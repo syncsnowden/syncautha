@@ -3,6 +3,8 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+export const dynamic = "force-dynamic";
+
 const schema = z.object({
   identifier: z.string().min(1, "Email or Username is required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
