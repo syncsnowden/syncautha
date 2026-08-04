@@ -156,6 +156,15 @@ export default function ProfilePage() {
                 {registeredAt}
               </div>
             </div>
+            <div className="input-group">
+              <label className="input-label">
+                <i className="fa-solid fa-crown" style={{ marginRight: 6, fontSize: 11 }} />
+                Your Plan
+              </label>
+              <div style={{ padding: "9px 12px", background: "var(--bg-2)", border: "1px solid var(--border-2)", borderRadius: "var(--radius)", color: plan === "Free" ? "var(--text-2)" : "var(--accent)", fontSize: 14, fontWeight: 600 }}>
+                {plan}
+              </div>
+            </div>
           </div>
         </div>
 
