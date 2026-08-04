@@ -1,69 +1,74 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
-
-const schema = z.object({
-  email: z.string().email("Enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  remember: z.boolean().optional(),
-});
+export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const parsed = schema.safeParse({
-      email: body.identifier || body.email || "",
-      password: body.password,
-      remember: body.remember,
-    });
+    const email = body.identifier || body.email || "";
+    const password = body.password || "";
+    const remember = body.remember || false;
 
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: parsed.error.issues[0].message },
-        { status: 400 }
-      );
+    if (!email || !password) {
+      return NextResponse.json({ error: "Email and password required." }, { status: 400 });
     }
 
-    const { email, password, remember } = parsed.data;
-    const supabase = await createClient({ remember });
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    const authRes = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: supabaseAnonKey!,
+        Authorization: `Bearer ${supabaseAnonKey}`,
+      },
+      body: JSON.stringify({ email, password }),
     });
 
-    if (error) {
-      console.error("[login] Supabase error:", error.message);
+    const authData = await authRes.json();
+
+    if (!authRes.ok) {
       return NextResponse.json(
-        { error: "Invalid email or password." },
+        { error: authData.error_description || authData.msg || "Invalid credentials." },
         { status: 401 }
       );
     }
 
     const response = NextResponse.json(
-      { success: true, user: { id: data.user.id, email: data.user.email } },
+      { success: true, user: { id: authData.user.id, email: authData.user.email } },
       { status: 200 }
     );
 
+    const maxAge = remember ? 30 * 24 * 60 * 60 : undefined;
+
+    if (authData.access_token) {
+      response.cookies.set("sb-access-token", authData.access_token, {
+        path: "/",
+        maxAge,
+        sameSite: "lax",
+        httpOnly: true,
+        secure: true,
+      });
+    }
+    if (authData.refresh_token) {
+      response.cookies.set("sb-refresh-token", authData.refresh_token, {
+        path: "/",
+        maxAge,
+        sameSite: "lax",
+        httpOnly: true,
+        secure: true,
+      });
+    }
+
     if (remember) {
-      response.cookies.set("syncauth-remember", "true", {
-        path: "/",
-        maxAge: 30 * 24 * 60 * 60,
-        sameSite: "lax",
-      });
-    } else {
-      response.cookies.set("syncauth-remember", "false", {
-        path: "/",
-        maxAge: 0,
-        sameSite: "lax",
-      });
+      response.cookies.set("syncauth-remember", "true", { path: "/", maxAge, sameSite: "lax" });
     }
 
     return response;
   } catch (err) {
-    console.error("Login Route Catch:", err);
+    console.error("Login Error:", err);
     return NextResponse.json({ error: "Internal server error." }, { status: 500 });
   }
 }
