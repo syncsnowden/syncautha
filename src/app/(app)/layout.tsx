@@ -27,6 +27,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         const u = user.user_metadata?.username || user.email?.split("@")[0] || "User";
         setEmail(user.email ?? "");
         setUsername(u);
+        return;
+      }
+      const cached = localStorage.getItem("syncauth_user");
+      if (cached) {
+        try {
+          const u = JSON.parse(cached);
+          setEmail(u.email ?? "");
+          setUsername((u.email ?? "").split("@")[0] || "User");
+        } catch {}
       }
     });
   }, [pathname]);
@@ -34,7 +43,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const handleLogout = async () => {
     const supabase = getSupabase();
     await supabase.auth.signOut();
-    document.cookie = "syncauth-remember=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+    localStorage.removeItem("syncauth_user");
     toast.success("Signed out.");
     router.push("/login");
   };

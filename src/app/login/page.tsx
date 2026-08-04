@@ -42,6 +42,7 @@ export default function LoginPage() {
           access_token: data.session.access_token,
           refresh_token: data.session.refresh_token,
         });
+        localStorage.setItem("syncauth_user", JSON.stringify(data.user));
       }
       toast.success("Welcome back!");
       router.push("/dashboard");
