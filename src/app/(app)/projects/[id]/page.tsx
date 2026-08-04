@@ -4,105 +4,19 @@ import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
 interface Script {
-  id: string;
-  project_id: string;
-  name: string;
-  silent_mode: boolean;
-  script_code: string;
-  created_at: number;
+  id: string; project_id: string; name: string;
+  silent_mode: boolean; script_code: string; created_at: number;
 }
 
-interface Project {
-  id: string;
-  name: string;
-}
+interface Project { id: string; name: string; }
 
-export default function ProjectDetailPage() {
-  const params = useParams();
-  const router = useRouter();
-  const pid = params.id as string;
+const keyLoaderTemplate = `-- SyncAuth Key System
+-- Enter your Script ID + Key below
 
-  const [project, setProject] = useState<Project | null>(null);
-  const [scripts, setScripts] = useState<Script[]>([]);
-  const [showForm, setShowForm] = useState(false);
-  const [editSid, setEditSid] = useState("");
-  const [form, setForm] = useState({ name: "", silent_mode: false, script_code: "" });
-  const [saving, setSaving] = useState(false);
-  const [tab, setTab] = useState<"scripts" | "keys">("scripts");
-
-  useEffect(() => {
-    fetch(`/api/projects/${pid}`).then(r => r.json()).then(setProject);
-    loadScripts();
-  }, [pid]);
-
-  async function loadScripts() {
-    const res = await fetch(`/api/projects/${pid}/scripts`);
-    setScripts(await res.json());
-  }
-
-  function resetForm() {
-    setForm({ name: "", silent_mode: false, script_code: "" });
-    setEditSid("");
-    setShowForm(false);
-  }
-
-  function editScript(s: Script) {
-    setEditSid(s.id);
-    setForm({ name: s.name, silent_mode: s.silent_mode, script_code: s.script_code });
-    setShowForm(true);
-  }
-
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.name.trim() || !form.script_code.trim()) return toast.error("Name and code required.");
-    setSaving(true);
-    try {
-      const url = editSid ? `/api/scripts/${editSid}` : `/api/projects/${pid}/scripts`;
-      const method = editSid ? "PUT" : "POST";
-      const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
-      if (!res.ok) throw new Error();
-      toast.success(editSid ? "Script updated!" : "Script created!");
-      resetForm();
-      loadScripts();
-    } catch {
-      toast.error("Failed to save.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function deleteScript(id: string) {
-    if (!confirm("Delete this script?")) return;
-    await fetch(`/api/scripts/${id}`, { method: "DELETE" });
-    toast.success("Deleted.");
-    loadScripts();
-  }
-
-  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.name.endsWith(".lua") && !file.name.endsWith(".txt")) {
-      toast.error("Only .lua or .txt files.");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setForm({ ...form, script_code: reader.result as string, name: form.name || file.name.replace(/\.(lua|txt)$/, "") });
-      toast.success("File loaded!");
-    };
-    reader.readAsText(file);
-  }
-
-  const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
-
-  const keyLoaderTemplate = `-- SyncAuth Key System Loader
--- Enter your Script ID below the GUI will load it
-
-local SITE = "${siteUrl}"
+local SITE = "SYNCAUTH_SITE_URL"
 
 local HttpService = game:GetService("HttpService")
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
+local player = game:GetService("Players").LocalPlayer
 
 local function getHWID()
     pcall(function()
@@ -127,108 +41,100 @@ local hwid = getHWID()
 local authed = false
 local scriptId = nil
 
--- GUI
 local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "SyncAuth_Loader"
+gui.Name = "SyncAuth"
 
 local bg = Instance.new("Frame", gui)
-bg.Size = UDim2.new(0, 360, 0, 260)
-bg.Position = UDim2.new(0.5, -180, 0.5, -130)
+bg.Size = UDim2.new(0, 370, 0, 270)
+bg.Position = UDim2.new(0.5, -185, 0.5, -135)
 bg.BackgroundColor3 = Color3.fromRGB(10, 11, 16)
 bg.BorderSizePixel = 0
 Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 10)
 Instance.new("UIStroke", bg).Color = Color3.fromRGB(0, 200, 224)
 
 local title = Instance.new("TextLabel", bg)
-title.Size = UDim2.new(1, -28, 0, 28)
+title.Size = UDim2.new(1, -28, 0, 24)
 title.Position = UDim2.new(0, 14, 0, 14)
-title.Text = "SyncAuth | Key System"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Text = "SyncAuth Key System"
+title.TextColor3 = Color3.fromRGB(255,255,255)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
 title.TextSize = 15
 title.TextXAlignment = Enum.TextXAlignment.Left
 
--- Script ID field
-local sidLabel = Instance.new("TextLabel", bg)
-sidLabel.Size = UDim2.new(1, -28, 0, 16)
-sidLabel.Position = UDim2.new(0, 14, 0, 48)
-sidLabel.Text = "Script ID:"
-sidLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
-sidLabel.BackgroundTransparency = 1
-sidLabel.Font = Enum.Font.Gotham
-sidLabel.TextSize = 12
-sidLabel.TextXAlignment = Enum.TextXAlignment.Left
+local function makeLabel(parent, text, y)
+    local l = Instance.new("TextLabel", parent)
+    l.Size = UDim2.new(1, -28, 0, 14)
+    l.Position = UDim2.new(0, 14, 0, y)
+    l.Text = text
+    l.TextColor3 = Color3.fromRGB(150,150,160)
+    l.BackgroundTransparency = 1
+    l.Font = Enum.Font.Gotham
+    l.TextSize = 12
+    l.TextXAlignment = Enum.TextXAlignment.Left
+    return l
+end
 
-local sidInput = Instance.new("TextBox", bg)
-sidInput.Size = UDim2.new(1, -28, 0, 32)
-sidInput.Position = UDim2.new(0, 14, 0, 66)
-sidInput.PlaceholderText = "Enter 14-char script ID..."
-sidInput.BackgroundColor3 = Color3.fromRGB(18, 20, 30)
-sidInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-sidInput.BorderSizePixel = 0
-sidInput.Font = Enum.Font.Gotham
-sidInput.TextSize = 13
-Instance.new("UICorner", sidInput).CornerRadius = UDim.new(0, 6)
+local function makeInput(parent, placeholder, y, h)
+    local inp = Instance.new("TextBox", parent)
+    inp.Size = UDim2.new(1, -28, 0, h or 32)
+    inp.Position = UDim2.new(0, 14, 0, y)
+    inp.PlaceholderText = placeholder
+    inp.BackgroundColor3 = Color3.fromRGB(18,20,30)
+    inp.TextColor3 = Color3.fromRGB(255,255,255)
+    inp.BorderSizePixel = 0
+    inp.Font = Enum.Font.Gotham
+    inp.TextSize = 13
+    Instance.new("UICorner", inp).CornerRadius = UDim.new(0, 6)
+    return inp
+end
 
--- Key field
-local keyLabel = Instance.new("TextLabel", bg)
-keyLabel.Size = UDim2.new(1, -28, 0, 16)
-keyLabel.Position = UDim2.new(0, 14, 0, 106)
-keyLabel.Text = "License Key:"
-keyLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
-keyLabel.BackgroundTransparency = 1
-keyLabel.Font = Enum.Font.Gotham
-keyLabel.TextSize = 12
-keyLabel.TextXAlignment = Enum.TextXAlignment.Left
+makeLabel(bg, "Script ID:", 44)
+local sidInput = makeInput(bg, "14-char script ID", 60)
 
-local keyInput = Instance.new("TextBox", bg)
-keyInput.Size = UDim2.new(1, -28, 0, 32)
-keyInput.Position = UDim2.new(0, 14, 0, 124)
-keyInput.PlaceholderText = "XXXX-XXXX-XXXX-XXXX"
-keyInput.BackgroundColor3 = Color3.fromRGB(18, 20, 30)
-keyInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-keyInput.BorderSizePixel = 0
-keyInput.Font = Enum.Font.Gotham
+makeLabel(bg, "License Key:", 100)
+local keyInput = makeInput(bg, "XXXX-XXXX-XXXX-XXXX", 116, 34)
 keyInput.TextSize = 14
-Instance.new("UICorner", keyInput).CornerRadius = UDim.new(0, 6)
 
--- Status
 local status = Instance.new("TextLabel", bg)
 status.Size = UDim2.new(1, -28, 0, 20)
-status.Position = UDim2.new(0, 14, 0, 164)
+status.Position = UDim2.new(0, 14, 0, 158)
 status.Text = ""
-status.TextColor3 = Color3.fromRGB(150, 150, 160)
+status.TextColor3 = Color3.fromRGB(150,150,160)
 status.BackgroundTransparency = 1
 status.Font = Enum.Font.Gotham
 status.TextSize = 12
 
--- Unlock button
 local btn = Instance.new("TextButton", bg)
-btn.Size = UDim2.new(1, -28, 0, 36)
-btn.Position = UDim2.new(0, 14, 0, 192)
+btn.Size = UDim2.new(1, -28, 0, 38)
+btn.Position = UDim2.new(0, 14, 0, 188)
 btn.Text = "UNLOCK"
 btn.BackgroundColor3 = Color3.fromRGB(0, 200, 224)
-btn.TextColor3 = Color3.fromRGB(10, 11, 16)
+btn.TextColor3 = Color3.fromRGB(10,11,16)
 btn.BorderSizePixel = 0
 btn.Font = Enum.Font.GothamBold
 btn.TextSize = 14
 Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 
+local hint = Instance.new("TextLabel", bg)
+hint.Size = UDim2.new(1, -28, 0, 14)
+hint.Position = UDim2.new(0, 14, 0, 238)
+hint.Text = "Get keys at: " .. SITE .. "/key-system"
+hint.TextColor3 = Color3.fromRGB(100,100,110)
+hint.BackgroundTransparency = 1
+hint.Font = Enum.Font.Gotham
+hint.TextSize = 10
+
 btn.MouseButton1Click:Connect(function()
     if authed then return end
-    
     local sid = sidInput.Text:gsub("%s+", "")
-    if #sid < 5 then status.Text = "Enter a Script ID."; return end
+    if #sid < 5 then status.Text = "Enter a valid Script ID"; return end
     scriptId = sid
-    
     local k = keyInput.Text:gsub("%s+", "")
-    if #k < 8 then status.Text = "Enter a valid key."; return end
-    
+    if #k < 8 then status.Text = "Enter a valid key"; return end
     status.Text = "Validating..."
-    status.TextColor3 = Color3.fromRGB(150, 150, 160)
+    status.TextColor3 = Color3.fromRGB(150,150,160)
     btn.Text = "..."
-    
     local result = request(SITE .. "/api/keys/validate", { key = k, hwid = hwid })
     if result and result.status == "valid" then
         status.Text = "Authorized! Loading..."
@@ -238,17 +144,79 @@ btn.MouseButton1Click:Connect(function()
         gui:Destroy()
         loadstring(game:HttpGet(SITE .. "/api/scripts/" .. scriptId .. "/raw"))()
     elseif result then
-        status.Text = result.reason or "Invalid key."
+        status.Text = result.reason or "Invalid key"
         status.TextColor3 = Color3.fromRGB(255, 80, 80)
         btn.Text = "UNLOCK"
     else
-        status.Text = "Connection failed."
+        status.Text = "Connection failed"
         status.TextColor3 = Color3.fromRGB(255, 80, 80)
         btn.Text = "UNLOCK"
     end
 end)
 
 while not authed do task.wait(0.5) end`;
+
+export default function ProjectDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const pid = params.id as string;
+
+  const [project, setProject] = useState<Project | null>(null);
+  const [scripts, setScripts] = useState<Script[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editSid, setEditSid] = useState("");
+  const [form, setForm] = useState({ name: "", silent_mode: false, script_code: "" });
+  const [saving, setSaving] = useState(false);
+  const [tab, setTab] = useState<"scripts" | "keys">("scripts");
+
+  useEffect(() => {
+    fetch(`/api/projects/${pid}`).then(r => r.json()).then(setProject);
+    loadScripts();
+  }, [pid]);
+
+  async function loadScripts() {
+    const res = await fetch(`/api/projects/${pid}/scripts`);
+    setScripts(await res.json());
+  }
+
+  function resetForm() { setForm({ name: "", silent_mode: false, script_code: "" }); setEditSid(""); setShowForm(false); }
+  function editScript(s: Script) { setEditSid(s.id); setForm({ name: s.name, silent_mode: s.silent_mode, script_code: s.script_code }); setShowForm(true); }
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.name.trim() || !form.script_code.trim()) return toast.error("Name and code required.");
+    setSaving(true);
+    try {
+      const url = editSid ? `/api/scripts/${editSid}` : `/api/projects/${pid}/scripts`;
+      const method = editSid ? "PUT" : "POST";
+      const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+      if (!res.ok) throw new Error();
+      toast.success(editSid ? "Script updated!" : "Script created!");
+      resetForm(); loadScripts();
+    } catch { toast.error("Failed to save."); }
+    finally { setSaving(false); }
+  }
+
+  async function deleteScript(id: string) {
+    if (!confirm("Delete this script?")) return;
+    await fetch(`/api/scripts/${id}`, { method: "DELETE" });
+    toast.success("Deleted."); loadScripts();
+  }
+
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.name.endsWith(".lua") && !file.name.endsWith(".txt")) { toast.error("Only .lua or .txt files"); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setForm({ ...form, script_code: reader.result as string, name: form.name || file.name.replace(/\.(lua|txt)$/, "") });
+      toast.success("File loaded!");
+    };
+    reader.readAsText(file);
+  }
+
+  const siteUrl = typeof window !== "undefined" ? window.location.origin : "https://syncauth-eight.vercel.app";
+  const loaderCode = keyLoaderTemplate.replace("SYNCAUTH_SITE_URL", siteUrl);
 
   return (
     <>
@@ -259,13 +227,27 @@ while not authed do task.wait(0.5) end`;
           </button>
         </div>
         <h1 className="page-title">{project?.name || "Loading..."}</h1>
+        <div style={{ display: "flex", gap: 8, marginBottom: 4 }}>
+          <button className="btn btn-secondary btn-sm" onClick={() => {
+            navigator.clipboard.writeText(`${siteUrl}/key-system?project=${pid}`);
+            toast.success("Key system link copied!");
+          }}>
+            <i className="fa-solid fa-link" /> Copy Key System Link
+          </button>
+          <button className="btn btn-secondary btn-sm" onClick={() => {
+            navigator.clipboard.writeText(loaderCode);
+            toast.success("Key loader copied!");
+          }}>
+            <i className="fa-solid fa-copy" /> Copy Key Loader
+          </button>
+        </div>
         <p className="page-subtitle">Manage scripts and key system for this project.</p>
       </div>
 
       <div className="page-body">
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           <button className={`btn ${tab === "scripts" ? "btn-primary" : "btn-secondary"}`} style={{ width: "auto" }} onClick={() => setTab("scripts")}>
-            <i className="fa-solid fa-code" /> Scripts
+            <i className="fa-solid fa-code" /> Scripts ({scripts.length})
           </button>
           <button className={`btn ${tab === "keys" ? "btn-primary" : "btn-secondary"}`} style={{ width: "auto" }} onClick={() => setTab("keys")}>
             <i className="fa-solid fa-key" /> Keys
@@ -290,14 +272,14 @@ while not authed do task.wait(0.5) end`;
                       <label className="input-label">Script Name</label>
                       <input className="input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Main Script" />
                     </div>
-                    <Toggle checked={form.silent_mode} onChange={v => setForm({ ...form, silent_mode: v })} label="Silent Mode (remove F9 logs/prints)" />
+                    <Toggle label="Silent Mode (remove F9 logs/prints)" checked={form.silent_mode} onChange={v => setForm({ ...form, silent_mode: v })} />
                     <div className="input-group">
                       <label className="input-label">Upload Script File (.lua / .txt)</label>
                       <input type="file" accept=".lua,.txt" onChange={handleFileUpload} style={{ color: "var(--text-2)", fontSize: 13 }} />
                     </div>
                     <div className="input-group">
                       <label className="input-label">Script Code</label>
-                      <textarea className="input" value={form.script_code} onChange={e => setForm({ ...form, script_code: e.target.value })} rows={8} style={{ resize: "vertical", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }} placeholder="Paste your Lua code here..." />
+                      <textarea className="input" value={form.script_code} onChange={e => setForm({ ...form, script_code: e.target.value })} rows={10} style={{ resize: "vertical", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }} placeholder="Paste your Lua code here..." />
                     </div>
                     <button className="btn btn-primary" disabled={saving} style={{ width: "auto" }}>
                       {saving ? "Saving..." : editSid ? "Update Script" : "Create Script"}
@@ -319,14 +301,8 @@ while not authed do task.wait(0.5) end`;
                     </div>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       <button className="btn btn-secondary btn-sm" onClick={() => {
-                        navigator.clipboard.writeText(keyLoaderTemplate);
-                        toast.success("Key loader copied!");
-                      }}>
-                        <i className="fa-solid fa-copy" /> Copy Loader
-                      </button>
-                      <button className="btn btn-secondary btn-sm" onClick={() => {
                         navigator.clipboard.writeText(`${siteUrl}/api/scripts/${s.id}/raw`);
-                        toast.success("Script URL copied!");
+                        toast.success("Raw URL copied!");
                       }}>
                         <i className="fa-solid fa-link" /> Raw URL
                       </button>
@@ -346,15 +322,13 @@ while not authed do task.wait(0.5) end`;
               <div className="empty-state">
                 <i className="fa-solid fa-code empty-icon" />
                 <div className="empty-title">No scripts yet</div>
-                <div className="empty-desc">Add a script to start. Each project needs a main script and a key system loader.</div>
+                <div className="empty-desc">Add a script to start. Upload your main script and use the key loader for your users.</div>
               </div>
             )}
           </>
         )}
 
-        {tab === "keys" && (
-          <KeysTab projectId={pid} />
-        )}
+        {tab === "keys" && <KeysTab projectId={pid} />}
       </div>
     </>
   );
@@ -367,31 +341,18 @@ function KeysTab({ projectId }: { projectId: string }) {
   async function generateKey() {
     setGenning(true);
     try {
-      const res = await fetch("/api/keys", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project_id: projectId }),
-      });
+      const res = await fetch("/api/keys", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ project_id: projectId }) });
       const data = await res.json();
-      if (data.key) {
-        setKey(data.key);
-        toast.success("Key generated!");
-      } else {
-        toast.error(data.error || "Failed");
-      }
-    } catch {
-      toast.error("Failed to generate key.");
-    } finally {
-      setGenning(false);
-    }
+      if (data.key) { setKey(data.key); toast.success("Key generated!"); }
+      else { toast.error(data.error || "Failed"); }
+    } catch { toast.error("Failed."); }
+    finally { setGenning(false); }
   }
 
   return (
     <div>
-      <div className="card" style={{ marginBottom: 20 }}>
-        <div className="card-header">
-          <span className="card-title">Generate Key</span>
-        </div>
+      <div className="card">
+        <div className="card-header"><span className="card-title">Generate Key</span></div>
         <div className="card-body">
           <button className="btn btn-primary" onClick={generateKey} disabled={genning} style={{ width: "auto" }}>
             <i className="fa-solid fa-key" /> {genning ? "Generating..." : "Generate Key"}
