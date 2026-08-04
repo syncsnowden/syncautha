@@ -5,8 +5,8 @@ import toast from "react-hot-toast";
 
 export default function ProfilePage() {
   const [email, setEmail] = useState("");
-  const [registeredAt, setRegisteredAt] = useState("");
-  const [endsAt, setEndsAt] = useState("");
+  const [username, setUsername] = useState("");
+  const [registeredAt, setRegisteredAt] = useState("Loading...");
   const [inviteCode, setInviteCode] = useState("");
   const [redeeming, setRedeeming] = useState(false);
 
@@ -15,13 +15,24 @@ export default function ProfilePage() {
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
         setEmail(data.user.email ?? "");
-        const createdAt = data.user.created_at
-          ? new Date(data.user.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+
+        const name =
+          data.user.user_metadata?.username ||
+          (data.user.email ? data.user.email.split("@")[0] : "User");
+        setUsername(name);
+
+        const created = data.user.created_at
+          ? new Date(data.user.created_at).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
           : "Unknown";
-        setRegisteredAt(createdAt);
-        setEndsAt(data.user.user_metadata?.ends_at || "N/A");
+        setRegisteredAt(created);
+      } else {
+        setRegisteredAt("Unknown");
       }
-    });
+    }).catch(() => setRegisteredAt("Unknown"));
   }, []);
 
   const handleRedeem = async () => {
@@ -32,15 +43,12 @@ export default function ProfilePage() {
     setRedeeming(true);
     try {
       const supabase = getSupabase();
-      const { data, error } = await supabase.auth.updateUser({
+      const { error } = await supabase.auth.updateUser({
         data: { redeemed_code: inviteCode.trim() },
       });
       if (error) throw error;
       toast.success("Invite code redeemed!");
       setInviteCode("");
-      if (data.user?.user_metadata?.ends_at) {
-        setEndsAt(data.user.user_metadata.ends_at);
-      }
     } catch {
       toast.error("Failed to redeem code.");
     } finally {
@@ -58,42 +66,106 @@ export default function ProfilePage() {
       <div className="page-body" style={{ maxWidth: 520 }}>
         <div className="card" style={{ marginBottom: 20 }}>
           <div className="card-header">
-            <span className="card-title">Redeem Invite Code</span>
+            <span className="card-title">
+              <i className="fa-solid fa-ticket" style={{ marginRight: 8, color: "var(--accent)" }} />
+              Redeem Invite Code
+            </span>
           </div>
           <div className="card-body">
             <div style={{ display: "flex", gap: 10 }}>
-              <input
-                className="input"
-                value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value)}
-                placeholder="Enter invite code..."
-                style={{ flex: 1 }}
-              />
-              <button className="btn btn-primary" onClick={handleRedeem} disabled={redeeming} style={{ width: "auto" }}>
+              <div style={{ position: "relative", flex: 1 }}>
+                <i
+                  className="fa-solid fa-gift"
+                  style={{
+                    position: "absolute",
+                    left: 12,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    color: "var(--text-3)",
+                    fontSize: 14,
+                    zIndex: 1,
+                  }}
+                />
+                <input
+                  className="input"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value)}
+                  placeholder="Enter invite code..."
+                  style={{ paddingLeft: 36 }}
+                />
+              </div>
+              <button
+                className="btn btn-primary"
+                onClick={handleRedeem}
+                disabled={redeeming}
+                style={{ width: "auto", gap: 6 }}
+              >
+                <i className="fa-solid fa-check" />
                 {redeeming ? "Redeeming..." : "Redeem"}
               </button>
             </div>
           </div>
         </div>
 
-        <div className="card">
+        <div className="card" style={{ marginBottom: 20 }}>
           <div className="card-header">
-            <span className="card-title">Account Info</span>
+            <span className="card-title">
+              <i className="fa-solid fa-circle-info" style={{ marginRight: 8, color: "var(--accent)" }} />
+              Account Info
+            </span>
           </div>
           <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div className="input-group">
-              <label className="input-label">Email</label>
-              <input className="input" value={email} disabled style={{ opacity: 0.6 }} />
+              <label className="input-label">
+                <i className="fa-solid fa-envelope" style={{ marginRight: 6, fontSize: 11 }} />
+                Email
+              </label>
+              <div style={{
+                padding: "9px 12px",
+                background: "var(--bg-2)",
+                border: "1px solid var(--border-2)",
+                borderRadius: "var(--radius)",
+                color: "var(--text-1)",
+                fontSize: 14,
+              }}>
+                {email || "Not available"}
+              </div>
             </div>
-            <div style={{ display: "flex", gap: 20 }}>
-              <div className="input-group" style={{ flex: 1 }}>
-                <label className="input-label">Registered At</label>
-                <div style={{ padding: "9px 0", fontSize: 14, color: "var(--text-1)", fontWeight: 500 }}>{registeredAt}</div>
+            <div className="input-group">
+              <label className="input-label">
+                <i className="fa-solid fa-calendar-plus" style={{ marginRight: 6, fontSize: 11 }} />
+                Registered At
+              </label>
+              <div style={{
+                padding: "9px 12px",
+                background: "var(--bg-2)",
+                border: "1px solid var(--border-2)",
+                borderRadius: "var(--radius)",
+                color: "var(--text-1)",
+                fontSize: 14,
+              }}>
+                {registeredAt}
               </div>
-              <div className="input-group" style={{ flex: 1 }}>
-                <label className="input-label">Ends At</label>
-                <div style={{ padding: "9px 0", fontSize: 14, color: "var(--text-1)", fontWeight: 500 }}>{endsAt}</div>
-              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          padding: "16px 20px",
+          background: "var(--bg-1)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-lg)",
+        }}>
+          <i className="fa-solid fa-circle-user" style={{ fontSize: 36, color: "var(--accent)" }} />
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>
+              {username || "User"}
+            </div>
+            <div style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2 }}>
+              SyncAuth Account
             </div>
           </div>
         </div>
