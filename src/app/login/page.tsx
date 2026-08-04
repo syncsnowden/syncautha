@@ -7,6 +7,8 @@ import toast from "react-hot-toast";
 import DiscordIcon from "@/components/DiscordIcon";
 import PricingSection from "@/components/PricingSection";
 import FAQSection from "@/components/FAQSection";
+import DarkCyberCanvas from "@/components/DarkCyberCanvas";
+import SuggestionModal from "@/components/SuggestionModal";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,6 +18,7 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isSuggestionOpen, setIsSuggestionOpen] = useState(false);
   const pageRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -77,7 +80,10 @@ export default function LoginPage() {
         }
       `}</style>
 
-      {/* Deep Subtle Midnight Ambient Glowing Auras */}
+      {/* Upgraded Cyber Canvas Mesh Effect */}
+      <DarkCyberCanvas />
+
+      {/* Ambient Glowing Auras */}
       <div
         style={{
           position: "fixed",
@@ -107,7 +113,7 @@ export default function LoginPage() {
         }}
       />
 
-      {/* Subtle Mouse Spotlight */}
+      {/* Mouse Spotlight */}
       <div
         style={{
           position: "fixed",
@@ -118,7 +124,7 @@ export default function LoginPage() {
         }}
       />
 
-      {/* Ultra Subtle Noise Grain */}
+      {/* Noise Grain Overlay */}
       <div
         style={{
           position: "fixed",
@@ -131,6 +137,9 @@ export default function LoginPage() {
           zIndex: 3,
         }}
       />
+
+      {/* Suggestion Modal */}
+      <SuggestionModal isOpen={isSuggestionOpen} onClose={() => setIsSuggestionOpen(false)} />
 
       {/* Main Container */}
       <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", minHeight: "100vh" }}>
@@ -168,6 +177,27 @@ export default function LoginPage() {
           </Link>
 
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <button
+              onClick={() => setIsSuggestionOpen(true)}
+              type="button"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 7,
+                padding: "8px 14px",
+                borderRadius: 10,
+                background: "rgba(99, 102, 241, 0.1)",
+                border: "1px solid rgba(99, 102, 241, 0.25)",
+                color: "#818cf8",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+              }}
+            >
+              <i className="fa-solid fa-lightbulb" style={{ fontSize: 12 }} />
+              Suggestions
+            </button>
             <a
               href="https://discord.gg/sM8ukpuzVE"
               target="_blank"
@@ -186,14 +216,6 @@ export default function LoginPage() {
                 textDecoration: "none",
                 transition: "all 0.2s ease",
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
-                e.currentTarget.style.color = "#ffffff";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)";
-                e.currentTarget.style.color = "#cbd5e1";
-              }}
             >
               <DiscordIcon style={{ width: 15, height: 15, fill: "#5865f2" }} />
               Discord
@@ -208,17 +230,14 @@ export default function LoginPage() {
                 fontSize: 13,
                 fontWeight: 700,
                 textDecoration: "none",
-                transition: "all 0.2s ease",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
             >
               Sign Up
             </Link>
           </div>
         </header>
 
-        {/* Hero Form Card Section */}
+        {/* Hero Form Card */}
         <main
           style={{
             flex: 1,
@@ -241,7 +260,6 @@ export default function LoginPage() {
               boxShadow: "0 24px 60px rgba(0, 0, 0, 0.8)",
             }}
           >
-            {/* Title */}
             <div style={{ marginBottom: 26 }}>
               <h1 style={{ fontSize: 22, fontWeight: 800, color: "#ffffff", letterSpacing: "-0.02em", marginBottom: 6 }}>
                 Sign in to SyncAuth
@@ -296,7 +314,6 @@ export default function LoginPage() {
                       padding: "11px 14px 11px 40px",
                       outline: "none",
                       fontFamily: "Inter, sans-serif",
-                      transition: "border-color 0.2s ease",
                     }}
                     onFocus={(e) => (e.target.style.borderColor = "#6366f1")}
                     onBlur={(e) => (e.target.style.borderColor = "rgba(255, 255, 255, 0.08)")}
@@ -336,7 +353,6 @@ export default function LoginPage() {
                       padding: "11px 40px 11px 40px",
                       outline: "none",
                       fontFamily: "Inter, sans-serif",
-                      transition: "border-color 0.2s ease",
                     }}
                     onFocus={(e) => (e.target.style.borderColor = "#6366f1")}
                     onBlur={(e) => (e.target.style.borderColor = "rgba(255, 255, 255, 0.08)")}
@@ -404,12 +420,6 @@ export default function LoginPage() {
                   gap: 8,
                   transition: "all 0.2s ease",
                 }}
-                onMouseEnter={(e) => {
-                  if (!loading) e.currentTarget.style.background = "#e2e8f0";
-                }}
-                onMouseLeave={(e) => {
-                  if (!loading) e.currentTarget.style.background = "#ffffff";
-                }}
               >
                 {loading ? "Signing in…" : "Sign In →"}
               </button>
@@ -422,7 +432,7 @@ export default function LoginPage() {
               <div style={{ flex: 1, height: 1, background: "rgba(255, 255, 255, 0.06)" }} />
             </div>
 
-            {/* Discord OAuth Button */}
+            {/* Discord Button */}
             <button
               onClick={() => toast("Discord login coming soon!", { icon: "🔗" })}
               type="button"
@@ -441,22 +451,12 @@ export default function LoginPage() {
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 10,
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(255, 255, 255, 0.06)";
-                e.currentTarget.style.color = "#ffffff";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)";
-                e.currentTarget.style.color = "#cbd5e1";
               }}
             >
               <DiscordIcon style={{ width: 17, height: 17, fill: "#5865f2" }} />
               Continue with Discord
             </button>
 
-            {/* Switch link */}
             <div style={{ marginTop: 24, textAlign: "center", fontSize: 13, color: "#64748b" }}>
               Don&apos;t have an account?{" "}
               <Link href="/register" style={{ color: "#ffffff", fontWeight: 600, textDecoration: "underline" }}>
@@ -465,7 +465,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Scroll Prompt */}
           <div
             style={{
               marginTop: 48,
@@ -488,7 +487,7 @@ export default function LoginPage() {
         <PricingSection />
         <FAQSection />
 
-        {/* Footer */}
+        {/* Footer with Suggestions Link */}
         <footer
           style={{
             width: "100%",
@@ -506,7 +505,25 @@ export default function LoginPage() {
           }}
         >
           <div>&copy; 2026 SyncAuth. All rights reserved.</div>
-          <div style={{ display: "flex", gap: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            <button
+              onClick={() => setIsSuggestionOpen(true)}
+              type="button"
+              style={{
+                background: "none",
+                border: "none",
+                color: "#818cf8",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <i className="fa-solid fa-lightbulb" style={{ fontSize: 11 }} />
+              Suggestions
+            </button>
             <Link href="/tos" style={{ color: "#94a3b8", textDecoration: "none" }}>
               Terms of Service
             </Link>

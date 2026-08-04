@@ -7,6 +7,8 @@ import toast from "react-hot-toast";
 import DiscordIcon from "@/components/DiscordIcon";
 import PricingSection from "@/components/PricingSection";
 import FAQSection from "@/components/FAQSection";
+import DarkCyberCanvas from "@/components/DarkCyberCanvas";
+import SuggestionModal from "@/components/SuggestionModal";
 
 function pwStrength(pw: string) {
   let s = 0;
@@ -31,6 +33,7 @@ export default function RegisterPage() {
   const [agree, setAgree] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isSuggestionOpen, setIsSuggestionOpen] = useState(false);
 
   const strength = pwStrength(password);
   const match = confirm ? password === confirm : null;
@@ -97,7 +100,10 @@ export default function RegisterPage() {
         }
       `}</style>
 
-      {/* Deep Subtle Midnight Glow */}
+      {/* Upgraded Canvas Particle Mesh Effect */}
+      <DarkCyberCanvas />
+
+      {/* Ambient Glowing Aura */}
       <div
         style={{
           position: "fixed",
@@ -139,10 +145,13 @@ export default function RegisterPage() {
         }}
       />
 
+      {/* Suggestion Modal */}
+      <SuggestionModal isOpen={isSuggestionOpen} onClose={() => setIsSuggestionOpen(false)} />
+
       {/* Main Content */}
       <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", minHeight: "100vh" }}>
         
-        {/* Navigation Bar */}
+        {/* Header */}
         <header style={{ width: "100%", maxWidth: 1120, margin: "0 auto", padding: "24px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -153,6 +162,26 @@ export default function RegisterPage() {
             </span>
           </Link>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <button
+              onClick={() => setIsSuggestionOpen(true)}
+              type="button"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 7,
+                padding: "8px 14px",
+                borderRadius: 10,
+                background: "rgba(99, 102, 241, 0.1)",
+                border: "1px solid rgba(99, 102, 241, 0.25)",
+                color: "#818cf8",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              <i className="fa-solid fa-lightbulb" style={{ fontSize: 12 }} />
+              Suggestions
+            </button>
             <a href="https://discord.gg/sM8ukpuzVE" target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "8px 16px", borderRadius: 10, background: "rgba(255, 255, 255, 0.04)", border: "1px solid rgba(255, 255, 255, 0.08)", color: "#cbd5e1", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
               <DiscordIcon style={{ width: 15, height: 15, fill: "#5865f2" }} />
               Discord
@@ -163,7 +192,7 @@ export default function RegisterPage() {
           </div>
         </header>
 
-        {/* Hero Auth Card Section */}
+        {/* Form Card */}
         <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px 60px" }}>
           <div
             className="auth-card-stealth"
@@ -315,7 +344,6 @@ export default function RegisterPage() {
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 8,
-                  transition: "all 0.2s ease",
                 }}
               >
                 {loading ? "Creating Account…" : "Create Account →"}
@@ -334,9 +362,28 @@ export default function RegisterPage() {
         <PricingSection />
         <FAQSection />
 
+        {/* Footer */}
         <footer style={{ width: "100%", maxWidth: 1120, margin: "0 auto", padding: "30px 20px 40px", borderTop: "1px solid rgba(255, 255, 255, 0.06)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16, fontSize: 13, color: "#64748b" }}>
           <div>&copy; 2026 SyncAuth. All rights reserved.</div>
-          <div style={{ display: "flex", gap: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            <button
+              onClick={() => setIsSuggestionOpen(true)}
+              type="button"
+              style={{
+                background: "none",
+                border: "none",
+                color: "#818cf8",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <i className="fa-solid fa-lightbulb" style={{ fontSize: 11 }} />
+              Suggestions
+            </button>
             <Link href="/tos" style={{ color: "#94a3b8", textDecoration: "none" }}>Terms of Service</Link>
             <Link href="/tos" style={{ color: "#94a3b8", textDecoration: "none" }}>Privacy Policy</Link>
             <a href="https://discord.gg/sM8ukpuzVE" target="_blank" rel="noreferrer" style={{ color: "#94a3b8", textDecoration: "none" }}>Discord</a>
