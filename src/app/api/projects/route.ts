@@ -32,7 +32,8 @@ export async function POST(req: Request) {
     };
     await updateDB((db) => { db.projects[id] = project; });
     return Response.json(project, { status: 201 });
-  } catch {
-    return Response.json({ error: "Failed to create project." }, { status: 500 });
+  } catch (e: any) {
+    console.error("Project create error:", e);
+    return Response.json({ error: e.message || "Failed to create project." }, { status: 500 });
   }
 }

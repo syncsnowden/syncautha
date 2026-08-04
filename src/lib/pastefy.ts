@@ -1,8 +1,9 @@
 const PASTEFY_BASE = "https://pastefy.app/api/v2";
 const API_KEY = process.env.PASTEFY_API_KEY || "sMBc9KgDW5Jy0PlP5GWCAa4Tlt4VJwJ2BQWJxW46NsLTYHEQbs3u4i8TyI4O";
-let PASTE_ID = process.env.PASTEFY_PASTE_ID || "";
+const PASTE_ID = process.env.PASTEFY_PASTE_ID || "";
 
-const headers = { Authorization: `Bearer ${API_KEY}`, "Content-Type": "application/json" };
+function authHeaders() { return { Authorization: `Bearer ${API_KEY}` }; }
+function jsonHeaders() { return { Authorization: `Bearer ${API_KEY}`, "Content-Type": "application/json" }; }
 
 export interface Project {
   id: string;
@@ -59,49 +60,43 @@ export interface DB {
 }
 
 const EMPTY_DB: DB = { projects: {}, scripts: {}, keys: {}, rewards: {} };
+let cachedPasteId = PASTE_ID;
 
-async function fetchDB(): Promise<DB> {
-  if (!PASTE_ID) {
-    const res = await fetch(`${PASTEFY_BASE}/paste`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ title: "syncauth-db", content: JSON.stringify(EMPTY_DB), visibility: "unlisted" }),
-    });
-    if (!res.ok) throw new Error(`Pastefy create failed: ${res.status}`);
-    const data = await res.json();
-    PASTE_ID = data.id || data.paste?.id;
-    if (!PASTE_ID) throw new Error("Failed to create Pastefy paste");
-    return EMPTY_DB;
-  }
+async function getOrCreatePasteId(): Promise<string> {
+  if (cachedPasteId) return cachedPasteId;
 
-  const res = await fetch(`${PASTEFY_BASE}/paste/${PASTE_ID}`, { headers });
-  if (!res.ok) {
-    PASTE_ID = "";
-    return fetchDB();
-  }
-  const data = await res.json();
-  try {
-    return JSON.parse(data.content || data.paste?.content || "{}");
-  } catch {
-    return EMPTY_DB;
-  }
-}
-
-async function saveDB(db: DB): Promise<void> {
-  if (!PASTE_ID) throw new Error("No paste ID");
-  const res = await fetch(`${PASTEFY_BASE}/paste/${PASTE_ID}`, {
-    method: "PUT",
-    headers,
-    body: JSON.stringify({ content: JSON.stringify(db) }),
+  const res = await fetch(`${PASTEFY_BASE}/paste`, {
+    method: "POST",
+    headers: jsonHeaders(),
+    body: JSON.stringify({ title: "syncauth-db", content: JSON.stringify(EMPTY_DB) }),
   });
-  if (!res.ok) throw new Error(`Pastefy save failed: ${res.status}`);
+  if (!res.ok) throw new Error(`Pastefy create failed: ${res.status} ${await res.text()}`);
+  const data = await res.json();
+  cachedPasteId = data.paste?.id || data.id;
+  if (!cachedPasteId) throw new Error("No paste id in response");
+  return cachedPasteId;
 }
-
-let cache: DB | null = null;
 
 export async function getDB(): Promise<DB> {
-  if (!cache) cache = await fetchDB();
-  return cache;
+  const pid = await getOrCreatePasteId();
+  const res = await fetch(`${PASTEFY_BASE}/paste/${pid}`, { headers: authHeaders() });
+  if (!res.ok) {
+    cachedPasteId = "";
+    return EMPTY_DB;
+  }
+  const data = await res.json();
+  const content = data.paste?.content || data.content || "{}";
+  try { return JSON.parse(content); } catch { return EMPTY_DB; }
+}
+
+export async function saveDB(db: DB): Promise<void> {
+  const pid = await getOrCreatePasteId();
+  const res = await fetch(`${PASTEFY_BASE}/paste/${pid}`, {
+    method: "PUT",
+    headers: jsonHeaders(),
+    body: JSON.stringify({ content: JSON.stringify(db) }),
+  });
+  if (!res.ok) throw new Error(`Pastefy save failed: ${res.status} ${await res.text()}`);
 }
 
 export async function updateDB(updater: (db: DB) => void): Promise<DB> {
@@ -128,8 +123,7 @@ export function generateKey(): string {
 export function hashHwid(raw: string): string {
   let hash = 0;
   for (let i = 0; i < raw.length; i++) {
-    const ch = raw.charCodeAt(i);
-    hash = ((hash << 5) - hash) + ch;
+    hash = ((hash << 5) - hash) + raw.charCodeAt(i);
     hash |= 0;
   }
   return "hw_" + Math.abs(hash).toString(16).padStart(8, "0") + raw.length.toString(16);
