@@ -1,6 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
-import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 
@@ -17,8 +16,8 @@ export default function ProfilePage() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
-  const [customInput, setCustomInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -27,23 +26,39 @@ export default function ProfilePage() {
         setEmail(data.user.email ?? "");
         setUsername(data.user.user_metadata?.username ?? "");
         setAvatarUrl(data.user.user_metadata?.avatar_url ?? "");
-        setCustomInput(data.user.user_metadata?.avatar_url ?? "");
       }
     });
   }, []);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size must be under 5MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setAvatarUrl(reader.result);
+        toast.success("Image selected! Click 'Save Changes' to apply.");
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       const supabase = createClient();
-      const finalAvatar = customInput.trim() || avatarUrl;
       const { error } = await supabase.auth.updateUser({
-        data: { username, avatar_url: finalAvatar },
+        data: { username, avatar_url: avatarUrl },
       });
       if (error) throw error;
-      setAvatarUrl(finalAvatar);
-      toast.success("Profile updated! Refresh to see sidebar changes.");
+      toast.success("Profile updated!");
     } catch {
       toast.error("Failed to update profile.");
     } finally {
@@ -57,42 +72,41 @@ export default function ProfilePage() {
     <>
       <div className="page-header">
         <h1 className="page-title">Profile Settings</h1>
-        <p className="page-subtitle">Customize your avatar, display details, and security.</p>
+        <p className="page-subtitle">Customize your profile picture, display details, and security.</p>
       </div>
 
-      <div className="page-body" style={{ maxWidth: 580 }}>
-        {/* Profile Card & Avatar Preview */}
+      <div className="page-body" style={{ maxWidth: 600 }}>
+        {/* Profile Card & Avatar Upload */}
         <div className="card" style={{ marginBottom: 20 }}>
           <div className="card-header">
             <span className="card-title">Profile Picture</span>
           </div>
           <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-              {avatarUrl || customInput ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+              {avatarUrl ? (
                 <div
                   style={{
-                    width: 72,
-                    height: 72,
+                    width: 76,
+                    height: 76,
                     borderRadius: "50%",
                     overflow: "hidden",
                     border: "2px solid var(--accent)",
-                    boxShadow: "0 0 20px rgba(99, 102, 241, 0.3)",
+                    boxShadow: "0 0 24px rgba(99, 102, 241, 0.35)",
                     flexShrink: 0,
-                    position: "relative",
                   }}
                 >
                   <img
-                    src={customInput || avatarUrl}
+                    src={avatarUrl}
                     alt="Avatar"
                     style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    onError={() => toast.error("Failed to load avatar image URL.")}
+                    onError={() => toast.error("Failed to render avatar image.")}
                   />
                 </div>
               ) : (
                 <div
                   style={{
-                    width: 72,
-                    height: 72,
+                    width: 76,
+                    height: 76,
                     borderRadius: "50%",
                     background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
                     display: "flex",
@@ -102,41 +116,67 @@ export default function ProfilePage() {
                     fontWeight: 800,
                     color: "#ffffff",
                     flexShrink: 0,
-                    boxShadow: "0 0 20px rgba(99, 102, 241, 0.3)",
+                    boxShadow: "0 0 24px rgba(99, 102, 241, 0.35)",
                   }}
                 >
                   {initials}
                 </div>
               )}
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 16, color: "#ffffff" }}>{username || "Developer"}</div>
-                <div style={{ fontSize: 13, color: "var(--text-3)", marginTop: 2 }}>{email}</div>
-                <div style={{ fontSize: 11.5, color: "var(--accent)", marginTop: 4 }}>
-                  Choose a preset or paste an image URL below
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 16, color: "#ffffff" }}>{username || "Developer"}</div>
+                  <div style={{ fontSize: 13, color: "var(--text-3)", marginTop: 2 }}>{email}</div>
+                </div>
+
+                <div style={{ display: "flex", gap: 10 }}>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    style={{ display: "none" }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="btn btn-secondary btn-sm"
+                    style={{ gap: 6 }}
+                  >
+                    <i className="fa-solid fa-upload" />
+                    Upload Image
+                  </button>
+                  {avatarUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setAvatarUrl("")}
+                      className="btn btn-secondary btn-sm"
+                      style={{ color: "var(--danger)" }}
+                    >
+                      Remove
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Presets Grid */}
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-2)", textTransform: "uppercase" }}>
-                Select Preset Avatar
+              <label style={{ fontSize: 11.5, fontWeight: 600, color: "var(--text-2)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                Or Choose a Preset Avatar
               </label>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 {PRESET_AVATARS.map((url, i) => (
                   <button
                     key={i}
                     type="button"
-                    onClick={() => {
-                      setCustomInput(url);
-                      setAvatarUrl(url);
-                    }}
+                    onClick={() => setAvatarUrl(url)}
                     style={{
-                      width: 46,
-                      height: 46,
+                      width: 44,
+                      height: 44,
                       borderRadius: "50%",
                       overflow: "hidden",
-                      border: (customInput === url || avatarUrl === url) ? "2px solid #818cf8" : "2px solid transparent",
+                      border: avatarUrl === url ? "2px solid #818cf8" : "2px solid transparent",
                       cursor: "pointer",
                       padding: 0,
                       background: "none",
@@ -151,14 +191,11 @@ export default function ProfilePage() {
 
             {/* Custom URL Input */}
             <div className="input-group">
-              <label className="input-label">Custom Avatar Image URL</label>
+              <label className="input-label">Image URL (Optional)</label>
               <input
                 className="input"
-                value={customInput}
-                onChange={(e) => {
-                  setCustomInput(e.target.value);
-                  setAvatarUrl(e.target.value);
-                }}
+                value={avatarUrl}
+                onChange={(e) => setAvatarUrl(e.target.value)}
                 placeholder="https://example.com/my-avatar.png"
               />
             </div>

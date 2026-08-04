@@ -20,19 +20,6 @@ export default function DarkCyberCanvas() {
       mouse.targetX = e.clientX;
       mouse.targetY = e.clientY;
       mouse.active = true;
-
-      // Spawn cursor trail sparks
-      if (Math.random() < 0.6) {
-        sparks.push({
-          x: e.clientX + (Math.random() - 0.5) * 12,
-          y: e.clientY + (Math.random() - 0.5) * 12,
-          vx: (Math.random() - 0.5) * 1.5,
-          vy: (Math.random() - 0.5) * 1.5 - 0.5,
-          size: Math.random() * 2 + 1,
-          alpha: 0.9,
-          decay: Math.random() * 0.03 + 0.015,
-        });
-      }
     };
 
     const handleResize = () => {
@@ -44,26 +31,15 @@ export default function DarkCyberCanvas() {
     window.addEventListener("resize", handleResize);
 
     // Background floating particle nodes
-    const PARTICLE_COUNT = 75;
+    const PARTICLE_COUNT = 65;
     const particles = Array.from({ length: PARTICLE_COUNT }, () => ({
       x: Math.random() * w,
       y: Math.random() * h,
-      vx: (Math.random() - 0.5) * 0.4,
-      vy: (Math.random() - 0.5) * 0.4,
-      size: Math.random() * 1.8 + 0.6,
-      alpha: Math.random() * 0.5 + 0.2,
+      vx: (Math.random() - 0.5) * 0.35,
+      vy: (Math.random() - 0.5) * 0.35,
+      size: Math.random() * 1.5 + 0.6,
+      alpha: Math.random() * 0.4 + 0.2,
     }));
-
-    // Spark particles generated on mouse move
-    const sparks: Array<{
-      x: number;
-      y: number;
-      vx: number;
-      vy: number;
-      size: number;
-      alpha: number;
-      decay: number;
-    }> = [];
 
     let pulseRadius = 0;
 
@@ -71,63 +47,33 @@ export default function DarkCyberCanvas() {
       ctx.clearRect(0, 0, w, h);
 
       // Smooth inertia mouse movement
-      mouse.x += (mouse.targetX - mouse.x) * 0.12;
-      mouse.y += (mouse.targetY - mouse.y) * 0.12;
+      mouse.x += (mouse.targetX - mouse.x) * 0.1;
+      mouse.y += (mouse.targetY - mouse.y) * 0.1;
 
-      pulseRadius = (pulseRadius + 0.04) % (Math.PI * 2);
-      const pulseExpand = Math.sin(pulseRadius) * 12;
+      pulseRadius = (pulseRadius + 0.03) % (Math.PI * 2);
+      const pulseExpand = Math.sin(pulseRadius) * 8;
 
-      // 1. Draw Multi-Layer Cursor Energy Spotlight
+      // 1. Draw Subtle Dark Cyber Cursor Glow (No noisy sparkles)
       if (mouse.active) {
-        // Outer aura gradient
         const outerGlow = ctx.createRadialGradient(
           mouse.x,
           mouse.y,
           0,
           mouse.x,
           mouse.y,
-          260 + pulseExpand
+          240 + pulseExpand
         );
-        outerGlow.addColorStop(0, "rgba(99, 102, 241, 0.14)");
-        outerGlow.addColorStop(0.5, "rgba(79, 70, 229, 0.05)");
+        outerGlow.addColorStop(0, "rgba(99, 102, 241, 0.1)");
+        outerGlow.addColorStop(0.6, "rgba(79, 70, 229, 0.03)");
         outerGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
 
         ctx.beginPath();
-        ctx.arc(mouse.x, mouse.y, 260 + pulseExpand, 0, Math.PI * 2);
+        ctx.arc(mouse.x, mouse.y, 240 + pulseExpand, 0, Math.PI * 2);
         ctx.fillStyle = outerGlow;
         ctx.fill();
-
-        // Inner glowing core ring
-        const innerGlow = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 60);
-        innerGlow.addColorStop(0, "rgba(129, 140, 248, 0.3)");
-        innerGlow.addColorStop(0.8, "rgba(99, 102, 241, 0.08)");
-        innerGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
-
-        ctx.beginPath();
-        ctx.arc(mouse.x, mouse.y, 60, 0, Math.PI * 2);
-        ctx.fillStyle = innerGlow;
-        ctx.fill();
       }
 
-      // 2. Render Trailing Sparks
-      for (let i = sparks.length - 1; i >= 0; i--) {
-        const s = sparks[i];
-        s.x += s.vx;
-        s.y += s.vy;
-        s.alpha -= s.decay;
-
-        if (s.alpha <= 0) {
-          sparks.splice(i, 1);
-          continue;
-        }
-
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(165, 180, 252, ${s.alpha})`;
-        ctx.fill();
-      }
-
-      // 3. Render Interconnected Particles & Cursor Connections
+      // 2. Render Interconnected Nodes & Subtle Cursor Gravity
       for (let i = 0; i < PARTICLE_COUNT; i++) {
         const p1 = particles[i];
         p1.x += p1.vx;
@@ -139,27 +85,23 @@ export default function DarkCyberCanvas() {
         // Draw particle node
         ctx.beginPath();
         ctx.arc(p1.x, p1.y, p1.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(129, 140, 248, ${p1.alpha * 0.45})`;
+        ctx.fillStyle = `rgba(147, 197, 253, ${p1.alpha * 0.4})`;
         ctx.fill();
 
-        // Connect to mouse if nearby
+        // Subtle link to mouse if nearby
         if (mouse.active) {
           const mdx = p1.x - mouse.x;
           const mdy = p1.y - mouse.y;
           const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
 
-          if (mdist < 200) {
+          if (mdist < 180) {
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
             ctx.lineTo(mouse.x, mouse.y);
-            const mAlpha = (1 - mdist / 200) * 0.25;
+            const mAlpha = (1 - mdist / 180) * 0.18;
             ctx.strokeStyle = `rgba(129, 140, 248, ${mAlpha})`;
-            ctx.lineWidth = 0.7;
+            ctx.lineWidth = 0.6;
             ctx.stroke();
-
-            // Magnetic attraction force
-            p1.x -= (mdx / mdist) * 0.15;
-            p1.y -= (mdy / mdist) * 0.15;
           }
         }
 
@@ -170,11 +112,11 @@ export default function DarkCyberCanvas() {
           const dy = p1.y - p2.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
 
-          if (dist < 130) {
+          if (dist < 120) {
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
             ctx.lineTo(p2.x, p2.y);
-            const lineAlpha = (1 - dist / 130) * 0.12;
+            const lineAlpha = (1 - dist / 120) * 0.1;
             ctx.strokeStyle = `rgba(99, 102, 241, ${lineAlpha})`;
             ctx.lineWidth = 0.5;
             ctx.stroke();
