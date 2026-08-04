@@ -20,6 +20,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [username, setUsername] = useState("");
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const c = localStorage.getItem("syncauth_theme") || "#00c8e0";
+    document.documentElement.style.setProperty("--accent", c);
+    document.documentElement.style.setProperty("--accent-dim", c + "1f");
+    document.documentElement.style.setProperty("--accent-border", c + "40");
+  }, []);
+
+  useEffect(() => {
     const supabase = getSupabase();
     supabase.auth.getSession().then(({ data }) => {
       const user = data.session?.user;
