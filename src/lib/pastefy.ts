@@ -23,6 +23,13 @@ export interface Project {
   log_executor: boolean;
   log_jobid: boolean;
   created_at: number;
+  key_duration: number;
+  max_keys: number;
+  allow_extending: boolean;
+  reward_cooldown: number;
+  allow_forgetting: boolean;
+  max_hours: number;
+  lootlabs_link: string;
 }
 
 export interface Script {

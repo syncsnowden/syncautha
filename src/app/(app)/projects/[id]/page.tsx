@@ -95,12 +95,10 @@ export default function ProjectDetailPage() {
 
   const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
 
-  const keyLoaderTemplate = (scriptId: string) =>
-    `-- Key System Loader for "${project?.name || "Project"}"
--- Script ID: ${scriptId}
+  const keyLoaderTemplate = `-- SyncAuth Key System Loader
+-- Enter your Script ID below the GUI will load it
 
 local SITE = "${siteUrl}"
-local SCRIPT_ID = "${scriptId}"
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -108,96 +106,144 @@ local player = Players.LocalPlayer
 
 local function getHWID()
     pcall(function()
-        local clientId = game:GetService("RbxAnalyticsService"):GetClientId()
-        if clientId and #clientId > 0 then return clientId end
+        local c = game:GetService("RbxAnalyticsService"):GetClientId()
+        if c and #c > 0 then return c end
     end)
     return HttpService:GenerateGUID(false)
 end
 
 local function request(url, body)
     local ok, res = pcall(function()
-        return HttpService:JSONDecode(syn.request({ Url = url, Method = "POST", Headers = { ["Content-Type"] = "application/json" }, Body = HttpService:JSONEncode(body) }).Body)
+        return HttpService:JSONDecode(syn.request({
+            Url = url, Method = "POST",
+            Headers = { ["Content-Type"] = "application/json" },
+            Body = HttpService:JSONEncode(body)
+        }).Body)
     end)
     if ok then return res end
 end
 
 local hwid = getHWID()
-local key = nil
+local authed = false
+local scriptId = nil
 
--- Create GUI
+-- GUI
 local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "SyncAuth"
+gui.Name = "SyncAuth_Loader"
 
-local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 320, 0, 180)
-frame.Position = UDim2.new(0.5, -160, 0.5, -90)
-frame.BackgroundColor3 = Color3.fromRGB(12, 14, 23)
-frame.BorderSizePixel = 0
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
-Instance.new("UIStroke", frame).Color = Color3.fromRGB(0, 200, 224)
+local bg = Instance.new("Frame", gui)
+bg.Size = UDim2.new(0, 360, 0, 260)
+bg.Position = UDim2.new(0.5, -180, 0.5, -130)
+bg.BackgroundColor3 = Color3.fromRGB(10, 11, 16)
+bg.BorderSizePixel = 0
+Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 10)
+Instance.new("UIStroke", bg).Color = Color3.fromRGB(0, 200, 224)
 
-local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1, 0, 0, 30)
-title.Text = "Enter License Key"
+local title = Instance.new("TextLabel", bg)
+title.Size = UDim2.new(1, -28, 0, 28)
+title.Position = UDim2.new(0, 14, 0, 14)
+title.Text = "SyncAuth | Key System"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.BackgroundTransparency = 1
-title.Position = UDim2.new(0, 0, 0, 12)
 title.Font = Enum.Font.GothamBold
-title.TextSize = 16
+title.TextSize = 15
+title.TextXAlignment = Enum.TextXAlignment.Left
 
-local input = Instance.new("TextBox", frame)
-input.Size = UDim2.new(1, -28, 0, 36)
-input.Position = UDim2.new(0, 14, 0, 50)
-input.PlaceholderText = "XXXX-XXXX-XXXX-XXXX"
-input.BackgroundColor3 = Color3.fromRGB(20, 22, 33)
-input.TextColor3 = Color3.fromRGB(255, 255, 255)
-input.BorderSizePixel = 0
-Instance.new("UICorner", input).CornerRadius = UDim.new(0, 6)
+-- Script ID field
+local sidLabel = Instance.new("TextLabel", bg)
+sidLabel.Size = UDim2.new(1, -28, 0, 16)
+sidLabel.Position = UDim2.new(0, 14, 0, 48)
+sidLabel.Text = "Script ID:"
+sidLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
+sidLabel.BackgroundTransparency = 1
+sidLabel.Font = Enum.Font.Gotham
+sidLabel.TextSize = 12
+sidLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-local status = Instance.new("TextLabel", frame)
-status.Size = UDim2.new(1, 0, 0, 20)
-status.Position = UDim2.new(0, 0, 0, 95)
+local sidInput = Instance.new("TextBox", bg)
+sidInput.Size = UDim2.new(1, -28, 0, 32)
+sidInput.Position = UDim2.new(0, 14, 0, 66)
+sidInput.PlaceholderText = "Enter 14-char script ID..."
+sidInput.BackgroundColor3 = Color3.fromRGB(18, 20, 30)
+sidInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+sidInput.BorderSizePixel = 0
+sidInput.Font = Enum.Font.Gotham
+sidInput.TextSize = 13
+Instance.new("UICorner", sidInput).CornerRadius = UDim.new(0, 6)
+
+-- Key field
+local keyLabel = Instance.new("TextLabel", bg)
+keyLabel.Size = UDim2.new(1, -28, 0, 16)
+keyLabel.Position = UDim2.new(0, 14, 0, 106)
+keyLabel.Text = "License Key:"
+keyLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
+keyLabel.BackgroundTransparency = 1
+keyLabel.Font = Enum.Font.Gotham
+keyLabel.TextSize = 12
+keyLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local keyInput = Instance.new("TextBox", bg)
+keyInput.Size = UDim2.new(1, -28, 0, 32)
+keyInput.Position = UDim2.new(0, 14, 0, 124)
+keyInput.PlaceholderText = "XXXX-XXXX-XXXX-XXXX"
+keyInput.BackgroundColor3 = Color3.fromRGB(18, 20, 30)
+keyInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+keyInput.BorderSizePixel = 0
+keyInput.Font = Enum.Font.Gotham
+keyInput.TextSize = 14
+Instance.new("UICorner", keyInput).CornerRadius = UDim.new(0, 6)
+
+-- Status
+local status = Instance.new("TextLabel", bg)
+status.Size = UDim2.new(1, -28, 0, 20)
+status.Position = UDim2.new(0, 14, 0, 164)
 status.Text = ""
-status.TextColor3 = Color3.fromRGB(150, 150, 150)
+status.TextColor3 = Color3.fromRGB(150, 150, 160)
 status.BackgroundTransparency = 1
 status.Font = Enum.Font.Gotham
-status.TextSize = 13
+status.TextSize = 12
 
-local btn = Instance.new("TextButton", frame)
-btn.Size = UDim2.new(1, -28, 0, 34)
-btn.Position = UDim2.new(0, 14, 0, 125)
+-- Unlock button
+local btn = Instance.new("TextButton", bg)
+btn.Size = UDim2.new(1, -28, 0, 36)
+btn.Position = UDim2.new(0, 14, 0, 192)
 btn.Text = "UNLOCK"
 btn.BackgroundColor3 = Color3.fromRGB(0, 200, 224)
-btn.TextColor3 = Color3.fromRGB(0, 0, 0)
+btn.TextColor3 = Color3.fromRGB(10, 11, 16)
 btn.BorderSizePixel = 0
 btn.Font = Enum.Font.GothamBold
 btn.TextSize = 14
 Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 
-local authed = false
-
 btn.MouseButton1Click:Connect(function()
     if authed then return end
-    local k = input.Text:gsub("%s+", "")
+    
+    local sid = sidInput.Text:gsub("%s+", "")
+    if #sid < 5 then status.Text = "Enter a Script ID."; return end
+    scriptId = sid
+    
+    local k = keyInput.Text:gsub("%s+", "")
     if #k < 8 then status.Text = "Enter a valid key."; return end
+    
     status.Text = "Validating..."
+    status.TextColor3 = Color3.fromRGB(150, 150, 160)
     btn.Text = "..."
     
     local result = request(SITE .. "/api/keys/validate", { key = k, hwid = hwid })
     if result and result.status == "valid" then
-        status.Text = "Authorized!"
+        status.Text = "Authorized! Loading..."
         status.TextColor3 = Color3.fromRGB(0, 200, 224)
         authed = true
-        task.wait(1.5)
+        task.wait(1)
         gui:Destroy()
-        -- Load main script
-        loadstring(game:HttpGet(SITE .. "/api/scripts/" .. SCRIPT_ID .. "/raw"))()
+        loadstring(game:HttpGet(SITE .. "/api/scripts/" .. scriptId .. "/raw"))()
     elseif result then
         status.Text = result.reason or "Invalid key."
         status.TextColor3 = Color3.fromRGB(255, 80, 80)
         btn.Text = "UNLOCK"
     else
         status.Text = "Connection failed."
+        status.TextColor3 = Color3.fromRGB(255, 80, 80)
         btn.Text = "UNLOCK"
     end
 end)
@@ -273,7 +319,7 @@ while not authed do task.wait(0.5) end`;
                     </div>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       <button className="btn btn-secondary btn-sm" onClick={() => {
-                        navigator.clipboard.writeText(keyLoaderTemplate(s.id));
+                        navigator.clipboard.writeText(keyLoaderTemplate);
                         toast.success("Key loader copied!");
                       }}>
                         <i className="fa-solid fa-copy" /> Copy Loader

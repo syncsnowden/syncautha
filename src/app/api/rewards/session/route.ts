@@ -9,7 +9,8 @@ export async function POST(req: Request) {
     if (!project_id) return Response.json({ error: "project_id required" }, { status: 400 });
 
     const db = await getDB();
-    if (!db.projects[project_id]) return Response.json({ error: "Project not found" }, { status: 404 });
+    const project = db.projects[project_id];
+    if (!project) return Response.json({ error: "Project not found" }, { status: 404 });
 
     const sessionId = generateId(14);
     await updateDB((d) => {
@@ -23,13 +24,41 @@ export async function POST(req: Request) {
     });
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://syncauth-eight.vercel.app";
-    const rewardUrl = `${siteUrl}/api/rewards/postback?sid=${sessionId}`;
+    const postbackUrl = `${siteUrl}/api/rewards/postback?sid=${sessionId}`;
+
+    let lootlabsUrl = "";
+    if (project.lootlabs_link) {
+      try {
+        const llRes = await fetch("https://lootlabs.gg/api/url/create", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Api-Key": process.env.LOOTLABS_API_KEY || "",
+          },
+          body: JSON.stringify({
+            url: postbackUrl,
+            name: project.name,
+            key_duration: project.key_duration,
+            max_keys: project.max_keys,
+            allow_extending: project.allow_extending,
+            cooldown: project.reward_cooldown,
+            allow_forgetting: project.allow_forgetting,
+            max_hours: project.max_hours || undefined,
+          }),
+        });
+        if (llRes.ok) {
+          const llData = await llRes.json();
+          lootlabsUrl = llData.url || llData.link || "";
+        }
+      } catch {}
+    }
 
     return Response.json({
       session_id: sessionId,
-      reward_url: rewardUrl,
+      postback_url: postbackUrl,
+      lootlabs_url: lootlabsUrl,
     });
-  } catch {
-    return Response.json({ error: "Failed to create session." }, { status: 500 });
+  } catch (e: any) {
+    return Response.json({ error: e.message || "Failed." }, { status: 500 });
   }
 }

@@ -4,47 +4,30 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
 interface Project {
-  id: string;
-  name: string;
-  logs_webhook: string;
-  alert_webhook: string;
-  cooldown: number;
-  allow_hwid_reset: boolean;
-  auto_delete_expired: boolean;
-  allow_hwid_clone: boolean;
-  log_hwid: boolean;
-  log_ip: boolean;
-  log_username: boolean;
-  log_displayname: boolean;
-  log_time: boolean;
-  log_key: boolean;
-  log_executor: boolean;
-  log_jobid: boolean;
-  created_at: number;
+  id: string; name: string; logs_webhook: string; alert_webhook: string;
+  cooldown: number; allow_hwid_reset: boolean; auto_delete_expired: boolean;
+  allow_hwid_clone: boolean; log_hwid: boolean; log_ip: boolean; log_username: boolean;
+  log_displayname: boolean; log_time: boolean; log_key: boolean; log_executor: boolean;
+  log_jobid: boolean; created_at: number; key_duration: number; max_keys: number;
+  allow_extending: boolean; reward_cooldown: number; allow_forgetting: boolean;
+  max_hours: number; lootlabs_link: string;
 }
+
+const defaultForm = {
+  name: "", logs_webhook: "", alert_webhook: "", cooldown: "0",
+  allow_hwid_reset: false, auto_delete_expired: false, allow_hwid_clone: false,
+  log_hwid: true, log_ip: true, log_username: true, log_displayname: false,
+  log_time: true, log_key: true, log_executor: true, log_jobid: false,
+  key_duration: "24", max_keys: "3", allow_extending: false,
+  reward_cooldown: "0", allow_forgetting: false, max_hours: "0", lootlabs_link: "",
+};
 
 export default function ProjectsPage() {
   const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState("");
-  const [form, setForm] = useState({
-    name: "",
-    logs_webhook: "",
-    alert_webhook: "",
-    cooldown: "0",
-    allow_hwid_reset: false,
-    auto_delete_expired: false,
-    allow_hwid_clone: false,
-    log_hwid: true,
-    log_ip: true,
-    log_username: true,
-    log_displayname: false,
-    log_time: true,
-    log_key: true,
-    log_executor: true,
-    log_jobid: false,
-  });
+  const [form, setForm] = useState({ ...defaultForm });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => { loadProjects(); }, []);
@@ -54,35 +37,21 @@ export default function ProjectsPage() {
     setProjects(await res.json());
   }
 
-  function resetForm() {
-    setForm({
-      name: "", logs_webhook: "", alert_webhook: "", cooldown: "0",
-      allow_hwid_reset: false, auto_delete_expired: false, allow_hwid_clone: false,
-      log_hwid: true, log_ip: true, log_username: true, log_displayname: false,
-      log_time: true, log_key: true, log_executor: true, log_jobid: false,
-    });
-    setEditId("");
-    setShowForm(false);
-  }
+  function resetForm() { setForm({ ...defaultForm }); setEditId(""); setShowForm(false); }
 
   function editProject(p: Project) {
     setEditId(p.id);
     setForm({
-      name: p.name,
-      logs_webhook: p.logs_webhook,
-      alert_webhook: p.alert_webhook,
-      cooldown: String(p.cooldown),
-      allow_hwid_reset: p.allow_hwid_reset,
-      auto_delete_expired: p.auto_delete_expired,
-      allow_hwid_clone: p.allow_hwid_clone,
-      log_hwid: p.log_hwid,
-      log_ip: p.log_ip,
-      log_username: p.log_username,
-      log_displayname: p.log_displayname,
-      log_time: p.log_time,
-      log_key: p.log_key,
-      log_executor: p.log_executor,
-      log_jobid: p.log_jobid,
+      name: p.name, logs_webhook: p.logs_webhook, alert_webhook: p.alert_webhook,
+      cooldown: String(p.cooldown), allow_hwid_reset: p.allow_hwid_reset,
+      auto_delete_expired: p.auto_delete_expired, allow_hwid_clone: p.allow_hwid_clone,
+      log_hwid: p.log_hwid, log_ip: p.log_ip, log_username: p.log_username,
+      log_displayname: p.log_displayname, log_time: p.log_time, log_key: p.log_key,
+      log_executor: p.log_executor, log_jobid: p.log_jobid,
+      key_duration: String(p.key_duration), max_keys: String(p.max_keys),
+      allow_extending: p.allow_extending, reward_cooldown: String(p.reward_cooldown),
+      allow_forgetting: p.allow_forgetting, max_hours: String(p.max_hours),
+      lootlabs_link: p.lootlabs_link,
     });
     setShowForm(true);
   }
@@ -95,35 +64,36 @@ export default function ProjectsPage() {
       const body = {
         ...form,
         cooldown: Number(form.cooldown) || 0,
+        key_duration: Number(form.key_duration) || 24,
+        max_keys: Number(form.max_keys) || 3,
+        reward_cooldown: Number(form.reward_cooldown) || 0,
+        max_hours: Number(form.max_hours) || 0,
       };
       const url = editId ? `/api/projects/${editId}` : "/api/projects";
       const method = editId ? "PUT" : "POST";
       const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       if (!res.ok) throw new Error();
       toast.success(editId ? "Project updated!" : "Project created!");
-      resetForm();
-      loadProjects();
-    } catch {
-      toast.error("Failed to save.");
-    } finally {
-      setSaving(false);
-    }
+      resetForm(); loadProjects();
+    } catch { toast.error("Failed to save."); }
+    finally { setSaving(false); }
   }
 
   async function deleteProject(id: string) {
-    if (!confirm("Delete this project and all its scripts/keys?")) return;
+    if (!confirm("Delete this project and all scripts/keys?")) return;
     await fetch(`/api/projects/${id}`, { method: "DELETE" });
-    toast.success("Deleted.");
-    loadProjects();
+    toast.success("Deleted."); loadProjects();
   }
+
+  const f = (k: string) => ({ value: (form as any)[k], onChange: (e: any) => setForm({ ...form, [k]: e.target.value }) });
+  const t = (k: string) => ({ checked: (form as any)[k], onChange: (v: boolean) => setForm({ ...form, [k]: v }) });
 
   return (
     <>
       <div className="page-header">
         <h1 className="page-title">Projects</h1>
-        <p className="page-subtitle">Manage your script projects and key systems.</p>
+        <p className="page-subtitle">Manage your script projects, key systems and LootLabs rewards.</p>
       </div>
-
       <div className="page-body">
         <button className="btn btn-primary" style={{ marginBottom: 16, width: "auto" }} onClick={() => { resetForm(); setShowForm(true); }}>
           <i className="fa-solid fa-plus" /> Create Project
@@ -137,31 +107,44 @@ export default function ProjectsPage() {
             </div>
             <div className="card-body">
               <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                <div className="input-group">
-                  <label className="input-label">Project Name</label>
-                  <input className="input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="My Script Hub" />
-                </div>
+                <div className="input-group"><label className="input-label">Project Name</label><input className="input" {...f("name")} placeholder="My Script Hub" /></div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                  <div className="input-group">
-                    <label className="input-label">Logs Webhook</label>
-                    <input className="input" value={form.logs_webhook} onChange={e => setForm({ ...form, logs_webhook: e.target.value })} placeholder="Discord webhook URL" />
-                  </div>
-                  <div className="input-group">
-                    <label className="input-label">Alert Webhook</label>
-                    <input className="input" value={form.alert_webhook} onChange={e => setForm({ ...form, alert_webhook: e.target.value })} placeholder="Discord webhook URL" />
-                  </div>
-                </div>
-                <div className="input-group">
-                  <label className="input-label">Key Cooldown (seconds, 0 = 24h default)</label>
-                  <input className="input" type="number" value={form.cooldown} onChange={e => setForm({ ...form, cooldown: e.target.value })} />
+                  <div className="input-group"><label className="input-label">Logs Webhook</label><input className="input" {...f("logs_webhook")} placeholder="Discord webhook" /></div>
+                  <div className="input-group"><label className="input-label">Alert Webhook</label><input className="input" {...f("alert_webhook")} placeholder="Discord webhook" /></div>
                 </div>
 
                 <div className="card" style={{ background: "var(--bg-2)", border: "1px solid var(--border-2)" }}>
                   <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <label className="input-label" style={{ marginBottom: 4 }}>Settings</label>
-                    <Toggle label="Allow HWID Reset" checked={form.allow_hwid_reset} onChange={v => setForm({ ...form, allow_hwid_reset: v })} />
-                    <Toggle label="Auto Delete Expired Users" checked={form.auto_delete_expired} onChange={v => setForm({ ...form, auto_delete_expired: v })} />
-                    <Toggle label="Allow HWID Clone Sharing" checked={form.allow_hwid_clone} onChange={v => setForm({ ...form, allow_hwid_clone: v })} />
+                    <label className="input-label" style={{ marginBottom: 4 }}>Reward / LootLabs Settings</label>
+                    <div className="input-group">
+                      <label className="input-label">LootLabs Link</label>
+                      <input className="input" {...f("lootlabs_link")} placeholder="e.g. https://lootlabs.gg/your-link or leave empty" />
+                      <span style={{ fontSize: 11, color: "var(--text-3)" }}>Your LootLabs checkpoint link template</span>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                      <div className="input-group"><label className="input-label">Key Duration (hours)</label><input className="input" type="number" step="0.5" {...f("key_duration")} /></div>
+                      <div className="input-group"><label className="input-label">Max Keys (per user)</label><input className="input" type="number" {...f("max_keys")} /></div>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                      <div className="input-group"><label className="input-label">Cooldown (hours)</label><input className="input" type="number" step="0.05" {...f("reward_cooldown")} /></div>
+                      <div className="input-group"><label className="input-label">Max Hours (extending cap)</label><input className="input" type="number" {...f("max_hours")} /></div>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                      <Toggle label="Allow Extending" {...t("allow_extending")} />
+                      <Toggle label="Allow Forgetting" {...t("allow_forgetting")} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card" style={{ background: "var(--bg-2)", border: "1px solid var(--border-2)" }}>
+                  <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <label className="input-label" style={{ marginBottom: 4 }}>License Settings</label>
+                    <div className="input-group"><label className="input-label">Key Cooldown (seconds)</label><input className="input" type="number" {...f("cooldown")} /></div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                      <Toggle label="Allow HWID Reset" {...t("allow_hwid_reset")} />
+                      <Toggle label="Auto Delete Expired" {...t("auto_delete_expired")} />
+                    </div>
+                    <Toggle label="Allow HWID Clone Sharing" {...t("allow_hwid_clone")} />
                   </div>
                 </div>
 
@@ -169,20 +152,16 @@ export default function ProjectsPage() {
                   <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     <label className="input-label" style={{ marginBottom: 4 }}>Log to Webhook</label>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                      <Toggle label="HWID" checked={form.log_hwid} onChange={v => setForm({ ...form, log_hwid: v })} />
-                      <Toggle label="IP" checked={form.log_ip} onChange={v => setForm({ ...form, log_ip: v })} />
-                      <Toggle label="Username" checked={form.log_username} onChange={v => setForm({ ...form, log_username: v })} />
-                      <Toggle label="Display Name" checked={form.log_displayname} onChange={v => setForm({ ...form, log_displayname: v })} />
-                      <Toggle label="Time" checked={form.log_time} onChange={v => setForm({ ...form, log_time: v })} />
-                      <Toggle label="Key" checked={form.log_key} onChange={v => setForm({ ...form, log_key: v })} />
-                      <Toggle label="Executor" checked={form.log_executor} onChange={v => setForm({ ...form, log_executor: v })} />
-                      <Toggle label="Job ID" checked={form.log_jobid} onChange={v => setForm({ ...form, log_jobid: v })} />
+                      <Toggle label="HWID" {...t("log_hwid")} /><Toggle label="IP" {...t("log_ip")} />
+                      <Toggle label="Username" {...t("log_username")} /><Toggle label="Display Name" {...t("log_displayname")} />
+                      <Toggle label="Time" {...t("log_time")} /><Toggle label="Key" {...t("log_key")} />
+                      <Toggle label="Executor" {...t("log_executor")} /><Toggle label="Job ID" {...t("log_jobid")} />
                     </div>
                   </div>
                 </div>
 
                 <button className="btn btn-primary" disabled={saving} style={{ width: "auto" }}>
-                  {saving ? "Saving..." : editId ? "Update Project" : "Create Project"}
+                  <i className="fa-solid fa-save" /> {saving ? "Saving..." : editId ? "Update Project" : "Create Project"}
                 </button>
               </form>
             </div>
@@ -190,31 +169,20 @@ export default function ProjectsPage() {
         )}
 
         {projects.length === 0 && !showForm && (
-          <div className="empty-state">
-            <i className="fa-solid fa-folder-open empty-icon" />
-            <div className="empty-title">No projects yet</div>
-            <div className="empty-desc">Create your first project to start managing scripts and keys.</div>
-          </div>
+          <div className="empty-state"><i className="fa-solid fa-folder-open empty-icon" /><div className="empty-title">No projects yet</div></div>
         )}
-
         <div style={{ display: "grid", gap: 12 }}>
           {projects.map((p) => (
             <div key={p.id} className="card">
-              <div className="card-body" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div className="card-body" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: 15, color: "var(--text-1)" }}>{p.name}</div>
-                  <div style={{ fontSize: 12, color: "var(--text-3)", marginTop: 3 }}>ID: {p.id}</div>
+                  <div style={{ fontSize: 11, color: "var(--text-3)" }}>ID: {p.id} | Keys: {p.key_duration}h | Max: {p.max_keys} | Cooldown: {p.reward_cooldown}h</div>
                 </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button className="btn btn-secondary btn-sm" onClick={() => router.push(`/projects/${p.id}`)}>
-                    <i className="fa-solid fa-code" /> Scripts
-                  </button>
-                  <button className="btn btn-secondary btn-sm" onClick={() => editProject(p)}>
-                    <i className="fa-solid fa-gear" />
-                  </button>
-                  <button className="btn btn-danger btn-sm" onClick={() => deleteProject(p.id)}>
-                    <i className="fa-solid fa-trash" />
-                  </button>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button className="btn btn-secondary btn-sm" onClick={() => router.push(`/projects/${p.id}`)}><i className="fa-solid fa-code" /> Scripts</button>
+                  <button className="btn btn-secondary btn-sm" onClick={() => editProject(p)}><i className="fa-solid fa-gear" /></button>
+                  <button className="btn btn-danger btn-sm" onClick={() => deleteProject(p.id)}><i className="fa-solid fa-trash" /></button>
                 </div>
               </div>
             </div>
