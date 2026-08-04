@@ -53,15 +53,7 @@ export default function RegisterPage() {
         body: JSON.stringify({ username, email, password }),
       });
       
-      let data;
-      const contentType = res.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        data = await res.json();
-      } else {
-        const text = await res.text();
-        throw new Error(`Server error (Status ${res.status}): ${text.slice(0, 150)}`);
-      }
-      
+      const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Registration failed.");
       toast.success("Account created! Check your email.");
       router.push("/login");
@@ -275,20 +267,31 @@ export default function RegisterPage() {
               </div>
 
               {/* Terms Checkbox */}
-              <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer", margin: "4px 0" }}>
-                <input
-                  type="checkbox"
-                  checked={agree}
-                  onChange={(e) => setAgree(e.target.checked)}
-                  style={{ appearance: "none", width: 15, height: 15, borderRadius: 4, background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.15)", cursor: "pointer", flexShrink: 0, marginTop: 2, accentColor: "#6366f1" }}
-                />
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer", margin: "4px 0", userSelect: "none" }} onClick={() => setAgree(!agree)}>
+                <div
+                  style={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: 5,
+                    background: agree ? "#00c8e0" : "rgba(255, 255, 255, 0.05)",
+                    border: agree ? "2px solid #00c8e0" : "2px solid rgba(255, 255, 255, 0.2)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    marginTop: 1,
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  {agree && <i className="fa-solid fa-check" style={{ color: "#000", fontSize: 10 }} />}
+                </div>
                 <span style={{ fontSize: 12.5, color: "#94a3b8", lineHeight: 1.5 }}>
                   I agree to the{" "}
                   <Link href="/tos" style={{ color: "#ffffff", textDecoration: "underline" }}>Terms of Service</Link>
                   {" "}and{" "}
                   <Link href="/tos" style={{ color: "#ffffff", textDecoration: "underline" }}>Privacy Policy</Link>
                 </span>
-              </label>
+              </div>
 
               {/* Submit Button */}
               <button

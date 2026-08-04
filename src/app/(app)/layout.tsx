@@ -29,7 +29,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         setAvatarUrl(data.user.user_metadata?.avatar_url ?? "");
       }
     });
-  }, []);
+  }, [pathname]);
 
   const handleLogout = async () => {
     const supabase = createClient();
