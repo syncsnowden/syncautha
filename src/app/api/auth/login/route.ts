@@ -1,4 +1,12 @@
+import { createClient } from "@supabase/supabase-js";
+
 export const dynamic = "force-dynamic";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  { auth: { persistSession: false, autoRefreshToken: false } }
+);
 
 export async function POST(req: Request) {
   try {
@@ -10,36 +18,19 @@ export async function POST(req: Request) {
       return Response.json({ error: "Email and password required." }, { status: 400 });
     }
 
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/token?grant_type=password`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        },
-        body: JSON.stringify({ email, password }),
-      }
-    );
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      return Response.json(
-        { error: data.error_description || data.msg || "Invalid credentials." },
-        { status: 401 }
-      );
+    if (error) {
+      return Response.json({ error: error.message }, { status: 401 });
     }
 
     return Response.json({
       success: true,
       user: { id: data.user.id, email: data.user.email },
       session: {
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
-        expires_at: data.expires_at,
-        expires_in: data.expires_in,
-        token_type: data.token_type,
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+        expires_at: data.session.expires_at,
       },
     });
   } catch (err) {
