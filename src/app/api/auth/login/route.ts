@@ -28,8 +28,9 @@ export async function POST(req: NextRequest) {
     });
 
     if (error) {
+      console.error("[login] Supabase error:", error.message, error.status);
       return NextResponse.json(
-        { error: "Invalid email or password." },
+        { error: error.message }, // temporary: show real error for debugging
         { status: 401 }
       );
     }
