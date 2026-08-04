@@ -24,8 +24,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const supabase = getSupabase();
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
+        const u = data.user.user_metadata?.username || data.user.email?.split("@")[0] || "User";
         setEmail(data.user.email ?? "");
-        setUsername(data.user.user_metadata?.username ?? data.user.email?.split("@")[0] ?? "User");
+        setUsername(u);
         setAvatarUrl(data.user.user_metadata?.avatar_url ?? "");
       }
     });

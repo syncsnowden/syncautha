@@ -13,7 +13,7 @@ function compressImage(file: File): Promise<string> {
       const ctx = canvas.getContext("2d");
       if (!ctx) { reject(new Error("Canvas error")); return; }
       ctx.drawImage(img, 0, 0, 150, 150);
-      resolve(canvas.toDataURL("image/jpeg", 0.7));
+      resolve(canvas.toDataURL("image/jpeg", 0.6));
     };
     img.onerror = reject;
     img.src = URL.createObjectURL(file);
@@ -25,15 +25,15 @@ export default function ProfilePage() {
   const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const supabase = getSupabase();
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
+        const u = data.user.user_metadata?.username || data.user.email?.split("@")[0] || "";
         setEmail(data.user.email ?? "");
-        setUsername(data.user.user_metadata?.username ?? data.user.email?.split("@")[0] ?? "");
+        setUsername(u);
         setAvatarUrl(data.user.user_metadata?.avatar_url ?? "");
       }
     });
@@ -42,45 +42,16 @@ export default function ProfilePage() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     if (file.size > 5 * 1024 * 1024) {
       toast.error("File size must be under 5MB.");
       return;
     }
-
-    setUploading(true);
     try {
-      const supabase = getSupabase();
-
-      const fileExt = file.name.split(".").pop() || "jpg";
-      const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
-
-      const { error: uploadErr } = await supabase.storage
-        .from("avatars")
-        .upload(fileName, file, { upsert: true, contentType: file.type });
-
-      if (uploadErr) {
-        const compressed = await compressImage(file);
-        setAvatarUrl(compressed);
-        toast.success("Image ready! Click 'Save Changes' to apply.");
-      } else {
-        const { data: urlData } = supabase.storage
-          .from("avatars")
-          .getPublicUrl(fileName);
-
-        setAvatarUrl(urlData.publicUrl);
-        toast.success("Image uploaded! Click 'Save Changes' to apply.");
-      }
+      const compressed = await compressImage(file);
+      setAvatarUrl(compressed);
+      toast.success("Photo ready! Click Save Changes.");
     } catch {
-      try {
-        const compressed = await compressImage(file);
-        setAvatarUrl(compressed);
-        toast.success("Image ready! Click 'Save Changes' to apply.");
-      } catch {
-        toast.error("Failed to process image.");
-      }
-    } finally {
-      setUploading(false);
+      toast.error("Failed to process image.");
     }
   };
 
@@ -89,27 +60,36 @@ export default function ProfilePage() {
     setLoading(true);
     try {
       const supabase = getSupabase();
-      const { error } = await supabase.auth.updateUser({
-        data: { username, avatar_url: avatarUrl },
-      });
-      if (error) throw error;
-
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData.user) {
-        setEmail(userData.user.email ?? "");
-        setUsername(userData.user.user_metadata?.username ?? "");
-        setAvatarUrl(userData.user.user_metadata?.avatar_url ?? "");
+      const meta: Record<string, string> = { username };
+      if (avatarUrl && avatarUrl.startsWith("data:")) {
+        meta.avatar_url = avatarUrl;
+      } else if (avatarUrl) {
+        meta.avatar_url = avatarUrl;
+      } else {
+        meta.avatar_url = "";
       }
-
+      const { error } = await supabase.auth.updateUser({ data: meta });
+      if (error) {
+        console.error("UpdateUser error:", error.message);
+        toast.error(error.message);
+        return;
+      }
+      const { data: fresh } = await supabase.auth.getUser();
+      if (fresh.user) {
+        setEmail(fresh.user.email ?? "");
+        setUsername(fresh.user.user_metadata?.username ?? "");
+        setAvatarUrl(fresh.user.user_metadata?.avatar_url ?? "");
+      }
       toast.success("Profile updated!");
-    } catch {
+    } catch (err) {
+      console.error("Profile save failed:", err);
       toast.error("Failed to update profile.");
     } finally {
       setLoading(false);
     }
   };
 
-  const initials = username ? username.slice(0, 2).toUpperCase() : "??";
+  const initials = username ? username.slice(0, 2).toUpperCase() : email ? email.slice(0, 2).toUpperCase() : "??";
 
   return (
     <>
@@ -126,54 +106,24 @@ export default function ProfilePage() {
           <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
               {avatarUrl ? (
-                <div
-                  style={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: "50%",
-                    overflow: "hidden",
-                    border: "2px solid var(--accent)",
-                    boxShadow: "0 0 16px rgba(0, 200, 224, 0.3)",
-                    flexShrink: 0,
-                  }}
-                >
-                  <img src={avatarUrl} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                <div style={{ width: 80, height: 80, borderRadius: "50%", overflow: "hidden", border: "2px solid var(--accent)", flexShrink: 0 }}>
+                  <img src={avatarUrl} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 </div>
               ) : (
-                <div
-                  style={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: "50%",
-                    background: "linear-gradient(135deg, #00c8e0 0%, #0098b0 100%)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 28,
-                    fontWeight: 800,
-                    color: "#ffffff",
-                    flexShrink: 0,
-                    boxShadow: "0 0 16px rgba(0, 200, 224, 0.3)",
-                  }}
-                >
+                <div style={{ width: 80, height: 80, borderRadius: "50%", background: "linear-gradient(135deg, var(--accent) 0%, #0098b0 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 800, color: "#fff", flexShrink: 0 }}>
                   {initials}
                 </div>
               )}
-
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 16, color: "#ffffff" }}>{username || "Developer"}</div>
+                  <div style={{ fontWeight: 700, fontSize: 16, color: "#ffffff" }}>{username || email?.split("@")[0] || "Developer"}</div>
                   <div style={{ fontSize: 13, color: "var(--text-3)", marginTop: 2 }}>{email}</div>
                 </div>
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                   <input type="file" ref={fileInputRef} accept="image/*" onChange={handleFileUpload} style={{ display: "none" }} />
-                  <button type="button" onClick={() => fileInputRef.current?.click()} className="btn btn-primary btn-sm" disabled={uploading}>
-                    {uploading ? "Uploading..." : "Change Picture"}
-                  </button>
+                  <button type="button" onClick={() => fileInputRef.current?.click()} className="btn btn-primary btn-sm">Change Picture</button>
                   {avatarUrl && (
-                    <button type="button" onClick={() => setAvatarUrl("")} className="btn btn-secondary btn-sm">
-                      Remove
-                    </button>
+                    <button type="button" onClick={() => setAvatarUrl("")} className="btn btn-secondary btn-sm">Remove</button>
                   )}
                 </div>
               </div>
@@ -193,7 +143,7 @@ export default function ProfilePage() {
               </div>
               <div className="input-group">
                 <label className="input-label">Email</label>
-                <input className="input" value={email} disabled style={{ opacity: 0.5, cursor: "not-allowed" }} />
+                <input className="input" value={email} disabled style={{ opacity: 0.5 }} />
                 <span style={{ fontSize: 11.5, color: "var(--text-3)" }}>Email cannot be changed here.</span>
               </div>
               <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: "auto", alignSelf: "flex-start" }}>
@@ -209,7 +159,7 @@ export default function ProfilePage() {
           </div>
           <div className="card-body">
             <p style={{ fontSize: 13, color: "var(--text-2)", marginBottom: 14 }}>
-              Permanently delete your account and all associated keys. This cannot be undone.
+              Permanently delete your account and all associated keys.
             </p>
             <button className="btn btn-danger btn-sm" style={{ width: "auto" }}>
               <i className="fa-solid fa-trash" /> Delete account
