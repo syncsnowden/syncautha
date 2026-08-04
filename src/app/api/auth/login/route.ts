@@ -12,7 +12,6 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    // Accept either 'identifier' or fallback 'email' field from legacy payloads
     const rawIdentifier = body.identifier || body.email || "";
     const parsed = schema.safeParse({
       identifier: rawIdentifier,
@@ -32,21 +31,26 @@ export async function POST(req: NextRequest) {
 
     // If user provided a username instead of an email (no '@' character)
     if (!targetEmail.includes("@")) {
-      try {
-        const admin = createAdminClient();
-        const { data } = await admin.auth.admin.listUsers();
-        if (data?.users) {
-          const match = data.users.find(
-            (u) =>
-              u.user_metadata?.username?.toLowerCase() === targetEmail.toLowerCase() ||
-              u.user_metadata?.display_name?.toLowerCase() === targetEmail.toLowerCase()
-          );
-          if (match && match.email) {
-            targetEmail = match.email;
+      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (serviceKey) {
+        try {
+          const admin = createAdminClient();
+          if (admin && admin.auth && admin.auth.admin) {
+            const { data, error: adminErr } = await admin.auth.admin.listUsers();
+            if (!adminErr && data?.users) {
+              const match = data.users.find(
+                (u) =>
+                  u.user_metadata?.username?.toLowerCase() === targetEmail.toLowerCase() ||
+                  u.user_metadata?.display_name?.toLowerCase() === targetEmail.toLowerCase()
+              );
+              if (match && match.email) {
+                targetEmail = match.email;
+              }
+            }
           }
+        } catch (err) {
+          console.warn("Username search failed, attempting direct login:", err);
         }
-      } catch (adminErr) {
-        console.warn("Username lookup warning:", adminErr);
       }
     }
 
@@ -69,7 +73,8 @@ export async function POST(req: NextRequest) {
       { success: true, user: { id: data.user.id, email: data.user.email } },
       { status: 200 }
     );
-  } catch {
+  } catch (err: any) {
+    console.error("Login Route Catch:", err);
     return NextResponse.json({ error: "Internal server error." }, { status: 500 });
   }
 }

@@ -1,19 +1,17 @@
 import { NextResponse } from "next/server";
 
-// Simple in-memory rate limiting map: IP -> lastTimestamp
-const rateLimitMap = new Map<string, number>();
+// Global last sent timestamp to enforce 1 message per 20 seconds universally
+let globalLastTimestamp = 0;
 
 export async function POST(req: Request) {
   try {
-    const ip = req.headers.get("x-forwarded-for") || "anonymous";
     const now = Date.now();
-    const lastTime = rateLimitMap.get(ip) || 0;
     const COOLDOWN_MS = 20 * 1000; // 20 seconds
 
-    if (now - lastTime < COOLDOWN_MS) {
-      const secondsLeft = Math.ceil((COOLDOWN_MS - (now - lastTime)) / 1000);
+    if (now - globalLastTimestamp < COOLDOWN_MS) {
+      const secondsLeft = Math.ceil((COOLDOWN_MS - (now - globalLastTimestamp)) / 1000);
       return NextResponse.json(
-        { error: `Please wait ${secondsLeft} seconds before sending another suggestion.` },
+        { error: `Please wait ${secondsLeft} seconds. Suggestions are globally rate-limited.` },
         { status: 429 }
       );
     }
@@ -77,8 +75,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Failed to dispatch suggestion to Discord." }, { status: 500 });
     }
 
-    // Record rate limit timestamp upon successful dispatch
-    rateLimitMap.set(ip, now);
+    // Update the universal rate limit timestamp on success
+    globalLastTimestamp = now;
 
     return NextResponse.json({ success: true, message: "Thank you! Your suggestion has been sent." });
   } catch (error) {

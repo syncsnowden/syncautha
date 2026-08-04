@@ -1,42 +1,23 @@
 "use client";
-import { useState } from "react";
-
-// Execution history sample matching user's timeline graph
-const CHART_DATA = [
-  { date: "7/9", count: 32 },
-  { date: "7/10", count: 28 },
-  { date: "7/11", count: 0 },
-  { date: "7/12", count: 16 },
-  { date: "7/13", count: 35 },
-  { date: "7/14", count: 32 },
-  { date: "7/15", count: 48 },
-  { date: "7/16", count: 22 },
-  { date: "7/17", count: 120 },
-  { date: "7/18", count: 265 },
-  { date: "7/19", count: 98 },
-  { date: "7/20", count: 148 },
-  { date: "7/21", count: 295 },
-  { date: "7/22", count: 74 },
-  { date: "7/23", count: 70 },
-  { date: "7/24", count: 106 },
-  { date: "7/25", count: 76 },
-  { date: "7/26", count: 82 },
-  { date: "7/27", count: 115 },
-  { date: "7/28", count: 32 },
-  { date: "7/29", count: 94 },
-  { date: "7/30", count: 145 },
-  { date: "7/31", count: 120 },
-  { date: "8/1", count: 38 },
-  { date: "8/2", count: 24 },
-  { date: "8/3", count: 15 },
-  { date: "8/4", count: 8 },
-  { date: "8/5", count: 0 },
-  { date: "8/6", count: 0 },
-  { date: "8/7", count: 0 },
-];
+import { useState, useMemo } from "react";
 
 export default function ExecutionChart() {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+
+  // Generate last 30 days dynamically up to today
+  const chartData = useMemo(() => {
+    const dates = [];
+    const today = new Date();
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      dates.push({
+        date: `${d.getMonth() + 1}/${d.getDate()}`,
+        count: 0,
+      });
+    }
+    return dates;
+  }, []);
 
   const maxVal = 300;
   const width = 1000;
@@ -48,19 +29,26 @@ export default function ExecutionChart() {
   const chartH = height - paddingY * 2;
 
   // Calculate coordinates for points
-  const points = CHART_DATA.map((d, i) => {
-    const x = paddingX + (i / (CHART_DATA.length - 1)) * chartW;
-    const y = height - paddingY - (d.count / maxVal) * chartH;
-    return { x, y, ...d };
-  });
+  const points = useMemo(() => {
+    return chartData.map((d, i) => {
+      const x = paddingX + (i / (chartData.length - 1)) * chartW;
+      const y = height - paddingY - (d.count / maxVal) * chartH;
+      return { x, y, ...d };
+    });
+  }, [chartData, chartW, chartH]);
 
   // Construct SVG path line
-  const pathD = points.reduce((acc, pt, i) => {
-    return i === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`;
-  }, "");
+  const pathD = useMemo(() => {
+    return points.reduce((acc, pt, i) => {
+      return i === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`;
+    }, "");
+  }, [points]);
 
   // Construct gradient area path
-  const areaD = `${pathD} L ${points[points.length - 1].x} ${height - paddingY} L ${points[0].x} ${height - paddingY} Z`;
+  const areaD = useMemo(() => {
+    if (points.length === 0) return "";
+    return `${pathD} L ${points[points.length - 1].x} ${height - paddingY} L ${points[0].x} ${height - paddingY} Z`;
+  }, [pathD, points]);
 
   return (
     <div
@@ -86,7 +74,7 @@ export default function ExecutionChart() {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <div style={{ fontSize: 12, color: "#64748b" }}>
-            Total Executions: <span style={{ color: "#ffffff", fontWeight: 700 }}>2,176</span>
+            Total Executions: <span style={{ color: "#ffffff", fontWeight: 700 }}>0</span>
           </div>
         </div>
       </div>
@@ -98,7 +86,7 @@ export default function ExecutionChart() {
         >
           <defs>
             <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="rgba(255, 255, 255, 0.15)" />
+              <stop offset="0%" stopColor="rgba(255, 255, 255, 0.05)" />
               <stop offset="100%" stopColor="rgba(255, 255, 255, 0.0)" />
             </linearGradient>
           </defs>
@@ -134,7 +122,7 @@ export default function ExecutionChart() {
           <path d={areaD} fill="url(#chartGrad)" />
 
           {/* Main Smooth White Line */}
-          <path d={pathD} fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={pathD} fill="none" stroke="rgba(255, 255, 255, 0.6)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
 
           {/* Data Points */}
           {points.map((pt, i) => (
@@ -159,20 +147,24 @@ export default function ExecutionChart() {
           ))}
 
           {/* X Axis Labels */}
-          {points.map((pt, i) => (
-            <text
-              key={i}
-              x={pt.x}
-              y={height - 8}
-              fill={hoveredIdx === i ? "#ffffff" : "#64748b"}
-              fontSize="10"
-              textAnchor="middle"
-              fontFamily="Inter, sans-serif"
-              fontWeight={hoveredIdx === i ? "700" : "400"}
-            >
-              {pt.date}
-            </text>
-          ))}
+          {points.map((pt, i) => {
+            // Show every 3rd date to avoid clutter
+            const showLabel = i % 3 === 0 || i === points.length - 1;
+            return showLabel ? (
+              <text
+                key={i}
+                x={pt.x}
+                y={height - 8}
+                fill={hoveredIdx === i ? "#ffffff" : "#64748b"}
+                fontSize="10"
+                textAnchor="middle"
+                fontFamily="Inter, sans-serif"
+                fontWeight={hoveredIdx === i ? "700" : "400"}
+              >
+                {pt.date}
+              </text>
+            ) : null;
+          })}
         </svg>
 
         {/* Hover Tooltip Overlay */}
@@ -196,7 +188,7 @@ export default function ExecutionChart() {
               zIndex: 10,
             }}
           >
-            <div>{CHART_DATA[hoveredIdx].date}: <span style={{ color: "#818cf8" }}>{CHART_DATA[hoveredIdx].count} Executions</span></div>
+            <div>{chartData[hoveredIdx].date}: <span style={{ color: "#818cf8" }}>{chartData[hoveredIdx].count} Executions</span></div>
           </div>
         )}
       </div>

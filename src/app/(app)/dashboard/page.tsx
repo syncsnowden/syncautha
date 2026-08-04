@@ -34,19 +34,6 @@ export default function DashboardPage() {
         {/* Execution Counter Graph (Matching user screenshot) */}
         <ExecutionChart />
 
-        {/* Recent activity */}
-        <div className="card" style={{ marginTop: 20 }}>
-          <div className="card-header">
-            <span className="card-title">Recent activity</span>
-          </div>
-          <div className="empty-state">
-            <div className="empty-icon">
-              <i className="fa-solid fa-clock-rotate-left" />
-            </div>
-            <div className="empty-title">No activity yet</div>
-            <div className="empty-desc">Auth events will appear here once users start authenticating with your keys.</div>
-          </div>
-        </div>
       </div>
     </>
   );

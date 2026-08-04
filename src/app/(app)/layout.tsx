@@ -61,22 +61,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </Link>
             );
           })}
-        </nav>
 
-        {/* Bottom */}
-        <div className="sidebar-bottom">
           {/* Discord */}
           <a
             href="https://discord.gg/sM8ukpuzVE"
             target="_blank"
             rel="noreferrer"
             className="nav-item"
-            style={{ color: "var(--text-3)" }}
+            style={{ marginTop: 8 }}
           >
             <i className="fa-brands fa-discord nav-icon" style={{ color: "#5865f2" }} />
             Discord
           </a>
+        </nav>
 
+        {/* Bottom */}
+        <div className="sidebar-bottom">
           {/* Logout */}
           <button className="nav-item danger" onClick={handleLogout}>
             <i className="fa-solid fa-arrow-right-from-bracket nav-icon" />

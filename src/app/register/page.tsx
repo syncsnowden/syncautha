@@ -38,17 +38,6 @@ export default function RegisterPage() {
   const strength = pwStrength(password);
   const match = confirm ? password === confirm : null;
 
-  useEffect(() => {
-    const el = pageRef.current;
-    if (!el) return;
-    const move = (e: MouseEvent) => {
-      el.style.setProperty("--mx", `${e.clientX}px`);
-      el.style.setProperty("--my", `${e.clientY}px`);
-    };
-    window.addEventListener("mousemove", move);
-    return () => window.removeEventListener("mousemove", move);
-  }, []);
-
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -63,7 +52,16 @@ export default function RegisterPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, email, password }),
       });
-      const data = await res.json();
+      
+      let data;
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(`Server error (Status ${res.status}): ${text.slice(0, 150)}`);
+      }
+      
       if (!res.ok) throw new Error(data.error || "Registration failed.");
       toast.success("Account created! Check your email.");
       router.push("/login");
@@ -76,7 +74,6 @@ export default function RegisterPage() {
 
   return (
     <div
-      ref={pageRef}
       style={{
         minHeight: "100vh",
         background: "#030305",
@@ -87,10 +84,6 @@ export default function RegisterPage() {
       }}
     >
       <style>{`
-        @keyframes ambient-glow {
-          0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.4; }
-          50% { transform: scale(1.15) translate(30px, -20px); opacity: 0.7; }
-        }
         @keyframes card-entry {
           from { opacity: 0; transform: translateY(24px) scale(0.98); }
           to   { opacity: 1; transform: translateY(0) scale(1); }
@@ -102,34 +95,6 @@ export default function RegisterPage() {
 
       {/* Upgraded Canvas Particle Mesh Effect */}
       <DarkCyberCanvas />
-
-      {/* Ambient Glowing Aura */}
-      <div
-        style={{
-          position: "fixed",
-          width: 750,
-          height: 750,
-          borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, rgba(0, 0, 0, 0) 70%)",
-          top: -200,
-          left: "50%",
-          transform: "translateX(-50%)",
-          animation: "ambient-glow 18s ease-in-out infinite",
-          pointerEvents: "none",
-          zIndex: 1,
-        }}
-      />
-
-      {/* Mouse Spotlight */}
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          pointerEvents: "none",
-          background: "radial-gradient(600px circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.03), transparent 70%)",
-          zIndex: 2,
-        }}
-      />
 
       {/* Noise Overlay */}
       <div

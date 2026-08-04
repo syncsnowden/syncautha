@@ -53,25 +53,7 @@ export default function DarkCyberCanvas() {
       pulseRadius = (pulseRadius + 0.03) % (Math.PI * 2);
       const pulseExpand = Math.sin(pulseRadius) * 8;
 
-      // 1. Draw Subtle Dark Cyber Cursor Glow (No noisy sparkles)
-      if (mouse.active) {
-        const outerGlow = ctx.createRadialGradient(
-          mouse.x,
-          mouse.y,
-          0,
-          mouse.x,
-          mouse.y,
-          240 + pulseExpand
-        );
-        outerGlow.addColorStop(0, "rgba(99, 102, 241, 0.1)");
-        outerGlow.addColorStop(0.6, "rgba(79, 70, 229, 0.03)");
-        outerGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
 
-        ctx.beginPath();
-        ctx.arc(mouse.x, mouse.y, 240 + pulseExpand, 0, Math.PI * 2);
-        ctx.fillStyle = outerGlow;
-        ctx.fill();
-      }
 
       // 2. Render Interconnected Nodes & Subtle Cursor Gravity
       for (let i = 0; i < PARTICLE_COUNT; i++) {
