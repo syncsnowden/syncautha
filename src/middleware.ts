@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+  let supabaseResponse = NextResponse.next();
 
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -11,6 +11,8 @@ export async function middleware(request: NextRequest) {
     if (!supabaseUrl || !supabaseAnonKey) {
       return supabaseResponse;
     }
+
+    const isRemembered = request.cookies.get("syncauth-remember")?.value === "true";
 
     const supabase = createServerClient(
       supabaseUrl,
@@ -21,9 +23,23 @@ export async function middleware(request: NextRequest) {
             return request.cookies.getAll();
           },
           setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) => {
+              try {
+                request.cookies.set(name, value);
+              } catch {
+                // Ignore
+              }
+            });
             cookiesToSet.forEach(({ name, value, options }) => {
               try {
-                supabaseResponse.cookies.set(name, value, options);
+                const opts = { ...options };
+                if (isRemembered) {
+                  opts.maxAge = 30 * 24 * 60 * 60; // 30 days
+                  if (opts.expires) {
+                    opts.expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                  }
+                }
+                supabaseResponse.cookies.set(name, value, opts);
               } catch {
                 // Ignore
               }

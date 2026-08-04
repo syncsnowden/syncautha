@@ -34,6 +34,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const handleLogout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
+    document.cookie = "syncauth-remember=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
     toast.success("Signed out.");
     router.push("/login");
   };

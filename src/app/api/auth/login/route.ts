@@ -56,7 +56,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const supabase = await createClient();
+    const { remember } = parsed.data;
+    const supabase = await createClient({ remember });
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email: targetEmail,
@@ -71,10 +72,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       { success: true, user: { id: data.user.id, email: data.user.email } },
       { status: 200 }
     );
+
+    if (remember) {
+      response.cookies.set("syncauth-remember", "true", {
+        path: "/",
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+        sameSite: "lax",
+      });
+    } else {
+      response.cookies.set("syncauth-remember", "false", {
+        path: "/",
+        maxAge: 0,
+        sameSite: "lax",
+      });
+    }
+
+    return response;
   } catch (err: any) {
     console.error("Login Route Catch:", err);
     return NextResponse.json({ error: "Internal server error." }, { status: 500 });
