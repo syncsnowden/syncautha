@@ -12,27 +12,22 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const supabase = getSupabase();
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        setEmail(data.user.email ?? "");
-
+    supabase.auth.getSession().then(({ data }) => {
+      const user = data.session?.user;
+      if (user) {
+        setEmail(user.email ?? "");
         const name =
-          data.user.user_metadata?.username ||
-          (data.user.email ? data.user.email.split("@")[0] : "User");
+          user.user_metadata?.username ||
+          (user.email ? user.email.split("@")[0] : "User");
         setUsername(name);
-
-        const created = data.user.created_at
-          ? new Date(data.user.created_at).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })
+        const created = user.created_at
+          ? new Date(user.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
           : "Unknown";
         setRegisteredAt(created);
       } else {
-        setRegisteredAt("Unknown");
+        setRegisteredAt("Not logged in");
       }
-    }).catch(() => setRegisteredAt("Unknown"));
+    }).catch(() => setRegisteredAt("Error"));
   }, []);
 
   const handleRedeem = async () => {

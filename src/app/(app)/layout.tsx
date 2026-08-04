@@ -21,10 +21,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const supabase = getSupabase();
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        const u = data.user.user_metadata?.username || data.user.email?.split("@")[0] || "User";
-        setEmail(data.user.email ?? "");
+    supabase.auth.getSession().then(({ data }) => {
+      const user = data.session?.user;
+      if (user) {
+        const u = user.user_metadata?.username || user.email?.split("@")[0] || "User";
+        setEmail(user.email ?? "");
         setUsername(u);
       }
     });
