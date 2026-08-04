@@ -26,7 +26,11 @@ export async function POST(req: Request) {
 
     return Response.json({
       success: true,
-      user: { id: data.user.id, email: data.user.email },
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        created_at: data.user.created_at,
+      },
       session: {
         access_token: data.session.access_token,
         refresh_token: data.session.refresh_token,

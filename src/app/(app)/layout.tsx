@@ -95,7 +95,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           {/* User info */}
           <div className="sidebar-user" style={{ marginTop: 4 }}>
-            <div className="sidebar-avatar">{initials}</div>
+            <i className="fa-solid fa-circle-user" style={{ fontSize: 28, color: "var(--accent)", flexShrink: 0 }} />
             <div className="sidebar-user-info">
               <div className="sidebar-username">{username}</div>
               <div className="sidebar-email">{email}</div>

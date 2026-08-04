@@ -24,29 +24,25 @@ export default function ProfilePage() {
         setRegisteredAt(created);
         return;
       }
-      const cached = localStorage.getItem("syncauth_user");
-      if (cached) {
-        try {
-          const u = JSON.parse(cached);
-          setEmail(u.email ?? "");
-          setUsername((u.email ?? "").split("@")[0] || "User");
-          setRegisteredAt("Unknown");
-          return;
-        } catch {}
-      }
-      setRegisteredAt("Not logged in");
-    }).catch(() => {
-      const cached = localStorage.getItem("syncauth_user");
-      if (cached) {
-        try {
-          const u = JSON.parse(cached);
-          setEmail(u.email ?? "");
-          setUsername((u.email ?? "").split("@")[0] || "User");
-        } catch {}
-      }
-      setRegisteredAt("Unknown");
-    });
+      loadFromCache();
+    }).catch(loadFromCache);
   }, []);
+
+  function loadFromCache() {
+    const cached = localStorage.getItem("syncauth_user");
+    if (cached) {
+      try {
+        const u = JSON.parse(cached);
+        setEmail(u.email ?? "");
+        setUsername((u.email ?? "").split("@")[0] || "User");
+        setRegisteredAt(u.created_at
+          ? new Date(u.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+          : "Unknown");
+      } catch {}
+    } else {
+      setRegisteredAt("Not logged in");
+    }
+  }
 
   const handleRedeem = async () => {
     if (!inviteCode.trim()) {
