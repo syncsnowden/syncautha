@@ -33,15 +33,7 @@ export default function LoginPage() {
         body: JSON.stringify({ identifier, password, remember }),
       });
       
-      let data;
-      const contentType = res.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        data = await res.json();
-      } else {
-        const text = await res.text();
-        throw new Error(`Server error (Status ${res.status}): ${text.slice(0, 150)}`);
-      }
-      
+      const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Login failed.");
       toast.success("Welcome back!");
       router.push("/dashboard");
