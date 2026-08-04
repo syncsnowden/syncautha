@@ -18,7 +18,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
 
   useEffect(() => {
     const supabase = getSupabase();
@@ -27,7 +26,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         const u = data.user.user_metadata?.username || data.user.email?.split("@")[0] || "User";
         setEmail(data.user.email ?? "");
         setUsername(u);
-        setAvatarUrl(data.user.user_metadata?.avatar_url ?? "");
       }
     });
   }, [pathname]);
@@ -87,22 +85,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           {/* User info */}
           <div className="sidebar-user" style={{ marginTop: 4 }}>
-            {avatarUrl ? (
-              <div
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: "50%",
-                  overflow: "hidden",
-                  border: "1px solid var(--accent)",
-                  flexShrink: 0,
-                }}
-              >
-                <img src={avatarUrl} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              </div>
-            ) : (
-              <div className="sidebar-avatar">{initials}</div>
-            )}
+            <div className="sidebar-avatar">{initials}</div>
             <div className="sidebar-user-info">
               <div className="sidebar-username">{username}</div>
               <div className="sidebar-email">{email}</div>
