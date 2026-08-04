@@ -9,6 +9,7 @@ import PricingSection from "@/components/PricingSection";
 import FAQSection from "@/components/FAQSection";
 import DarkCyberCanvas from "@/components/DarkCyberCanvas";
 import SuggestionModal from "@/components/SuggestionModal";
+import { getSupabase } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,6 +36,13 @@ export default function LoginPage() {
       
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Login failed.");
+      if (data.session) {
+        const supabase = getSupabase();
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+      }
       toast.success("Welcome back!");
       router.push("/dashboard");
     } catch (err: unknown) {

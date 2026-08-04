@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { getSupabase } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 
 function compressImage(file: File): Promise<string> {
@@ -29,7 +29,7 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const supabase = createClient();
+    const supabase = getSupabase();
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
         setEmail(data.user.email ?? "");
@@ -50,7 +50,7 @@ export default function ProfilePage() {
 
     setUploading(true);
     try {
-      const supabase = createClient();
+      const supabase = getSupabase();
 
       const fileExt = file.name.split(".").pop() || "jpg";
       const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
@@ -88,7 +88,7 @@ export default function ProfilePage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const supabase = createClient();
+      const supabase = getSupabase();
       const { error } = await supabase.auth.updateUser({
         data: { username, avatar_url: avatarUrl },
       });

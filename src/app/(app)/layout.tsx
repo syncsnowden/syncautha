@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { getSupabase } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 
 const NAV = [
@@ -21,7 +21,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [avatarUrl, setAvatarUrl] = useState("");
 
   useEffect(() => {
-    const supabase = createClient();
+    const supabase = getSupabase();
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
         setEmail(data.user.email ?? "");
@@ -32,7 +32,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   const handleLogout = async () => {
-    const supabase = createClient();
+    const supabase = getSupabase();
     await supabase.auth.signOut();
     document.cookie = "syncauth-remember=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
     toast.success("Signed out.");
