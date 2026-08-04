@@ -106,7 +106,7 @@ Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 local hint = Instance.new("TextLabel", bg)
 hint.Size = UDim2.new(1, -28, 0, 14)
 hint.Position = UDim2.new(0, 14, 0, 180)
-hint.Text = "Get keys: " .. SITE .. "/key-system"
+hint.Text = "Get keys: " .. SITE .. "/get-key/" .. SCRIPT_ID
 hint.TextColor3 = Color3.fromRGB(100,100,110)
 hint.BackgroundTransparency = 1
 hint.Font = Enum.Font.Gotham
@@ -212,10 +212,10 @@ export default function ProjectDetailPage() {
         <h1 className="page-title">{project?.name || "Loading..."}</h1>
         <div style={{ display: "flex", gap: 8, marginBottom: 4 }}>
           <button className="btn btn-secondary btn-sm" onClick={() => {
-            navigator.clipboard.writeText(`${siteUrl}/key-system?project=${pid}`);
-            toast.success("Key system link copied!");
+            navigator.clipboard.writeText(`${siteUrl}/get-key/${pid}`);
+            toast.success("Key system link copied! Share with users.");
           }}>
-            <i className="fa-solid fa-link" /> Copy Key System Link
+            <i className="fa-solid fa-link" /> Copy Key Link ({siteUrl}/get-key/{pid})
           </button>
           <a href={`${siteUrl}/api/key-loader`} className="btn btn-secondary btn-sm" style={{ textDecoration: "none" }}>
             <i className="fa-solid fa-download" /> Download loader.lua
