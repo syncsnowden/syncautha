@@ -1,10 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import AuthBackground from "@/components/AuthBackground";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,8 +13,21 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const pageRef = useRef<HTMLDivElement>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Mouse spotlight
+  useEffect(() => {
+    const el = pageRef.current;
+    if (!el) return;
+    const move = (e: MouseEvent) => {
+      el.style.setProperty("--mx", `${e.clientX}px`);
+      el.style.setProperty("--my", `${e.clientY}px`);
+    };
+    window.addEventListener("mousemove", move);
+    return () => window.removeEventListener("mousemove", move);
+  }, []);
+
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (!email || !password) return setError("Fill in all fields.");
@@ -37,176 +49,235 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)" }}>
+    <div ref={pageRef} style={{
+      minHeight: "100vh",
+      background: "#07080f",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24,
+      position: "relative",
+      overflow: "hidden",
+    }}>
+      <style>{`
+        /* Animated orbs */
+        @keyframes orb1 {
+          0%,100% { transform: translate(0,0) scale(1); }
+          33% { transform: translate(80px,-60px) scale(1.1); }
+          66% { transform: translate(-40px,80px) scale(0.9); }
+        }
+        @keyframes orb2 {
+          0%,100% { transform: translate(0,0) scale(1); }
+          33% { transform: translate(-100px,60px) scale(1.15); }
+          66% { transform: translate(60px,-80px) scale(0.9); }
+        }
+        @keyframes orb3 {
+          0%,100% { transform: translate(0,0) scale(1); }
+          50% { transform: translate(60px,60px) scale(1.1); }
+        }
+        @keyframes card-in {
+          from { opacity:0; transform: translateY(24px) scale(0.98); }
+          to   { opacity:1; transform: translateY(0) scale(1); }
+        }
+        .auth-card-main {
+          animation: card-in 0.5s cubic-bezier(0.22,1,0.36,1) forwards;
+        }
+      `}</style>
 
-      {/* ── LEFT PANEL ── */}
+      {/* Orb 1 — cyan top left */}
       <div style={{
-        flex: 1,
-        position: "relative",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        padding: "36px 48px",
-        background: "#0a0a0a",
-        borderRight: "1px solid var(--border)",
-        overflow: "hidden",
+        position:"absolute", width:700, height:700, borderRadius:"50%",
+        background:"radial-gradient(circle, rgba(0,200,224,0.13) 0%, transparent 70%)",
+        top:-200, left:-200, animation:"orb1 18s ease-in-out infinite", pointerEvents:"none",
+      }}/>
+      {/* Orb 2 — indigo bottom right */}
+      <div style={{
+        position:"absolute", width:600, height:600, borderRadius:"50%",
+        background:"radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)",
+        bottom:-200, right:-100, animation:"orb2 22s ease-in-out infinite", pointerEvents:"none",
+      }}/>
+      {/* Orb 3 — subtle center */}
+      <div style={{
+        position:"absolute", width:400, height:400, borderRadius:"50%",
+        background:"radial-gradient(circle, rgba(0,180,200,0.06) 0%, transparent 70%)",
+        top:"30%", left:"50%", transform:"translateX(-50%)",
+        animation:"orb3 14s ease-in-out infinite", pointerEvents:"none",
+      }}/>
+
+      {/* Mouse spotlight */}
+      <div style={{
+        position:"fixed", inset:0, pointerEvents:"none",
+        background:"radial-gradient(600px circle at var(--mx,50%) var(--my,50%), rgba(0,200,224,0.04), transparent 70%)",
+        transition:"background 0.1s",
+      }}/>
+
+      {/* Noise overlay */}
+      <div style={{
+        position:"fixed", inset:0, pointerEvents:"none", opacity:0.025,
+        backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+        backgroundRepeat:"repeat", backgroundSize:"200px 200px",
+      }}/>
+
+      {/* Card */}
+      <div className="auth-card-main" style={{
+        position:"relative", zIndex:10,
+        width:"100%", maxWidth:400,
+        background:"rgba(255,255,255,0.03)",
+        backdropFilter:"blur(40px) saturate(150%)",
+        WebkitBackdropFilter:"blur(40px) saturate(150%)",
+        border:"1px solid rgba(255,255,255,0.08)",
+        borderRadius:20,
+        padding:"36px 32px",
+        boxShadow:"0 0 0 1px rgba(255,255,255,0.03), 0 32px 80px rgba(0,0,0,0.6), 0 0 60px rgba(0,200,224,0.04)",
       }}>
-        {/* Animated network background */}
-        <AuthBackground />
-
-        {/* Gradient overlay so text stays readable */}
-        <div style={{
-          position: "absolute", inset: 0,
-          background: "linear-gradient(135deg, rgba(10,10,10,0.85) 0%, rgba(10,10,10,0.4) 100%)",
-          pointerEvents: "none",
-        }} />
-
         {/* Logo */}
-        <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 10 }}>
-          <Image src="/syncauthlogo.png" alt="SyncAuth" width={30} height={30} style={{ objectFit: "contain" }} />
-          <span style={{ fontWeight: 800, fontSize: 16, color: "#fff", letterSpacing: "-0.01em" }}>SyncAuth</span>
-        </div>
-
-        {/* Center copy */}
-        <div style={{ position: "relative", zIndex: 1 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:28 }}>
           <div style={{
-            display: "inline-flex", alignItems: "center", gap: 6,
-            padding: "5px 12px", borderRadius: 100,
-            background: "rgba(0,200,224,0.1)", border: "1px solid rgba(0,200,224,0.2)",
-            fontSize: 11.5, fontWeight: 500, color: "var(--accent)",
-            marginBottom: 20, letterSpacing: "0.04em",
+            width:36, height:36, borderRadius:10,
+            background:"rgba(0,200,224,0.08)",
+            border:"1px solid rgba(0,200,224,0.15)",
+            display:"flex", alignItems:"center", justifyContent:"center", padding:5,
           }}>
-            <i className="fa-solid fa-shield-halved" style={{ fontSize: 10 }} />
-            SECURE · FAST · RELIABLE
+            <Image src="/syncauthlogo.png" alt="SyncAuth" width={22} height={22} style={{ objectFit:"contain" }} priority />
           </div>
-          <h2 style={{
-            fontSize: 36, fontWeight: 800, color: "#fff",
-            letterSpacing: "-0.03em", lineHeight: 1.15, marginBottom: 16,
-          }}>
-            Protect your scripts.<br />
-            <span style={{ color: "var(--accent)" }}>Authenticate</span> with<br />
-            confidence.
-          </h2>
-          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, maxWidth: 360 }}>
-            License key authentication, HWID binding, and real-time user management — built for Roblox script developers.
-          </p>
-
-          {/* Feature pills */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 28 }}>
-            {[
-              { icon: "fa-key", text: "License keys" },
-              { icon: "fa-fingerprint", text: "HWID binding" },
-              { icon: "fa-chart-line", text: "Auth analytics" },
-              { icon: "fa-ban", text: "User blacklist" },
-            ].map(f => (
-              <div key={f.text} style={{
-                display: "flex", alignItems: "center", gap: 7,
-                padding: "7px 12px", borderRadius: 8,
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                fontSize: 12, color: "rgba(255,255,255,0.6)",
-              }}>
-                <i className={`fa-solid ${f.icon}`} style={{ fontSize: 10, color: "var(--accent)" }} />
-                {f.text}
-              </div>
-            ))}
-          </div>
+          <span style={{ fontWeight:700, fontSize:15, color:"#fff", letterSpacing:"-0.01em" }}>SyncAuth</span>
         </div>
 
-        {/* Bottom */}
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <a href="https://discord.gg/sM8ukpuzVE" target="_blank" rel="noreferrer"
-            style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12.5, color: "rgba(255,255,255,0.35)", textDecoration: "none", transition: "color 0.15s" }}
-            onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.7)")}
-            onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}>
-            <i className="fa-brands fa-discord" style={{ color: "#5865f2" }} />
-            Join our Discord community
-          </a>
-        </div>
-      </div>
-
-      {/* ── RIGHT PANEL ── */}
-      <div style={{
-        width: 420,
-        flexShrink: 0,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        padding: "48px 40px",
-        background: "var(--bg)",
-      }}>
-        <div style={{ marginBottom: 32 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 6 }}>
-            Sign in
-          </h1>
-          <p style={{ fontSize: 13.5, color: "var(--text-2)" }}>
-            Don&apos;t have an account?{" "}
-            <Link href="/register" style={{ color: "var(--text-1)", fontWeight: 500, textDecoration: "underline" }}>
-              Sign up free
-            </Link>
-          </p>
-        </div>
+        <h1 style={{ fontSize:22, fontWeight:700, color:"#fff", letterSpacing:"-0.02em", marginBottom:5 }}>
+          Welcome back
+        </h1>
+        <p style={{ fontSize:13.5, color:"rgba(255,255,255,0.4)", marginBottom:24 }}>
+          Sign in to your dashboard
+        </p>
 
         {error && (
-          <div className="alert alert-error" style={{ marginBottom: 20 }}>
-            <i className="fa-solid fa-circle-exclamation" style={{ marginTop: 1, flexShrink: 0 }} />
-            <span>{error}</span>
+          <div style={{
+            padding:"10px 14px", borderRadius:10, marginBottom:18,
+            background:"rgba(239,68,68,0.08)", border:"1px solid rgba(239,68,68,0.2)",
+            color:"#fca5a5", fontSize:13, display:"flex", gap:9, alignItems:"flex-start",
+          }}>
+            <i className="fa-solid fa-circle-exclamation" style={{ marginTop:1, flexShrink:0 }}/>
+            {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} noValidate style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div className="input-group">
-            <label className="input-label" htmlFor="email">Email</label>
-            <div className="input-icon-wrap">
-              <i className="fa-solid fa-envelope input-prefix-icon" />
-              <input id="email" type="email" className="input" placeholder="you@example.com"
-                value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" required />
+        <form onSubmit={submit} noValidate style={{ display:"flex", flexDirection:"column", gap:14 }}>
+          {/* Email */}
+          <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+            <label style={{ fontSize:12, fontWeight:500, color:"rgba(255,255,255,0.4)", letterSpacing:"0.04em", textTransform:"uppercase" }}>
+              Email
+            </label>
+            <div style={{ position:"relative" }}>
+              <i className="fa-solid fa-envelope" style={{ position:"absolute", left:13, top:"50%", transform:"translateY(-50%)", fontSize:12, color:"rgba(255,255,255,0.2)", pointerEvents:"none" }}/>
+              <input type="email" value={email} onChange={e=>setEmail(e.target.value)}
+                placeholder="you@example.com" autoComplete="email" required
+                style={{
+                  width:"100%", background:"rgba(255,255,255,0.04)",
+                  border:"1px solid rgba(255,255,255,0.08)", borderRadius:10,
+                  color:"#fff", fontSize:13.5, padding:"10px 12px 10px 36px",
+                  outline:"none", fontFamily:"Inter,sans-serif", transition:"border-color 0.15s",
+                }}
+                onFocus={e=>e.target.style.borderColor="rgba(0,200,224,0.4)"}
+                onBlur={e=>e.target.style.borderColor="rgba(255,255,255,0.08)"}
+              />
             </div>
           </div>
 
-          <div className="input-group">
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <label className="input-label" htmlFor="password">Password</label>
-              <Link href="/forgot-password" style={{ fontSize: 12, color: "var(--text-3)", textDecoration: "none", transition: "color 0.15s" }}
-                onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.color = "var(--text-1)")}
-                onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.color = "var(--text-3)")}>
-                Forgot password?
+          {/* Password */}
+          <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <label style={{ fontSize:12, fontWeight:500, color:"rgba(255,255,255,0.4)", letterSpacing:"0.04em", textTransform:"uppercase" }}>
+                Password
+              </label>
+              <Link href="/forgot-password" style={{ fontSize:12, color:"rgba(255,255,255,0.3)", textDecoration:"none", transition:"color 0.15s" }}
+                onMouseEnter={e=>(e.currentTarget.style.color="rgba(255,255,255,0.7)")}
+                onMouseLeave={e=>(e.currentTarget.style.color="rgba(255,255,255,0.3)")}>
+                Forgot?
               </Link>
             </div>
-            <div className="input-icon-wrap">
-              <i className="fa-solid fa-lock input-prefix-icon" />
-              <input id="password" type={showPw ? "text" : "password"} className="input"
-                placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)}
-                autoComplete="current-password" required />
-              <button type="button" className="input-suffix-btn" onClick={() => setShowPw(v => !v)}>
-                <i className={`fa-solid ${showPw ? "fa-eye-slash" : "fa-eye"}`} />
+            <div style={{ position:"relative" }}>
+              <i className="fa-solid fa-lock" style={{ position:"absolute", left:13, top:"50%", transform:"translateY(-50%)", fontSize:12, color:"rgba(255,255,255,0.2)", pointerEvents:"none" }}/>
+              <input type={showPw?"text":"password"} value={password} onChange={e=>setPassword(e.target.value)}
+                placeholder="••••••••" autoComplete="current-password" required
+                style={{
+                  width:"100%", background:"rgba(255,255,255,0.04)",
+                  border:"1px solid rgba(255,255,255,0.08)", borderRadius:10,
+                  color:"#fff", fontSize:13.5, padding:"10px 36px 10px 36px",
+                  outline:"none", fontFamily:"Inter,sans-serif", transition:"border-color 0.15s",
+                }}
+                onFocus={e=>e.target.style.borderColor="rgba(0,200,224,0.4)"}
+                onBlur={e=>e.target.style.borderColor="rgba(255,255,255,0.08)"}
+              />
+              <button type="button" onClick={()=>setShowPw(v=>!v)}
+                style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", color:"rgba(255,255,255,0.25)", cursor:"pointer", fontSize:12, padding:2, transition:"color 0.15s" }}
+                onMouseEnter={e=>(e.currentTarget.style.color="rgba(255,255,255,0.6)")}
+                onMouseLeave={e=>(e.currentTarget.style.color="rgba(255,255,255,0.25)")}>
+                <i className={`fa-solid ${showPw?"fa-eye-slash":"fa-eye"}`}/>
               </button>
             </div>
           </div>
 
-          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-            <input type="checkbox" className="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} />
-            <span style={{ fontSize: 13, color: "var(--text-2)" }}>Stay signed in for 30 days</span>
+          {/* Remember */}
+          <label style={{ display:"flex", alignItems:"center", gap:9, cursor:"pointer" }}>
+            <input type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)}
+              style={{ appearance:"none", width:15, height:15, borderRadius:4, background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.15)", cursor:"pointer", flexShrink:0, transition:"all 0.15s", accentColor:"#00c8e0" }}/>
+            <span style={{ fontSize:13, color:"rgba(255,255,255,0.4)" }}>Stay signed in for 30 days</span>
           </label>
 
-          <button type="submit" className="btn btn-primary" disabled={loading} style={{ marginTop: 4 }}>
-            {loading ? <><div className="spinner" />Signing in...</> : "Sign in →"}
+          {/* Submit */}
+          <button type="submit" disabled={loading}
+            style={{
+              marginTop:4, padding:"11px 20px", borderRadius:10, border:"none",
+              background: loading ? "rgba(0,200,224,0.5)" : "linear-gradient(135deg, #00c8e0 0%, #0099b5 100%)",
+              color:"#07080f", fontFamily:"Inter,sans-serif", fontWeight:700,
+              fontSize:14, cursor: loading?"not-allowed":"pointer",
+              display:"flex", alignItems:"center", justifyContent:"center", gap:8,
+              transition:"all 0.2s", boxShadow: loading?"none":"0 4px 24px rgba(0,200,224,0.25)",
+            }}
+            onMouseEnter={e=>{ if(!loading){ e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.boxShadow="0 8px 32px rgba(0,200,224,0.4)"; }}}
+            onMouseLeave={e=>{ e.currentTarget.style.transform="translateY(0)"; e.currentTarget.style.boxShadow="0 4px 24px rgba(0,200,224,0.25)"; }}>
+            {loading ? <><div style={{ width:14,height:14,border:"2px solid rgba(0,0,0,0.2)",borderTopColor:"#07080f",borderRadius:"50%",animation:"spin 0.65s linear infinite" }}/> Signing in…</> : "Sign in →"}
           </button>
         </form>
 
-        <div className="divider" style={{ margin: "20px 0" }}>or</div>
+        {/* Divider */}
+        <div style={{ display:"flex", alignItems:"center", gap:10, margin:"18px 0", color:"rgba(255,255,255,0.15)", fontSize:12 }}>
+          <div style={{ flex:1, height:1, background:"rgba(255,255,255,0.07)" }}/>or<div style={{ flex:1, height:1, background:"rgba(255,255,255,0.07)" }}/>
+        </div>
 
-        <button type="button" className="btn btn-secondary" style={{ width: "100%" }}
-          onClick={() => toast("Discord login coming soon!", { icon: "🔗" })}>
-          <i className="fa-brands fa-discord" style={{ color: "#5865f2" }} />
+        {/* Discord */}
+        <button onClick={()=>toast("Discord login coming soon!")} type="button"
+          style={{
+            width:"100%", padding:"10px 20px", borderRadius:10,
+            background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)",
+            color:"rgba(255,255,255,0.6)", fontFamily:"Inter,sans-serif", fontWeight:500,
+            fontSize:13.5, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center",
+            gap:9, transition:"all 0.15s",
+          }}
+          onMouseEnter={e=>{ e.currentTarget.style.background="rgba(255,255,255,0.07)"; e.currentTarget.style.color="#fff"; }}
+          onMouseLeave={e=>{ e.currentTarget.style.background="rgba(255,255,255,0.04)"; e.currentTarget.style.color="rgba(255,255,255,0.6)"; }}>
+          <i className="fa-brands fa-discord" style={{ color:"#5865f2", fontSize:15 }}/>
           Continue with Discord
         </button>
 
-        <p style={{ marginTop: "auto", paddingTop: 32, fontSize: 11.5, color: "var(--text-3)", textAlign: "center" }}>
-          <Link href="/tos" style={{ color: "var(--text-3)", textDecoration: "underline" }}>Terms</Link>
-          {" · "}
-          <Link href="/tos" style={{ color: "var(--text-3)", textDecoration: "underline" }}>Privacy</Link>
-        </p>
+        {/* Footer links */}
+        <div style={{ marginTop:22, display:"flex", justifyContent:"center", gap:20, fontSize:12, color:"rgba(255,255,255,0.2)" }}>
+          <Link href="/register" style={{ color:"rgba(255,255,255,0.35)", textDecoration:"none", transition:"color 0.15s" }}
+            onMouseEnter={e=>(e.currentTarget.style.color="#fff")} onMouseLeave={e=>(e.currentTarget.style.color="rgba(255,255,255,0.35)")}>
+            Create account
+          </Link>
+          <span>·</span>
+          <a href="https://discord.gg/sM8ukpuzVE" target="_blank" rel="noreferrer"
+            style={{ color:"rgba(255,255,255,0.35)", textDecoration:"none", transition:"color 0.15s" }}
+            onMouseEnter={e=>(e.currentTarget.style.color="#fff")} onMouseLeave={e=>(e.currentTarget.style.color="rgba(255,255,255,0.35)")}>
+            Discord
+          </a>
+          <span>·</span>
+          <Link href="/tos" style={{ color:"rgba(255,255,255,0.35)", textDecoration:"none", transition:"color 0.15s" }}
+            onMouseEnter={e=>(e.currentTarget.style.color="#fff")} onMouseLeave={e=>(e.currentTarget.style.color="rgba(255,255,255,0.35)")}>
+            Terms
+          </Link>
+        </div>
       </div>
     </div>
   );
