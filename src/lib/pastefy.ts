@@ -16,19 +16,25 @@ async function ensureMaster(): Promise<string> {
     return masterId;
   }
 
-  // Search user's pastes for existing master
+  // Search user's pastes for existing master — use most recent
   try {
     const listRes = await fetch(`${PASTEFY_BASE}/paste?limit=100`, { headers: authH() });
     if (listRes.ok) {
       const listData = await listRes.json();
       const items = listData.items || listData.data || [];
+      let best: any = null;
       for (const item of items) {
         const p = item.paste || item;
         if (p.title === "syncauth-master") {
-          masterId = p.id;
-          console.log(`[SyncAuth] Found master: ${masterId}`);
-          return masterId;
+          if (!best || new Date(p.created_at) > new Date(best.created_at)) {
+            best = p;
+          }
         }
+      }
+      if (best) {
+        masterId = best.id;
+        console.log(`[SyncAuth] Found master: ${masterId} (${items.length} pastes checked)`);
+        return masterId;
       }
     }
   } catch (e) {
