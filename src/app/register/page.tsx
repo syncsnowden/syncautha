@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import AuthBackground from "@/components/AuthBackground";
 
 function pwStrength(pw: string) {
   let s = 0;
@@ -15,6 +16,7 @@ function pwStrength(pw: string) {
   return s;
 }
 const COLORS = ["", "#ef4444", "#f59e0b", "#3b82f6", "#00c8e0", "#22c55e"];
+const LABELS = ["", "Weak", "Fair", "Good", "Strong", "Very strong"];
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -55,15 +57,84 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card fade-in">
-        <div className="auth-logo">
-          <Image src="/syncauthlogo.png" alt="SyncAuth" width={28} height={28} className="auth-logo-img" priority />
-          <span className="auth-logo-name">SyncAuth</span>
+    <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)" }}>
+
+      {/* ── LEFT PANEL ── */}
+      <div style={{
+        flex: 1, position: "relative",
+        display: "flex", flexDirection: "column", justifyContent: "space-between",
+        padding: "36px 48px", background: "#0a0a0a",
+        borderRight: "1px solid var(--border)", overflow: "hidden",
+      }}>
+        <AuthBackground />
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "linear-gradient(135deg, rgba(10,10,10,0.85) 0%, rgba(10,10,10,0.4) 100%)",
+          pointerEvents: "none",
+        }} />
+
+        <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 10 }}>
+          <Image src="/syncauthlogo.png" alt="SyncAuth" width={30} height={30} style={{ objectFit: "contain" }} />
+          <span style={{ fontWeight: 800, fontSize: 16, color: "#fff", letterSpacing: "-0.01em" }}>SyncAuth</span>
         </div>
 
-        <h1 className="auth-heading">Create account</h1>
-        <p className="auth-sub">Get started with SyncAuth for free.</p>
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            padding: "5px 12px", borderRadius: 100,
+            background: "rgba(0,200,224,0.1)", border: "1px solid rgba(0,200,224,0.2)",
+            fontSize: 11.5, fontWeight: 500, color: "var(--accent)",
+            marginBottom: 20, letterSpacing: "0.04em",
+          }}>
+            <i className="fa-solid fa-user-plus" style={{ fontSize: 10 }} />
+            FREE TO GET STARTED
+          </div>
+          <h2 style={{ fontSize: 34, fontWeight: 800, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1.15, marginBottom: 16 }}>
+            Join SyncAuth.<br />
+            Start protecting<br />
+            <span style={{ color: "var(--accent)" }}>your scripts.</span>
+          </h2>
+          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, maxWidth: 360 }}>
+            Get your scripts protected in minutes. Generate keys, bind HWIDs, and track every auth attempt in real time.
+          </p>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 28 }}>
+            {[
+              { icon: "fa-check", text: "Free account, no credit card" },
+              { icon: "fa-check", text: "Unlimited auth checks" },
+              { icon: "fa-check", text: "HWID binding & IP logging" },
+              { icon: "fa-check", text: "Real-time user management" },
+            ].map(f => (
+              <div key={f.text} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "rgba(255,255,255,0.55)" }}>
+                <i className={`fa-solid ${f.icon}`} style={{ fontSize: 11, color: "var(--accent)", width: 14 }} />
+                {f.text}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <a href="https://discord.gg/sM8ukpuzVE" target="_blank" rel="noreferrer"
+            style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12.5, color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>
+            <i className="fa-brands fa-discord" style={{ color: "#5865f2" }} />
+            Join our Discord community
+          </a>
+        </div>
+      </div>
+
+      {/* ── RIGHT PANEL ── */}
+      <div style={{
+        width: 440, flexShrink: 0,
+        display: "flex", flexDirection: "column", justifyContent: "center",
+        padding: "48px 40px", background: "var(--bg)", overflowY: "auto",
+      }}>
+        <div style={{ marginBottom: 28 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 6 }}>Create account</h1>
+          <p style={{ fontSize: 13.5, color: "var(--text-2)" }}>
+            Already have one?{" "}
+            <Link href="/login" style={{ color: "var(--text-1)", fontWeight: 500, textDecoration: "underline" }}>Sign in</Link>
+          </p>
+        </div>
 
         {error && (
           <div className="alert alert-error" style={{ marginBottom: 16 }}>
@@ -72,7 +143,7 @@ export default function RegisterPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} noValidate className="auth-form">
+        <form onSubmit={handleSubmit} noValidate style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div className="input-group">
             <label className="input-label" htmlFor="username">Username</label>
             <div className="input-icon-wrap">
@@ -102,16 +173,14 @@ export default function RegisterPage() {
               </button>
             </div>
             {password && (
-              <>
+              <div>
                 <div className="strength-bars">
                   {[1,2,3,4,5].map(i => (
                     <div key={i} className="strength-bar" style={{ background: i <= strength ? COLORS[strength] : undefined }} />
                   ))}
                 </div>
-                <span style={{ fontSize: 11, color: COLORS[strength] }}>
-                  {["","Weak","Fair","Good","Strong","Very strong"][strength]}
-                </span>
-              </>
+                <span style={{ fontSize: 11, color: COLORS[strength] }}>{LABELS[strength]}</span>
+              </div>
             )}
           </div>
 
@@ -141,14 +210,15 @@ export default function RegisterPage() {
           </label>
 
           <button type="submit" className="btn btn-primary" disabled={loading} style={{ marginTop: 4 }}>
-            {loading ? <><div className="spinner" /> Creating account...</> : "Create account"}
+            {loading ? <><div className="spinner" />Creating account...</> : "Create account →"}
           </button>
         </form>
 
-        <div className="auth-footer">
-          Already have an account?{" "}
-          <Link href="/login" className="auth-link">Sign in</Link>
-        </div>
+        <p style={{ marginTop: 24, fontSize: 11.5, color: "var(--text-3)", textAlign: "center" }}>
+          <Link href="/tos" style={{ color: "var(--text-3)", textDecoration: "underline" }}>Terms</Link>
+          {" · "}
+          <Link href="/tos" style={{ color: "var(--text-3)", textDecoration: "underline" }}>Privacy</Link>
+        </p>
       </div>
     </div>
   );
