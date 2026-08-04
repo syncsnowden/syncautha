@@ -10,10 +10,11 @@ interface Script {
 
 interface Project { id: string; name: string; }
 
-const keyLoaderTemplate = `-- SyncAuth Key System
--- Enter your Script ID + Key below
+const keyLoaderTemplate = (scriptId: string, name: string) => `-- SyncAuth Key Loader for "${name}"
+-- Script ID: ${scriptId}
 
 local SITE = "SYNCAUTH_SITE_URL"
+local SCRIPT_ID = "${scriptId}"
 
 local HttpService = game:GetService("HttpService")
 local player = game:GetService("Players").LocalPlayer
@@ -34,71 +35,57 @@ local function request(url, body)
             Body = HttpService:JSONEncode(body)
         }).Body)
     end)
-    if ok then return res end
+    if ok and res then return res end
 end
 
 local hwid = getHWID()
 local authed = false
-local scriptId = nil
 
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "SyncAuth"
 
 local bg = Instance.new("Frame", gui)
-bg.Size = UDim2.new(0, 370, 0, 270)
-bg.Position = UDim2.new(0.5, -185, 0.5, -135)
+bg.Size = UDim2.new(0, 340, 0, 210)
+bg.Position = UDim2.new(0.5, -170, 0.5, -105)
 bg.BackgroundColor3 = Color3.fromRGB(10, 11, 16)
 bg.BorderSizePixel = 0
 Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 10)
 Instance.new("UIStroke", bg).Color = Color3.fromRGB(0, 200, 224)
 
 local title = Instance.new("TextLabel", bg)
-title.Size = UDim2.new(1, -28, 0, 24)
+title.Size = UDim2.new(1, -28, 0, 22)
 title.Position = UDim2.new(0, 14, 0, 14)
-title.Text = "SyncAuth Key System"
+title.Text = "SyncAuth | License Key"
 title.TextColor3 = Color3.fromRGB(255,255,255)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.TextSize = 15
+title.TextSize = 14
 title.TextXAlignment = Enum.TextXAlignment.Left
 
-local function makeLabel(parent, text, y)
-    local l = Instance.new("TextLabel", parent)
-    l.Size = UDim2.new(1, -28, 0, 14)
-    l.Position = UDim2.new(0, 14, 0, y)
-    l.Text = text
-    l.TextColor3 = Color3.fromRGB(150,150,160)
-    l.BackgroundTransparency = 1
-    l.Font = Enum.Font.Gotham
-    l.TextSize = 12
-    l.TextXAlignment = Enum.TextXAlignment.Left
-    return l
-end
+local keyLabel = Instance.new("TextLabel", bg)
+keyLabel.Size = UDim2.new(1, -28, 0, 14)
+keyLabel.Position = UDim2.new(0, 14, 0, 50)
+keyLabel.Text = "License Key:"
+keyLabel.TextColor3 = Color3.fromRGB(150,150,160)
+keyLabel.BackgroundTransparency = 1
+keyLabel.Font = Enum.Font.Gotham
+keyLabel.TextSize = 12
+keyLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-local function makeInput(parent, placeholder, y, h)
-    local inp = Instance.new("TextBox", parent)
-    inp.Size = UDim2.new(1, -28, 0, h or 32)
-    inp.Position = UDim2.new(0, 14, 0, y)
-    inp.PlaceholderText = placeholder
-    inp.BackgroundColor3 = Color3.fromRGB(18,20,30)
-    inp.TextColor3 = Color3.fromRGB(255,255,255)
-    inp.BorderSizePixel = 0
-    inp.Font = Enum.Font.Gotham
-    inp.TextSize = 13
-    Instance.new("UICorner", inp).CornerRadius = UDim.new(0, 6)
-    return inp
-end
-
-makeLabel(bg, "Script ID:", 44)
-local sidInput = makeInput(bg, "14-char script ID", 60)
-
-makeLabel(bg, "License Key:", 100)
-local keyInput = makeInput(bg, "XXXX-XXXX-XXXX-XXXX", 116, 34)
+local keyInput = Instance.new("TextBox", bg)
+keyInput.Size = UDim2.new(1, -28, 0, 34)
+keyInput.Position = UDim2.new(0, 14, 0, 66)
+keyInput.PlaceholderText = "XXXX-XXXX-XXXX-XXXX"
+keyInput.BackgroundColor3 = Color3.fromRGB(18,20,30)
+keyInput.TextColor3 = Color3.fromRGB(255,255,255)
+keyInput.BorderSizePixel = 0
+keyInput.Font = Enum.Font.Gotham
 keyInput.TextSize = 14
+Instance.new("UICorner", keyInput).CornerRadius = UDim.new(0, 6)
 
 local status = Instance.new("TextLabel", bg)
-status.Size = UDim2.new(1, -28, 0, 20)
-status.Position = UDim2.new(0, 14, 0, 158)
+status.Size = UDim2.new(1, -28, 0, 18)
+status.Position = UDim2.new(0, 14, 0, 108)
 status.Text = ""
 status.TextColor3 = Color3.fromRGB(150,150,160)
 status.BackgroundTransparency = 1
@@ -106,8 +93,8 @@ status.Font = Enum.Font.Gotham
 status.TextSize = 12
 
 local btn = Instance.new("TextButton", bg)
-btn.Size = UDim2.new(1, -28, 0, 38)
-btn.Position = UDim2.new(0, 14, 0, 188)
+btn.Size = UDim2.new(1, -28, 0, 36)
+btn.Position = UDim2.new(0, 14, 0, 134)
 btn.Text = "UNLOCK"
 btn.BackgroundColor3 = Color3.fromRGB(0, 200, 224)
 btn.TextColor3 = Color3.fromRGB(10,11,16)
@@ -118,8 +105,8 @@ Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 
 local hint = Instance.new("TextLabel", bg)
 hint.Size = UDim2.new(1, -28, 0, 14)
-hint.Position = UDim2.new(0, 14, 0, 238)
-hint.Text = "Get keys at: " .. SITE .. "/key-system"
+hint.Position = UDim2.new(0, 14, 0, 180)
+hint.Text = "Get keys: " .. SITE .. "/key-system"
 hint.TextColor3 = Color3.fromRGB(100,100,110)
 hint.BackgroundTransparency = 1
 hint.Font = Enum.Font.Gotham
@@ -127,9 +114,6 @@ hint.TextSize = 10
 
 btn.MouseButton1Click:Connect(function()
     if authed then return end
-    local sid = sidInput.Text:gsub("%s+", "")
-    if #sid < 5 then status.Text = "Enter a valid Script ID"; return end
-    scriptId = sid
     local k = keyInput.Text:gsub("%s+", "")
     if #k < 8 then status.Text = "Enter a valid key"; return end
     status.Text = "Validating..."
@@ -137,12 +121,12 @@ btn.MouseButton1Click:Connect(function()
     btn.Text = "..."
     local result = request(SITE .. "/api/keys/validate", { key = k, hwid = hwid })
     if result and result.status == "valid" then
-        status.Text = "Authorized! Loading..."
+        status.Text = "Authorized!"
         status.TextColor3 = Color3.fromRGB(0, 200, 224)
         authed = true
         task.wait(1)
         gui:Destroy()
-        loadstring(game:HttpGet(SITE .. "/api/scripts/" .. scriptId .. "/raw"))()
+        loadstring(game:HttpGet(SITE .. "/api/scripts/" .. SCRIPT_ID .. "/raw"))()
     elseif result then
         status.Text = result.reason or "Invalid key"
         status.TextColor3 = Color3.fromRGB(255, 80, 80)
@@ -216,7 +200,6 @@ export default function ProjectDetailPage() {
   }
 
   const siteUrl = typeof window !== "undefined" ? window.location.origin : "https://syncauth-eight.vercel.app";
-  const loaderCode = keyLoaderTemplate.replace("SYNCAUTH_SITE_URL", siteUrl);
 
   return (
     <>
@@ -234,12 +217,9 @@ export default function ProjectDetailPage() {
           }}>
             <i className="fa-solid fa-link" /> Copy Key System Link
           </button>
-          <button className="btn btn-secondary btn-sm" onClick={() => {
-            navigator.clipboard.writeText(loaderCode);
-            toast.success("Key loader copied!");
-          }}>
-            <i className="fa-solid fa-copy" /> Copy Key Loader
-          </button>
+          <a href={`${siteUrl}/api/key-loader`} className="btn btn-secondary btn-sm" style={{ textDecoration: "none" }}>
+            <i className="fa-solid fa-download" /> Download loader.lua
+          </a>
         </div>
         <p className="page-subtitle">Manage scripts and key system for this project.</p>
       </div>

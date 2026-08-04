@@ -12,7 +12,6 @@ const NAV = [
   { href: "/keys",      icon: "fa-key",    label: "Keys" },
   { href: "/users",     icon: "fa-users",  label: "Users" },
   { href: "/rewards",   icon: "fa-gift",   label: "Rewards" },
-  { href: "/docs",      icon: "fa-book",   label: "Docs" },
   { href: "/profile",   icon: "fa-user",   label: "Profile" },
 ];
 
