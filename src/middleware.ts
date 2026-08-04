@@ -12,6 +12,16 @@ export async function middleware(request: NextRequest) {
       return supabaseResponse;
     }
 
+    const pathname = request.nextUrl.pathname;
+    if (
+      pathname.startsWith("/api/auth") ||
+      pathname === "/login" ||
+      pathname === "/register" ||
+      pathname === "/forgot-password"
+    ) {
+      return supabaseResponse;
+    }
+
     const isRemembered = request.cookies.get("syncauth-remember")?.value === "true";
 
     const supabase = createServerClient(
@@ -52,8 +62,6 @@ export async function middleware(request: NextRequest) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-
-    const { pathname } = request.nextUrl;
 
     // Redirect unauthenticated users away from protected routes
     const protectedRoutes = ["/dashboard", "/keys", "/users", "/profile"];
