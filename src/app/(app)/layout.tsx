@@ -8,8 +8,10 @@ import toast from "react-hot-toast";
 
 const NAV = [
   { href: "/dashboard", icon: "fa-gauge", label: "Dashboard" },
+  { href: "/projects",  icon: "fa-diagram-project", label: "Projects" },
   { href: "/keys",      icon: "fa-key",    label: "Keys" },
   { href: "/users",     icon: "fa-users",  label: "Users" },
+  { href: "/rewards",   icon: "fa-gift",   label: "Rewards" },
   { href: "/profile",   icon: "fa-user",   label: "Profile" },
 ];
 
