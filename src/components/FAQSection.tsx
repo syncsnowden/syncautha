@@ -37,46 +37,46 @@ export default function FAQSection() {
   };
 
   return (
-    <section style={{ width: "100%", maxWidth: 860, margin: "60px auto 80px", padding: "0 20px" }}>
+    <section style={{ width: "100%", maxWidth: 860, margin: "60px auto 90px", padding: "0 20px" }}>
       {/* Header */}
-      <div style={{ textAlign: "center", marginBottom: 40 }}>
+      <div style={{ textAlign: "center", marginBottom: 44 }}>
         <div
           style={{
             display: "inline-flex",
             alignItems: "center",
-            gap: 6,
-            padding: "5px 14px",
+            gap: 8,
+            padding: "5px 16px",
             borderRadius: 100,
-            background: "rgba(0, 200, 224, 0.08)",
-            border: "1px solid rgba(0, 200, 224, 0.2)",
+            background: "rgba(255, 255, 255, 0.04)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
             fontSize: 12,
             fontWeight: 600,
-            color: "#00c8e0",
-            letterSpacing: "0.06em",
+            color: "#cbd5e1",
+            letterSpacing: "0.05em",
             textTransform: "uppercase",
             marginBottom: 16,
           }}
         >
-          <i className="fa-solid fa-circle-question" style={{ fontSize: 11 }} />
-          Frequently Asked Questions
+          <i className="fa-solid fa-circle-question" style={{ fontSize: 11, color: "#818cf8" }} />
+          Got Questions?
         </div>
         <h2
           style={{
-            fontSize: "clamp(24px, 4vw, 32px)",
+            fontSize: "clamp(26px, 4vw, 34px)",
             fontWeight: 800,
             color: "#ffffff",
-            letterSpacing: "-0.02em",
+            letterSpacing: "-0.03em",
             marginBottom: 12,
           }}
         >
-          Everything you need to know about SyncAuth
+          Frequently Asked Questions
         </h2>
-        <p style={{ color: "rgba(255, 255, 255, 0.5)", fontSize: 14.5 }}>
-          Have more questions? Join our Discord server to talk with our team.
+        <p style={{ color: "#94a3b8", fontSize: 14.5 }}>
+          Everything you need to know about our security, infrastructure, and plans.
         </p>
       </div>
 
-      {/* Accordion list */}
+      {/* Accordion List */}
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {FAQS.map((faq, idx) => {
           const isOpen = openIndex === idx;
@@ -84,17 +84,14 @@ export default function FAQSection() {
             <div
               key={faq.q}
               style={{
-                background: isOpen ? "rgba(14, 25, 45, 0.8)" : "rgba(13, 17, 26, 0.5)",
-                backdropFilter: "blur(20px)",
-                WebkitBackdropFilter: "blur(20px)",
-                border: isOpen ? "1px solid rgba(0, 200, 224, 0.35)" : "1px solid rgba(255, 255, 255, 0.07)",
+                background: isOpen ? "#0f1118" : "#08090d",
+                border: isOpen ? "1px solid rgba(99, 102, 241, 0.35)" : "1px solid rgba(255, 255, 255, 0.07)",
                 borderRadius: 16,
                 overflow: "hidden",
                 transition: "all 0.25s ease",
-                boxShadow: isOpen ? "0 8px 30px rgba(0, 200, 224, 0.1)" : "none",
+                boxShadow: isOpen ? "0 8px 30px rgba(0, 0, 0, 0.6)" : "none",
               }}
             >
-              {/* Question button */}
               <button
                 onClick={() => toggle(idx)}
                 type="button"
@@ -109,7 +106,7 @@ export default function FAQSection() {
                   gap: 16,
                   cursor: "pointer",
                   textAlign: "left",
-                  color: "#ffffff",
+                  color: isOpen ? "#ffffff" : "#cbd5e1",
                   fontFamily: "Inter, sans-serif",
                   fontSize: 15,
                   fontWeight: 600,
@@ -121,13 +118,13 @@ export default function FAQSection() {
                     width: 28,
                     height: 28,
                     borderRadius: "50%",
-                    background: isOpen ? "rgba(0, 200, 224, 0.15)" : "rgba(255, 255, 255, 0.05)",
+                    background: isOpen ? "rgba(99, 102, 241, 0.15)" : "rgba(255, 255, 255, 0.04)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: isOpen ? "#00c8e0" : "rgba(255, 255, 255, 0.4)",
+                    color: isOpen ? "#818cf8" : "#64748b",
                     flexShrink: 0,
-                    transition: "transform 0.25s ease, background 0.25s ease",
+                    transition: "transform 0.25s ease",
                     transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
                   }}
                 >
@@ -135,12 +132,11 @@ export default function FAQSection() {
                 </div>
               </button>
 
-              {/* Answer content */}
               {isOpen && (
                 <div
                   style={{
                     padding: "0 24px 22px 24px",
-                    color: "rgba(255, 255, 255, 0.65)",
+                    color: "#94a3b8",
                     fontSize: 14,
                     lineHeight: 1.7,
                     borderTop: "1px solid rgba(255, 255, 255, 0.05)",
