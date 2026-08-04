@@ -9,6 +9,27 @@ let masterId = ENV_MASTER_ID;
 
 async function ensureMaster(): Promise<string> {
   if (masterId) return masterId;
+
+  // Try to find an existing master paste by searching
+  try {
+    const searchRes = await fetch(
+      `${PASTEFY_BASE}/paste?search=syncauth-master&limit=5`,
+      { headers: authH() }
+    );
+    if (searchRes.ok) {
+      const searchData = await searchRes.json();
+      const items = searchData.items || searchData.data || [];
+      if (items.length > 0) {
+        masterId = items[0].id || items[0].paste?.id;
+        if (masterId) {
+          console.log(`[SyncAuth] Found existing master: ${masterId}`);
+          return masterId;
+        }
+      }
+    }
+  } catch {}
+
+  // Create new master paste
   const res = await fetch(`${PASTEFY_BASE}/paste`, {
     method: "POST", headers: jsonH(),
     body: JSON.stringify({ title: "syncauth-master", content: JSON.stringify({ projects: {} }) }),
@@ -17,7 +38,8 @@ async function ensureMaster(): Promise<string> {
   const d = await res.json();
   masterId = d.paste?.id || d.id;
   if (!masterId) throw new Error("No master id");
-  console.log(`[SyncAuth] Master paste: ${masterId}`);
+  console.log(`[SyncAuth] Created master: ${masterId}`);
+  console.log(`[SyncAuth] ⚠️ Set PASTEFY_PASTE_ID=${masterId} on Vercel for guaranteed persistence`);
   return masterId;
 }
 
