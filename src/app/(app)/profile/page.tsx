@@ -10,6 +10,7 @@ const THEMES = [
   { name: "Green", value: "#22c55e", icon: "fa-leaf" },
   { name: "Amber", value: "#f59e0b", icon: "fa-sun" },
   { name: "Red", value: "#ef4444", icon: "fa-fire" },
+  { name: "Noir", value: "#6b7280", icon: "fa-circle" },
 ];
 
 function applyTheme(color: string) {
@@ -31,6 +32,7 @@ export default function ProfilePage() {
   const [inviteCode, setInviteCode] = useState("");
   const [redeeming, setRedeeming] = useState(false);
   const [theme, setTheme] = useState(getSavedTheme);
+  const [plan, setPlan] = useState("Free");
 
   useEffect(() => {
     applyTheme(theme);
@@ -48,6 +50,7 @@ export default function ProfilePage() {
           ? new Date(user.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
           : "Unknown";
         setRegisteredAt(created);
+        setPlan(user.user_metadata?.redeemed_code || "Free");
         return;
       }
       loadFromCache();
@@ -89,6 +92,7 @@ export default function ProfilePage() {
       });
       if (error) throw error;
       toast.success("Invite code redeemed!");
+      setPlan(inviteCode.trim());
       setInviteCode("");
     } catch {
       toast.error("Failed to redeem code.");
@@ -196,8 +200,17 @@ export default function ProfilePage() {
             <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>{username || "User"}</div>
             <div style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2 }}>SyncAuth Account</div>
           </div>
-        </div>
-      </div>
+            </div>
+            <div className="input-group">
+              <label className="input-label">
+                <i className="fa-solid fa-crown" style={{ marginRight: 6, fontSize: 11 }} />
+                Your Plan
+              </label>
+              <div style={{ padding: "9px 12px", background: "var(--bg-2)", border: "1px solid var(--border-2)", borderRadius: "var(--radius)", color: plan === "Free" ? "var(--text-2)" : "var(--accent)", fontSize: 14, fontWeight: 600 }}>
+                {plan}
+              </div>
+            </div>
+          </div>
     </>
   );
 }
