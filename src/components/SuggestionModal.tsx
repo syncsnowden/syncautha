@@ -132,7 +132,7 @@ export default function SuggestionModal({
               <h3 style={{ fontSize: 18, fontWeight: 800, color: "#ffffff", letterSpacing: "-0.01em" }}>
                 Submit a Suggestion
               </h3>
-              <p style={{ fontSize: 12, color: "#94a3b8" }}>Help us make SyncAuth 500x better</p>
+              <p style={{ fontSize: 12, color: "#94a3b8" }}>Help us make SyncAuth better</p>
             </div>
           </div>
           <button

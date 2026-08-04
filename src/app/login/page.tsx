@@ -12,7 +12,7 @@ import SuggestionModal from "@/components/SuggestionModal";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [remember, setRemember] = useState(false);
@@ -35,13 +35,13 @@ export default function LoginPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!email || !password) return setError("Fill in all fields.");
+    if (!identifier || !password) return setError("Fill in all fields.");
     setLoading(true);
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, remember }),
+        body: JSON.stringify({ identifier, password, remember }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Login failed.");
@@ -290,19 +290,19 @@ export default function LoginPage() {
             )}
 
             <form onSubmit={submit} noValidate style={{ display: "flex", flexDirection: "column", gap: 15 }}>
-              {/* Email */}
+              {/* Email or Username */}
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 <label style={{ fontSize: 12, fontWeight: 600, color: "#64748b", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-                  Email Address
+                  Email or Username
                 </label>
                 <div style={{ position: "relative" }}>
-                  <i className="fa-solid fa-envelope" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "#475569", pointerEvents: "none" }} />
+                  <i className="fa-solid fa-user" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "#475569", pointerEvents: "none" }} />
                   <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    autoComplete="email"
+                    type="text"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    placeholder="developer or email@example.com"
+                    autoComplete="username"
                     required
                     style={{
                       width: "100%",
@@ -378,26 +378,38 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* Remember */}
-              <label style={{ display: "flex", alignItems: "center", gap: 9, cursor: "pointer", margin: "2px 0" }}>
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
+              {/* Remember Me Custom Stylish Toggle Checkbox */}
+              <div
+                onClick={() => setRemember(!remember)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  cursor: "pointer",
+                  margin: "4px 0",
+                  userSelect: "none",
+                }}
+              >
+                <div
                   style={{
-                    appearance: "none",
-                    width: 15,
-                    height: 15,
-                    borderRadius: 4,
-                    background: "rgba(255, 255, 255, 0.05)",
-                    border: "1px solid rgba(255, 255, 255, 0.15)",
-                    cursor: "pointer",
+                    width: 18,
+                    height: 18,
+                    borderRadius: 5,
+                    background: remember ? "#6366f1" : "rgba(255, 255, 255, 0.05)",
+                    border: remember ? "1px solid #6366f1" : "1px solid rgba(255, 255, 255, 0.2)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "all 0.2s ease",
                     flexShrink: 0,
-                    accentColor: "#6366f1",
                   }}
-                />
-                <span style={{ fontSize: 13, color: "#94a3b8" }}>Keep me signed in for 30 days</span>
-              </label>
+                >
+                  {remember && <i className="fa-solid fa-check" style={{ color: "#ffffff", fontSize: 11 }} />}
+                </div>
+                <span style={{ fontSize: 13, color: remember ? "#ffffff" : "#94a3b8", transition: "color 0.2s" }}>
+                  Keep me signed in for 30 days
+                </span>
+              </div>
 
               {/* Submit */}
               <button
