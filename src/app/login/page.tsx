@@ -242,19 +242,19 @@ export default function LoginPage() {
             )}
 
             <form onSubmit={submit} noValidate style={{ display: "flex", flexDirection: "column", gap: 15 }}>
-              {/* Email or Username */}
+              {/* Email */}
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 <label style={{ fontSize: 12, fontWeight: 600, color: "#64748b", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-                  Email or Username
+                  Email
                 </label>
                 <div style={{ position: "relative" }}>
-                  <i className="fa-solid fa-user" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "#475569", pointerEvents: "none" }} />
+                  <i className="fa-solid fa-envelope" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "#475569", pointerEvents: "none" }} />
                   <input
-                    type="text"
+                    type="email"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="developer or email@example.com"
-                    autoComplete="username"
+                    placeholder="email@example.com"
+                    autoComplete="email"
                     required
                     style={{
                       width: "100%",
