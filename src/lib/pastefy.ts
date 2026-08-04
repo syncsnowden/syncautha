@@ -1,10 +1,66 @@
 const PASTEFY_BASE = "https://pastefy.app/api/v2";
 const API_KEY = process.env.PASTEFY_API_KEY || "sMBc9KgDW5Jy0PlP5GWCAa4Tlt4VJwJ2BQWJxW46NsLTYHEQbs3u4i8TyI4O";
-const ENV_PASTE_ID = process.env.PASTEFY_PASTE_ID || "";
+const ENV_MASTER_ID = process.env.PASTEFY_PASTE_ID || "";
 
-function authHeaders() { return { Authorization: `Bearer ${API_KEY}` }; }
-function jsonHeaders() { return { Authorization: `Bearer ${API_KEY}`, "Content-Type": "application/json" }; }
+function authH() { return { Authorization: `Bearer ${API_KEY}` }; }
+function jsonH() { return { Authorization: `Bearer ${API_KEY}`, "Content-Type": "application/json" }; }
 
+let masterId = ENV_MASTER_ID;
+
+async function ensureMaster(): Promise<string> {
+  if (masterId) return masterId;
+  const res = await fetch(`${PASTEFY_BASE}/paste`, {
+    method: "POST", headers: jsonH(),
+    body: JSON.stringify({ title: "syncauth-master", content: JSON.stringify({ projects: {} }) }),
+  });
+  if (!res.ok) throw new Error(`Master create failed: ${res.status}`);
+  const d = await res.json();
+  masterId = d.paste?.id || d.id;
+  if (!masterId) throw new Error("No master id");
+  console.log(`[SyncAuth] Master paste: ${masterId}`);
+  return masterId;
+}
+
+async function readPaste(id: string): Promise<any> {
+  const res = await fetch(`${PASTEFY_BASE}/paste/${id}`, { headers: authH() });
+  if (!res.ok) return null;
+  const d = await res.json();
+  try { return JSON.parse(d.paste?.content || d.content || "{}"); } catch { return {}; }
+}
+
+async function writePaste(id: string, data: any): Promise<void> {
+  const res = await fetch(`${PASTEFY_BASE}/paste/${id}`, {
+    method: "PUT", headers: jsonH(),
+    body: JSON.stringify({ content: JSON.stringify(data) }),
+  });
+  if (!res.ok) throw new Error(`Write failed: ${res.status}`);
+}
+
+async function createPaste(data: any): Promise<string> {
+  const res = await fetch(`${PASTEFY_BASE}/paste`, {
+    method: "POST", headers: jsonH(),
+    body: JSON.stringify({ title: "syncauth-project", content: JSON.stringify(data) }),
+  });
+  if (!res.ok) throw new Error(`Create failed: ${res.status}`);
+  const d = await res.json();
+  return d.paste?.id || d.id;
+}
+
+// ─── MASTER DB ───
+interface MasterDB { projects: Record<string, { paste_id: string; name: string; created_at: number }>; }
+
+async function getMaster(): Promise<MasterDB> {
+  const mid = await ensureMaster();
+  const data = await readPaste(mid);
+  return data || { projects: {} };
+}
+
+async function saveMaster(db: MasterDB): Promise<void> {
+  const mid = await ensureMaster();
+  await writePaste(mid, db);
+}
+
+// ─── PROJECT DATA ───
 export interface Project {
   id: string; name: string; logs_webhook: string; alert_webhook: string;
   cooldown: number; allow_hwid_reset: boolean; auto_delete_expired: boolean;
@@ -32,65 +88,192 @@ export interface RewardSession {
   created: number; used: boolean;
 }
 
-export interface DB {
-  projects: Record<string, Project>;
+interface ProjectData {
+  settings: Project;
   scripts: Record<string, Script>;
   keys: Record<string, KeyEntry>;
   rewards: Record<string, RewardSession>;
 }
 
-const EMPTY_DB: DB = { projects: {}, scripts: {}, keys: {}, rewards: {} };
-let cachedPasteId = ENV_PASTE_ID;
+const EMPTY_PROJECT: ProjectData = { settings: null as any, scripts: {}, keys: {}, rewards: {} };
 
-export function getPasteId(): string { return cachedPasteId; }
+// ─── PUBLIC API ───
 
-async function getOrCreatePasteId(): Promise<string> {
-  if (cachedPasteId) return cachedPasteId;
-
-  console.log("[SyncAuth] No PASTEFY_PASTE_ID env var set. Creating new paste...");
-  const res = await fetch(`${PASTEFY_BASE}/paste`, {
-    method: "POST",
-    headers: jsonHeaders(),
-    body: JSON.stringify({ title: "syncauth-db", content: JSON.stringify(EMPTY_DB) }),
-  });
-  if (!res.ok) throw new Error(`Pastefy create failed: ${res.status} ${await res.text()}`);
-  const data = await res.json();
-  cachedPasteId = data.paste?.id || data.id;
-  if (!cachedPasteId) throw new Error("No paste id in response");
-  console.log(`[SyncAuth] ✅ Created paste: ${cachedPasteId}`);
-  console.log(`[SyncAuth] ⚠️ Add this to Vercel env vars: PASTEFY_PASTE_ID=${cachedPasteId}`);
-  return cachedPasteId;
+export async function getProjects(): Promise<Project[]> {
+  const m = await getMaster();
+  return Object.entries(m.projects).map(([id, p]) => ({ ...p, id } as unknown as Project));
 }
 
-export async function getDB(): Promise<DB> {
-  const pid = await getOrCreatePasteId();
-  const res = await fetch(`${PASTEFY_BASE}/paste/${pid}`, { headers: authHeaders() });
-  if (!res.ok) {
-    if (!ENV_PASTE_ID) { cachedPasteId = ""; return getDB(); }
-    throw new Error(`Pastefy read failed: ${res.status}`);
+export async function getProject(id: string): Promise<Project | null> {
+  const m = await getMaster();
+  const p = m.projects[id];
+  if (!p) return null;
+  return { ...p, id } as unknown as Project;
+}
+
+async function loadProjectData(pasteId: string): Promise<ProjectData> {
+  const data = await readPaste(pasteId);
+  return { ...EMPTY_PROJECT, ...data };
+}
+
+async function saveProjectData(pasteId: string, data: ProjectData): Promise<void> {
+  await writePaste(pasteId, data);
+}
+
+export async function createProject(project: Project): Promise<void> {
+  const data: ProjectData = { ...EMPTY_PROJECT, settings: project };
+  const pasteId = await createPaste(data);
+  const m = await getMaster();
+  m.projects[project.id] = { paste_id: pasteId, name: project.name, created_at: project.created_at };
+  await saveMaster(m);
+}
+
+export async function updateProject(id: string, updates: Partial<Project>): Promise<void> {
+  const m = await getMaster();
+  const p = m.projects[id];
+  if (!p) throw new Error("Not found");
+  const data = await loadProjectData(p.paste_id);
+  Object.assign(data.settings, updates);
+  await saveProjectData(p.paste_id, data);
+  m.projects[id].name = data.settings.name;
+  await saveMaster(m);
+}
+
+export async function deleteProject(id: string): Promise<void> {
+  const m = await getMaster();
+  const p = m.projects[id];
+  if (!p) return;
+  m.projects[id] = undefined as any;
+  delete m.projects[id];
+  await saveMaster(m);
+}
+
+// ─── SCRIPTS ───
+export async function getScripts(projectId: string): Promise<Script[]> {
+  const m = await getMaster();
+  const p = m.projects[projectId];
+  if (!p) return [];
+  const data = await loadProjectData(p.paste_id);
+  return Object.values(data.scripts);
+}
+
+export async function createScript(projectId: string, script: Script): Promise<void> {
+  const m = await getMaster();
+  const p = m.projects[projectId];
+  if (!p) throw new Error("Project not found");
+  const data = await loadProjectData(p.paste_id);
+  data.scripts[script.id] = script;
+  await saveProjectData(p.paste_id, data);
+}
+
+export async function getScript(id: string): Promise<Script | null> {
+  const m = await getMaster();
+  for (const [pid, p] of Object.entries(m.projects)) {
+    const data = await loadProjectData(p.paste_id);
+    if (data.scripts[id]) return data.scripts[id];
   }
-  const data = await res.json();
-  const content = data.paste?.content || data.content || "{}";
-  try { return JSON.parse(content); } catch { return EMPTY_DB; }
+  return null;
 }
 
-export async function saveDB(db: DB): Promise<void> {
-  const pid = await getOrCreatePasteId();
-  const res = await fetch(`${PASTEFY_BASE}/paste/${pid}`, {
-    method: "PUT",
-    headers: jsonHeaders(),
-    body: JSON.stringify({ content: JSON.stringify(db) }),
-  });
-  if (!res.ok) throw new Error(`Pastefy save failed: ${res.status}`);
+export async function updateScript(id: string, updates: Partial<Script>): Promise<void> {
+  const m = await getMaster();
+  for (const [pid, p] of Object.entries(m.projects)) {
+    const data = await loadProjectData(p.paste_id);
+    if (data.scripts[id]) {
+      Object.assign(data.scripts[id], updates);
+      await saveProjectData(p.paste_id, data);
+      return;
+    }
+  }
+  throw new Error("Not found");
 }
 
-export async function updateDB(updater: (db: DB) => void): Promise<DB> {
-  const db = await getDB();
-  updater(db);
-  await saveDB(db);
-  return db;
+export async function deleteScript(id: string): Promise<void> {
+  const m = await getMaster();
+  for (const [pid, p] of Object.entries(m.projects)) {
+    const data = await loadProjectData(p.paste_id);
+    if (data.scripts[id]) {
+      delete data.scripts[id];
+      await saveProjectData(p.paste_id, data);
+      return;
+    }
+  }
 }
 
+// ─── KEYS ───
+export async function createKey(projectId: string, entry: KeyEntry): Promise<void> {
+  const m = await getMaster();
+  const p = m.projects[projectId];
+  if (!p) throw new Error("Project not found");
+  const data = await loadProjectData(p.paste_id);
+  data.keys[entry.key] = entry;
+  await saveProjectData(p.paste_id, data);
+}
+
+export async function getKey(key: string): Promise<KeyEntry | null> {
+  const m = await getMaster();
+  for (const [pid, p] of Object.entries(m.projects)) {
+    const data = await loadProjectData(p.paste_id);
+    if (data.keys[key]) return data.keys[key];
+  }
+  return null;
+}
+
+export async function updateKey(key: string, cb: (entry: KeyEntry) => void): Promise<void> {
+  const m = await getMaster();
+  for (const [pid, p] of Object.entries(m.projects)) {
+    const data = await loadProjectData(p.paste_id);
+    if (data.keys[key]) {
+      cb(data.keys[key]);
+      await saveProjectData(p.paste_id, data);
+      return;
+    }
+  }
+}
+
+export async function deleteKey(key: string): Promise<void> {
+  const m = await getMaster();
+  for (const [pid, p] of Object.entries(m.projects)) {
+    const data = await loadProjectData(p.paste_id);
+    if (data.keys[key]) {
+      delete data.keys[key];
+      await saveProjectData(p.paste_id, data);
+      return;
+    }
+  }
+}
+
+// ─── REWARDS ───
+export async function getRewardSession(id: string): Promise<RewardSession | null> {
+  const m = await getMaster();
+  for (const [pid, p] of Object.entries(m.projects)) {
+    const data = await loadProjectData(p.paste_id);
+    if (data.rewards[id]) return data.rewards[id];
+  }
+  return null;
+}
+
+export async function createRewardSession(projectId: string, session: RewardSession): Promise<void> {
+  const m = await getMaster();
+  const p = m.projects[projectId];
+  if (!p) throw new Error("Project not found");
+  const data = await loadProjectData(p.paste_id);
+  data.rewards[session.id] = session;
+  await saveProjectData(p.paste_id, data);
+}
+
+export async function updateRewardSession(projectId: string, id: string, cb: (s: RewardSession) => void): Promise<void> {
+  const m = await getMaster();
+  const p = m.projects[projectId];
+  if (!p) throw new Error("Project not found");
+  const data = await loadProjectData(p.paste_id);
+  if (data.rewards[id]) {
+    cb(data.rewards[id]);
+    await saveProjectData(p.paste_id, data);
+  }
+}
+
+// ─── UTILS ───
 export function generateId(len = 14): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
   let id = "";
@@ -107,9 +290,13 @@ export function generateKey(): string {
 
 export function hashHwid(raw: string): string {
   let hash = 0;
-  for (let i = 0; i < raw.length; i++) {
-    hash = ((hash << 5) - hash) + raw.charCodeAt(i);
-    hash |= 0;
-  }
+  for (let i = 0; i < raw.length; i++) { hash = ((hash << 5) - hash) + raw.charCodeAt(i); hash |= 0; }
   return "hw_" + Math.abs(hash).toString(16).padStart(8, "0") + raw.length.toString(16);
+}
+
+export { ensureMaster as setup, masterId };
+
+export async function getSetupInfo() {
+  const mid = await ensureMaster();
+  return { master_paste_id: mid };
 }

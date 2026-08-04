@@ -1,12 +1,11 @@
-import { getDB, getPasteId } from "@/lib/pastefy";
+import { setup } from "@/lib/pastefy";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  await getDB();
-  const pid = getPasteId();
+  const mid = await setup();
   return Response.json({
-    paste_id: pid,
-    instructions: "Add this env var to Vercel: PASTEFY_PASTE_ID=" + pid,
+    master_paste_id: mid,
+    instructions: "Add to Vercel env vars: PASTEFY_PASTE_ID=" + mid,
   });
 }

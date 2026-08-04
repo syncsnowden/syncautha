@@ -1,10 +1,10 @@
-import { getDB, updateDB, generateId, type Project } from "@/lib/pastefy";
+import { getProjects, createProject, generateId, type Project } from "@/lib/pastefy";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const db = await getDB();
-  return Response.json(Object.values(db.projects));
+  const projects = await getProjects();
+  return Response.json(projects);
 }
 
 export async function POST(req: Request) {
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
       max_hours: Number(body.max_hours) || 0,
       lootlabs_link: body.lootlabs_link || "",
     };
-    await updateDB((db) => { db.projects[id] = project; });
+    await createProject(project);
     return Response.json(project, { status: 201 });
   } catch (e: any) {
     console.error("Project create error:", e);

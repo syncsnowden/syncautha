@@ -1,11 +1,10 @@
-import { getDB, updateDB, generateId, type Script } from "@/lib/pastefy";
+import { getScripts, createScript, generateId, type Script } from "@/lib/pastefy";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const db = await getDB();
-  const scripts = Object.values(db.scripts).filter((s) => s.project_id === id);
+  const scripts = await getScripts(id);
   return Response.json(scripts);
 }
 
@@ -13,18 +12,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { id: project_id } = await params;
   try {
     const body = await req.json();
-    const scriptId = generateId(14);
     const script: Script = {
-      id: scriptId,
+      id: generateId(14),
       project_id,
-      name: body.name || "Untitled Script",
+      name: body.name || "Untitled",
       silent_mode: body.silent_mode ?? false,
       script_code: body.script_code || "",
       created_at: Date.now(),
     };
-    await updateDB((db) => { db.scripts[scriptId] = script; });
+    await createScript(project_id, script);
     return Response.json(script, { status: 201 });
   } catch {
-    return Response.json({ error: "Failed to create script." }, { status: 500 });
+    return Response.json({ error: "Failed." }, { status: 500 });
   }
 }
