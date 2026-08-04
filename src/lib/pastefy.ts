@@ -1,62 +1,35 @@
 const PASTEFY_BASE = "https://pastefy.app/api/v2";
 const API_KEY = process.env.PASTEFY_API_KEY || "sMBc9KgDW5Jy0PlP5GWCAa4Tlt4VJwJ2BQWJxW46NsLTYHEQbs3u4i8TyI4O";
-const PASTE_ID = process.env.PASTEFY_PASTE_ID || "";
+const ENV_PASTE_ID = process.env.PASTEFY_PASTE_ID || "";
 
 function authHeaders() { return { Authorization: `Bearer ${API_KEY}` }; }
 function jsonHeaders() { return { Authorization: `Bearer ${API_KEY}`, "Content-Type": "application/json" }; }
 
 export interface Project {
-  id: string;
-  name: string;
-  logs_webhook: string;
-  alert_webhook: string;
-  cooldown: number;
-  allow_hwid_reset: boolean;
-  auto_delete_expired: boolean;
-  allow_hwid_clone: boolean;
-  log_hwid: boolean;
-  log_ip: boolean;
-  log_username: boolean;
-  log_displayname: boolean;
-  log_time: boolean;
-  log_key: boolean;
-  log_executor: boolean;
-  log_jobid: boolean;
-  created_at: number;
-  key_duration: number;
-  max_keys: number;
-  allow_extending: boolean;
-  reward_cooldown: number;
-  allow_forgetting: boolean;
-  max_hours: number;
-  lootlabs_link: string;
+  id: string; name: string; logs_webhook: string; alert_webhook: string;
+  cooldown: number; allow_hwid_reset: boolean; auto_delete_expired: boolean;
+  allow_hwid_clone: boolean; log_hwid: boolean; log_ip: boolean;
+  log_username: boolean; log_displayname: boolean; log_time: boolean;
+  log_key: boolean; log_executor: boolean; log_jobid: boolean;
+  created_at: number; key_duration: number; max_keys: number;
+  allow_extending: boolean; reward_cooldown: number; allow_forgetting: boolean;
+  max_hours: number; lootlabs_link: string;
 }
 
 export interface Script {
-  id: string;
-  project_id: string;
-  name: string;
-  silent_mode: boolean;
-  script_code: string;
-  created_at: number;
+  id: string; project_id: string; name: string;
+  silent_mode: boolean; script_code: string; created_at: number;
 }
 
 export interface KeyEntry {
-  key: string;
-  project_id: string;
-  hwid: string | null;
-  created: number;
-  expires: number;
-  status: "unused" | "used";
+  key: string; project_id: string; hwid: string | null;
+  created: number; expires: number; status: "unused" | "used";
   linked_reward: string | null;
 }
 
 export interface RewardSession {
-  id: string;
-  project_id: string;
-  status: "pending" | "completed";
-  created: number;
-  used: boolean;
+  id: string; project_id: string; status: "pending" | "completed";
+  created: number; used: boolean;
 }
 
 export interface DB {
@@ -67,11 +40,14 @@ export interface DB {
 }
 
 const EMPTY_DB: DB = { projects: {}, scripts: {}, keys: {}, rewards: {} };
-let cachedPasteId = PASTE_ID;
+let cachedPasteId = ENV_PASTE_ID;
+
+export function getPasteId(): string { return cachedPasteId; }
 
 async function getOrCreatePasteId(): Promise<string> {
   if (cachedPasteId) return cachedPasteId;
 
+  console.log("[SyncAuth] No PASTEFY_PASTE_ID env var set. Creating new paste...");
   const res = await fetch(`${PASTEFY_BASE}/paste`, {
     method: "POST",
     headers: jsonHeaders(),
@@ -81,6 +57,8 @@ async function getOrCreatePasteId(): Promise<string> {
   const data = await res.json();
   cachedPasteId = data.paste?.id || data.id;
   if (!cachedPasteId) throw new Error("No paste id in response");
+  console.log(`[SyncAuth] ✅ Created paste: ${cachedPasteId}`);
+  console.log(`[SyncAuth] ⚠️ Add this to Vercel env vars: PASTEFY_PASTE_ID=${cachedPasteId}`);
   return cachedPasteId;
 }
 
@@ -88,8 +66,8 @@ export async function getDB(): Promise<DB> {
   const pid = await getOrCreatePasteId();
   const res = await fetch(`${PASTEFY_BASE}/paste/${pid}`, { headers: authHeaders() });
   if (!res.ok) {
-    cachedPasteId = "";
-    return EMPTY_DB;
+    if (!ENV_PASTE_ID) { cachedPasteId = ""; return getDB(); }
+    throw new Error(`Pastefy read failed: ${res.status}`);
   }
   const data = await res.json();
   const content = data.paste?.content || data.content || "{}";
@@ -103,7 +81,7 @@ export async function saveDB(db: DB): Promise<void> {
     headers: jsonHeaders(),
     body: JSON.stringify({ content: JSON.stringify(db) }),
   });
-  if (!res.ok) throw new Error(`Pastefy save failed: ${res.status} ${await res.text()}`);
+  if (!res.ok) throw new Error(`Pastefy save failed: ${res.status}`);
 }
 
 export async function updateDB(updater: (db: DB) => void): Promise<DB> {
