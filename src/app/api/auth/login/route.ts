@@ -1,9 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-
 export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
     const body = await req.json();
     const email = body.identifier || body.email || "";
@@ -11,7 +8,7 @@ export async function POST(req: NextRequest) {
     const remember = body.remember || false;
 
     if (!email || !password) {
-      return NextResponse.json({ error: "Email and password required." }, { status: 400 });
+      return Response.json({ error: "Email and password required." }, { status: 400 });
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -22,7 +19,6 @@ export async function POST(req: NextRequest) {
       headers: {
         "Content-Type": "application/json",
         apikey: supabaseAnonKey!,
-        Authorization: `Bearer ${supabaseAnonKey}`,
       },
       body: JSON.stringify({ email, password }),
     });
@@ -30,45 +26,32 @@ export async function POST(req: NextRequest) {
     const authData = await authRes.json();
 
     if (!authRes.ok) {
-      return NextResponse.json(
-        { error: authData.error_description || authData.msg || "Invalid credentials." },
+      return Response.json(
+        { error: authData.error_description || "Invalid credentials." },
         { status: 401 }
       );
     }
 
-    const response = NextResponse.json(
+    const maxAge = remember ? 30 * 24 * 60 * 60 : undefined;
+
+    const res = Response.json(
       { success: true, user: { id: authData.user.id, email: authData.user.email } },
       { status: 200 }
     );
 
-    const maxAge = remember ? 30 * 24 * 60 * 60 : undefined;
-
     if (authData.access_token) {
-      response.cookies.set("sb-access-token", authData.access_token, {
-        path: "/",
-        maxAge,
-        sameSite: "lax",
-        httpOnly: true,
-        secure: true,
-      });
+      res.headers.append("Set-Cookie", `sb-access-token=${authData.access_token}; Path=/; HttpOnly; Secure; SameSite=Lax${maxAge ? `; Max-Age=${maxAge}` : ""}`);
     }
     if (authData.refresh_token) {
-      response.cookies.set("sb-refresh-token", authData.refresh_token, {
-        path: "/",
-        maxAge,
-        sameSite: "lax",
-        httpOnly: true,
-        secure: true,
-      });
+      res.headers.append("Set-Cookie", `sb-refresh-token=${authData.refresh_token}; Path=/; HttpOnly; Secure; SameSite=Lax${maxAge ? `; Max-Age=${maxAge}` : ""}`);
     }
-
     if (remember) {
-      response.cookies.set("syncauth-remember", "true", { path: "/", maxAge, sameSite: "lax" });
+      res.headers.append("Set-Cookie", `syncauth-remember=true; Path=/; SameSite=Lax; Max-Age=${maxAge}`);
     }
 
-    return response;
+    return res;
   } catch (err) {
     console.error("Login Error:", err);
-    return NextResponse.json({ error: "Internal server error." }, { status: 500 });
+    return Response.json({ error: "Internal server error." }, { status: 500 });
   }
 }
