@@ -17,7 +17,9 @@ export async function POST(req: Request) {
       status: "pending", created: Date.now(), used: false,
     });
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || req.headers.get("origin") || "";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ||
+      (req.headers.get("origin") || "").replace(/\/+$/, "") ||
+      `https://${req.headers.get("host") || ""}`;
     const postbackUrl = `${siteUrl}/api/rewards/postback?sid=${sid}`;
 
     let lootlabsUrl = "";

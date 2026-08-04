@@ -250,12 +250,42 @@ export default function ProjectDetailPage() {
                   <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                     <div className="input-group">
                       <label className="input-label">Script Name</label>
-                      <input className="input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Main Script" />
+                      <input className="input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Main Script, Aimbot, ESP" />
                     </div>
                     <Toggle label="Silent Mode (remove F9 logs/prints)" checked={form.silent_mode} onChange={v => setForm({ ...form, silent_mode: v })} />
-                    <div className="input-group">
-                      <label className="input-label">Upload Script File (.lua / .txt)</label>
-                      <input type="file" accept=".lua,.txt" onChange={handleFileUpload} style={{ color: "var(--text-2)", fontSize: 13 }} />
+                    <div
+                      onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "var(--accent)"; }}
+                      onDragLeave={(e) => { e.currentTarget.style.borderColor = "var(--border-2)"; }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.style.borderColor = "var(--border-2)";
+                        const file = e.dataTransfer.files[0];
+                        if (!file) return;
+                        if (!file.name.endsWith(".lua") && !file.name.endsWith(".txt")) { toast.error("Only .lua or .txt files"); return; }
+                        const reader = new FileReader();
+                        reader.onload = () => setForm({ ...form, script_code: reader.result as string, name: form.name || file.name.replace(/\.(lua|txt)$/, "") });
+                        reader.readAsText(file);
+                      }}
+                      style={{
+                        border: "2px dashed var(--border-2)",
+                        borderRadius: 10,
+                        padding: "24px 16px",
+                        textAlign: "center",
+                        cursor: "pointer",
+                        transition: "border-color 0.2s",
+                        background: "var(--bg-2)",
+                      }}
+                      onClick={() => document.getElementById("scriptFileInput")?.click()}
+                    >
+                      <input id="scriptFileInput" type="file" accept=".lua,.txt" onChange={handleFileUpload} style={{ display: "none" }} />
+                      <i className="fa-solid fa-cloud-arrow-up" style={{ fontSize: 28, color: "var(--text-3)", marginBottom: 8 }} />
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-2)" }}>Drop your .lua file here</div>
+                      <div style={{ fontSize: 12, color: "var(--text-3)", marginTop: 4 }}>or click to browse</div>
+                      {form.script_code && (
+                        <div style={{ marginTop: 8, fontSize: 12, color: "var(--accent)", fontWeight: 600 }}>
+                          {form.script_code.length.toLocaleString()} characters loaded
+                        </div>
+                      )}
                     </div>
                     <div className="input-group">
                       <label className="input-label">Script Code</label>

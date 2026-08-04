@@ -10,36 +10,42 @@ let masterId = ENV_MASTER_ID;
 async function ensureMaster(): Promise<string> {
   if (masterId) return masterId;
 
-  // Try to find an existing master paste by searching
+  // Try ENV var first
+  if (ENV_MASTER_ID) {
+    masterId = ENV_MASTER_ID;
+    return masterId;
+  }
+
+  // Search user's pastes for existing master
   try {
-    const searchRes = await fetch(
-      `${PASTEFY_BASE}/paste?search=syncauth-master&limit=5`,
-      { headers: authH() }
-    );
-    if (searchRes.ok) {
-      const searchData = await searchRes.json();
-      const items = searchData.items || searchData.data || [];
-      if (items.length > 0) {
-        masterId = items[0].id || items[0].paste?.id;
-        if (masterId) {
-          console.log(`[SyncAuth] Found existing master: ${masterId}`);
+    const listRes = await fetch(`${PASTEFY_BASE}/paste?limit=100`, { headers: authH() });
+    if (listRes.ok) {
+      const listData = await listRes.json();
+      const items = listData.items || listData.data || [];
+      for (const item of items) {
+        const p = item.paste || item;
+        if (p.title === "syncauth-master") {
+          masterId = p.id;
+          console.log(`[SyncAuth] Found master: ${masterId}`);
           return masterId;
         }
       }
     }
-  } catch {}
+  } catch (e) {
+    console.error("[SyncAuth] List search failed:", e);
+  }
 
-  // Create new master paste
+  // Create new master
   const res = await fetch(`${PASTEFY_BASE}/paste`, {
     method: "POST", headers: jsonH(),
     body: JSON.stringify({ title: "syncauth-master", content: JSON.stringify({ projects: {} }) }),
   });
-  if (!res.ok) throw new Error(`Master create failed: ${res.status}`);
+  if (!res.ok) throw new Error(`Master create failed: ${res.status} ${await res.text()}`);
   const d = await res.json();
   masterId = d.paste?.id || d.id;
   if (!masterId) throw new Error("No master id");
   console.log(`[SyncAuth] Created master: ${masterId}`);
-  console.log(`[SyncAuth] ⚠️ Set PASTEFY_PASTE_ID=${masterId} on Vercel for guaranteed persistence`);
+  console.log(`[SyncAuth] Set PASTEFY_PASTE_ID=${masterId} on Vercel to lock it`);
   return masterId;
 }
 
