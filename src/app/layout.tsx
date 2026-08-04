@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Toaster } from "react-hot-toast";
+import ThemeToaster from "@/components/ThemeToaster";
 
 export const metadata: Metadata = {
   title: "SyncAuth — Secure License Authentication",
@@ -42,32 +42,7 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            style: {
-              background: "rgba(13, 27, 62, 0.95)",
-              backdropFilter: "blur(20px)",
-              color: "#f0f4ff",
-              border: "1px solid rgba(0, 200, 224, 0.25)",
-              borderRadius: "12px",
-              fontFamily: "Inter, sans-serif",
-              fontSize: "0.875rem",
-            },
-            success: {
-              iconTheme: {
-                primary: "#00c8e0",
-                secondary: "#060d1f",
-              },
-            },
-            error: {
-              iconTheme: {
-                primary: "#ef4444",
-                secondary: "#fff",
-              },
-            },
-          }}
-        />
+        <ThemeToaster />
         {children}
       </body>
     </html>

@@ -56,8 +56,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     router.push("/login");
   };
 
-  const initials = username.slice(0, 2).toUpperCase();
-
   return (
     <div style={{ display: "flex" }}>
       {/* Sidebar */}
@@ -91,25 +89,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <i className="fa-brands fa-discord nav-icon" style={{ color: "#5865f2" }} />
             Discord
           </a>
-        </nav>
 
-        {/* Bottom */}
-        <div className="sidebar-bottom">
           {/* Logout */}
-          <button className="nav-item danger" onClick={handleLogout}>
+          <button className="nav-item danger" onClick={handleLogout} style={{ marginTop: 4 }}>
             <i className="fa-solid fa-arrow-right-from-bracket nav-icon" />
             Log out
           </button>
 
           {/* User info */}
-          <div className="sidebar-user" style={{ marginTop: 4 }}>
+          <div className="sidebar-user" style={{ marginTop: 12, padding: "8px 10px" }}>
             <i className="fa-solid fa-circle-user" style={{ fontSize: 28, color: "var(--accent)", flexShrink: 0 }} />
             <div className="sidebar-user-info">
               <div className="sidebar-username">{username}</div>
               <div className="sidebar-email">{email}</div>
             </div>
           </div>
-        </div>
+        </nav>
       </aside>
 
       {/* Page */}
