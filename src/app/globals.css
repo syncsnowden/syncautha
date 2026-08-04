@@ -185,19 +185,21 @@ body {
   margin-left: var(--sidebar-w);
   min-height: 100vh;
   background: var(--bg);
+  width: calc(100vw - var(--sidebar-w));
+  display: flex;
+  flex-direction: column;
 }
 
 .page-header {
-  padding: 28px 32px 0;
+  padding: 24px 28px 0;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 0;
 }
 
 .page-title {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--text-1);
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   letter-spacing: -0.01em;
 }
 
@@ -208,7 +210,9 @@ body {
 }
 
 .page-body {
-  padding: 28px 32px;
+  padding: 24px 28px;
+  flex: 1;
+  width: 100%;
 }
 
 /* ---- CARDS ---- */
@@ -489,9 +493,39 @@ tr:hover td { background: var(--bg-2); color: var(--text-1); }
   justify-content: center;
   padding: 24px 16px;
   background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle grid pattern */
+.auth-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* Top center glow */
+.auth-page::after {
+  content: '';
+  position: absolute;
+  top: -120px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 400px;
+  background: radial-gradient(ellipse at center, rgba(0,200,224,0.07) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .auth-card {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 380px;
   background: var(--bg-1);
