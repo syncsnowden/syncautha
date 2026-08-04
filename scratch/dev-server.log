@@ -1,0 +1,351 @@
+
+> syncauth-app@0.1.0 dev
+> next dev
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.8.125:3000
+- Environments: .env.local
+✓ Ready in 465ms
+⚠ Warning: Next.js ignored package-lock.json in C:\Users\sync3\Downloads because it is outside the current Git repository (C:\Users\sync3\Downloads\syncauthh\syncauth-app).
+ To use this directory, set `turbopack.root` in your Next.js config.
+
+✓ Running next.config.ts took 49ms
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead.
+
+  To migrate automatically, run:
+  npx @next/codemod@canary middleware-to-proxy .
+
+  Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+
+ POST /api/auth/register 201 in 1183ms (next.js: 539ms, proxy.ts: 80ms, application-code: 563ms)
+ POST /api/auth/login 200 in 730ms (next.js: 155ms, proxy.ts: 6ms, application-code: 569ms)
+ GET /dashboard 200 in 1632ms (next.js: 1345ms, proxy.ts: 98ms, application-code: 190ms)
+✓ Compiled in 31ms
+ POST /api/auth/register 201 in 433ms (next.js: 5ms, proxy.ts: 24ms, application-code: 405ms)
+ POST /api/auth/login 200 in 646ms (next.js: 3ms, proxy.ts: 3ms, application-code: 639ms)
+ GET /dashboard 200 in 210ms (next.js: 5ms, proxy.ts: 173ms, application-code: 33ms)
+✓ Compiled in 25ms
+ POST /api/auth/register 201 in 942ms (next.js: 9ms, proxy.ts: 18ms, application-code: 915ms)
+ POST /api/auth/login 200 in 597ms (next.js: 6ms, proxy.ts: 4ms, application-code: 587ms)
+ GET /dashboard 200 in 153ms (next.js: 9ms, proxy.ts: 111ms, application-code: 34ms)
+ GET /login 200 in 388ms (next.js: 323ms, proxy.ts: 3ms, application-code: 62ms)
+ GET /dashboard 200 in 218ms (next.js: 4ms, proxy.ts: 170ms, application-code: 44ms)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/dashboard" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <RootLayout>
+                        <html lang="en" suppressHydrationWarning={true}>
+                          <head>
+                          <body
+-                           className="antigravity-scroll-lock"
+                          >
+                  ...
+ 
+ GET /login 200 in 32ms (next.js: 4ms, proxy.ts: 6ms, application-code: 22ms)
+[browser] Image with src "/syncauthlogo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[login] Supabase error: Invalid login credentials
+ POST /api/auth/login 401 in 314ms (next.js: 3ms, proxy.ts: 6ms, application-code: 305ms)
+ GET /register 200 in 280ms (next.js: 255ms, proxy.ts: 5ms, application-code: 20ms)
+ GET /login 200 in 34ms (next.js: 5ms, proxy.ts: 6ms, application-code: 23ms)
+ GET /register 200 in 33ms (next.js: 5ms, proxy.ts: 4ms, application-code: 24ms)
+ POST /api/auth/register 201 in 342ms (next.js: 3ms, proxy.ts: 4ms, application-code: 335ms)
+ GET /dashboard 307 in 97ms (proxy.ts: 90ms)
+ GET /dashboard 200 in 126ms (next.js: 6ms, proxy.ts: 97ms, application-code: 23ms)
+ POST /api/auth/register 201 in 446ms (next.js: 2ms, proxy.ts: 4ms, application-code: 440ms)
+ POST /api/auth/login 200 in 558ms (next.js: 2ms, proxy.ts: 3ms, application-code: 553ms)
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at ignore-listed frames {
+  
+}
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at ignore-listed frames {
+  
+}
+@supabase/ssr: could not base64url-decode chunked cookie value, treating as absent. Cookie chunks may have been written partially across responses. Error: Invalid UTF-8 sequence
+    at async middleware (src\middleware.ts:54:9)
+  52 |     const {
+  53 |       data: { user },
+> 54 |     } = await supabase.auth.getUser();
+     |         ^
+  55 |
+  56 |     const { pathname } = request.nextUrl;
+  57 | {
+  
+}
+⨯ Error [SyntaxError]: Identifier 'pathname' has already been declared
+    at <unknown> (.next\dev\server\edge\chunks\[root-of-the-server]__13jvavz._.js:73)
+✓ Compiled in 40ms
+[browser] ./src/middleware.ts:66:13
+Error: the name `pathname` is defined multiple times
+  64 |     } = await supabase.auth.getUser();
+  65 |
+> 66 |     const { pathname } = request.nextUrl;
+     |             ^^^^^^^^
+  67 |
+  68 |     // Redirect unauthenticated users away from protected routes
+  69 |     const protectedRoutes = ["/dashboard", "/keys", "/users", "/profile"];
+
+Ecmascript file had an error 
+[browser] ./src/middleware.ts:66:13
+Error: the name `pathname` is defined multiple times
+  64 |     } = await supabase.auth.getUser();
+  65 |
+> 66 |     const { pathname } = request.nextUrl;
+     |             ^^^^^^^^
+  67 |
+  68 |     // Redirect unauthenticated users away from protected routes
+  69 |     const protectedRoutes = ["/dashboard", "/keys", "/users", "/profile"];
+
+Ecmascript file had an error 
+[browser] ./src/middleware.ts:66:13
+Error: the name `pathname` is defined multiple times
+  64 |     } = await supabase.auth.getUser();
+  65 |
+> 66 |     const { pathname } = request.nextUrl;
+     |             ^^^^^^^^
+  67 |
+  68 |     // Redirect unauthenticated users away from protected routes
+  69 |     const protectedRoutes = ["/dashboard", "/keys", "/users", "/profile"];
+
+Ecmascript file had an error 
+[browser] ./src/middleware.ts:66:13
+Error: the name `pathname` is defined multiple times
+  64 |     } = await supabase.auth.getUser();
+  65 |
+> 66 |     const { pathname } = request.nextUrl;
+     |             ^^^^^^^^
+  67 |
+  68 |     // Redirect unauthenticated users away from protected routes
+  69 |     const protectedRoutes = ["/dashboard", "/keys", "/users", "/profile"];
+
+Ecmascript file had an error 
+[browser] ./src/middleware.ts:66:13
+Error: the name `pathname` is defined multiple times
+  64 |     } = await supabase.auth.getUser();
+  65 |
+> 66 |     const { pathname } = request.nextUrl;
+     |             ^^^^^^^^
+  67 |
+  68 |     // Redirect unauthenticated users away from protected routes
+  69 |     const protectedRoutes = ["/dashboard", "/keys", "/users", "/profile"];
+
+Ecmascript file had an error 
+ GET /dashboard 404 in 1050ms (next.js: -118.5ms, proxy.ts: 1045ms, application-code: 124ms)
+⨯ Error [SyntaxError]: Identifier 'pathname' has already been declared
+    at <unknown> (.next\dev\server\edge\chunks\[root-of-the-server]__13jvavz._.js:73)
+⨯ Error [SyntaxError]: Identifier 'pathname' has already been declared
+    at <unknown> (.next\dev\server\edge\chunks\[root-of-the-server]__13jvavz._.js:73)
+ GET /dashboard 404 in 25ms (next.js: -9.5ms, proxy.ts: 18ms, application-code: 17ms)
+⨯ Error [SyntaxError]: Identifier 'pathname' has already been declared
+    at <unknown> (.next\dev\server\edge\chunks\[root-of-the-server]__13jvavz._.js:73)
+ GET /dashboard 404 in 24ms (next.js: -8.9ms, proxy.ts: 22ms, application-code: 12ms)
+ GET /dashboard 404 in 30ms (next.js: -7.4ms, proxy.ts: 26ms, application-code: 11ms)
+⨯ Error [SyntaxError]: Identifier 'pathname' has already been declared
+    at <unknown> (.next\dev\server\edge\chunks\[root-of-the-server]__13jvavz._.js:73)
+[browser] Uncaught Error: ./src/middleware.ts:66:13
+Error: the name `pathname` is defined multiple times
+  64 |     } = await supabase.auth.getUser();
+  65 |
+> 66 |     const { pathname } = request.nextUrl;
+     |             ^^^^^^^^
+  67 |
+  68 |     // Redirect unauthenticated users away from protected routes
+  69 |     const protectedRoutes = ["/dashboard", "/keys", "/users", "/profile"];
+
+Ecmascript file had an error
+
+
+    at <unknown> (Error: ./src/middleware.ts:66:13)
+    at <unknown> (Error: (./src/middleware.ts:66:13)
+[browser] ./src/middleware.ts:66:13
+Error: the name `pathname` is defined multiple times
+  64 |     } = await supabase.auth.getUser();
+  65 |
+> 66 |     const { pathname } = request.nextUrl;
+     |             ^^^^^^^^
+  67 |
+  68 |     // Redirect unauthenticated users away from protected routes
+  69 |     const protectedRoutes = ["/dashboard", "/keys", "/users", "/profile"];
+
+Ecmascript file had an error 
+[browser] ./src/middleware.ts:66:13
+Error: the name `pathname` is defined multiple times
+  64 |     } = await supabase.auth.getUser();
+  65 |
+> 66 |     const { pathname } = request.nextUrl;
+     |             ^^^^^^^^
+  67 |
+  68 |     // Redirect unauthenticated users away from protected routes
+  69 |     const protectedRoutes = ["/dashboard", "/keys", "/users", "/profile"];
+
+Ecmascript file had an error 
+[browser] ./src/middleware.ts:66:13
+Error: the name `pathname` is defined multiple times
+  64 |     } = await supabase.auth.getUser();
+  65 |
+> 66 |     const { pathname } = request.nextUrl;
+     |             ^^^^^^^^
+  67 |
+  68 |     // Redirect unauthenticated users away from protected routes
+  69 |     const protectedRoutes = ["/dashboard", "/keys", "/users", "/profile"];
+
+Ecmascript file had an error 
+[browser] ./src/middleware.ts:66:13
+Error: the name `pathname` is defined multiple times
+  64 |     } = await supabase.auth.getUser();
+  65 |
+> 66 |     const { pathname } = request.nextUrl;
+     |             ^^^^^^^^
+  67 |
+  68 |     // Redirect unauthenticated users away from protected routes
+  69 |     const protectedRoutes = ["/dashboard", "/keys", "/users", "/profile"];
+
+Ecmascript file had an error 
+[browser] ./src/middleware.ts:66:13
+Error: the name `pathname` is defined multiple times
+  64 |     } = await supabase.auth.getUser();
+  65 |
+> 66 |     const { pathname } = request.nextUrl;
+     |             ^^^^^^^^
+  67 |
+  68 |     // Redirect unauthenticated users away from protected routes
+  69 |     const protectedRoutes = ["/dashboard", "/keys", "/users", "/profile"];
+
+Ecmascript file had an error 
+[browser] ./src/middleware.ts:66:13
+Error: the name `pathname` is defined multiple times
+  64 |     } = await supabase.auth.getUser();
+  65 |
+> 66 |     const { pathname } = request.nextUrl;
+     |             ^^^^^^^^
+  67 |
+  68 |     // Redirect unauthenticated users away from protected routes
+  69 |     const protectedRoutes = ["/dashboard", "/keys", "/users", "/profile"];
+
+Ecmascript file had an error 
+[browser] ./src/middleware.ts:66:13
+Error: the name `pathname` is defined multiple times
+  64 |     } = await supabase.auth.getUser();
+  65 |
+> 66 |     const { pathname } = request.nextUrl;
+     |             ^^^^^^^^
+  67 |
+  68 |     // Redirect unauthenticated users away from protected routes
+  69 |     const protectedRoutes = ["/dashboard", "/keys", "/users", "/profile"];
+
+Ecmascript file had an error 
+[browser] ./src/middleware.ts:66:13
+Error: the name `pathname` is defined multiple times
+  64 |     } = await supabase.auth.getUser();
+  65 |
+> 66 |     const { pathname } = request.nextUrl;
+     |             ^^^^^^^^
+  67 |
+  68 |     // Redirect unauthenticated users away from protected routes
+  69 |     const protectedRoutes = ["/dashboard", "/keys", "/users", "/profile"];
+
+Ecmascript file had an error 
+[browser] ./src/middleware.ts:66:13
+Error: the name `pathname` is defined multiple times
+  64 |     } = await supabase.auth.getUser();
+  65 |
+> 66 |     const { pathname } = request.nextUrl;
+     |             ^^^^^^^^
+  67 |
+  68 |     // Redirect unauthenticated users away from protected routes
+  69 |     const protectedRoutes = ["/dashboard", "/keys", "/users", "/profile"];
+
+Ecmascript file had an error 
+[browser] ./src/middleware.ts:66:13
+Error: the name `pathname` is defined multiple times
+  64 |     } = await supabase.auth.getUser();
+  65 |
+> 66 |     const { pathname } = request.nextUrl;
+     |             ^^^^^^^^
+  67 |
+  68 |     // Redirect unauthenticated users away from protected routes
+  69 |     const protectedRoutes = ["/dashboard", "/keys", "/users", "/profile"];
+
+Ecmascript file had an error 
+[browser] ./src/middleware.ts:66:13
+Error: the name `pathname` is defined multiple times
+  64 |     } = await supabase.auth.getUser();
+  65 |
+> 66 |     const { pathname } = request.nextUrl;
+     |             ^^^^^^^^
+  67 |
+  68 |     // Redirect unauthenticated users away from protected routes
+  69 |     const protectedRoutes = ["/dashboard", "/keys", "/users", "/profile"];
+
+Ecmascript file had an error 
+[browser] ./src/middleware.ts:66:13
+Error: the name `pathname` is defined multiple times
+  64 |     } = await supabase.auth.getUser();
+  65 |
+> 66 |     const { pathname } = request.nextUrl;
+     |             ^^^^^^^^
+  67 |
+  68 |     // Redirect unauthenticated users away from protected routes
+  69 |     const protectedRoutes = ["/dashboard", "/keys", "/users", "/profile"];
+
+Ecmascript file had an error 
+[browser] ./src/middleware.ts:66:13
+Error: the name `pathname` is defined multiple times
+  64 |     } = await supabase.auth.getUser();
+  65 |
+> 66 |     const { pathname } = request.nextUrl;
+     |             ^^^^^^^^
+  67 |
+  68 |     // Redirect unauthenticated users away from protected routes
+  69 |     const protectedRoutes = ["/dashboard", "/keys", "/users", "/profile"];
+
+Ecmascript file had an error 
+[browser] ./src/middleware.ts:66:13
+Error: the name `pathname` is defined multiple times
+  64 |     } = await supabase.auth.getUser();
+  65 |
+> 66 |     const { pathname } = request.nextUrl;
+     |             ^^^^^^^^
+  67 |
+  68 |     // Redirect unauthenticated users away from protected routes
+  69 |     const protectedRoutes = ["/dashboard", "/keys", "/users", "/profile"];
+
+Ecmascript file had an error 
+[browser] ./src/middleware.ts:66:13
+Error: the name `pathname` is defined multiple times
+  64 |     } = await supabase.auth.getUser();
+  65 |
+> 66 |     const { pathname } = request.nextUrl;
+     |             ^^^^^^^^
+  67 |
+  68 |     // Redirect unauthenticated users away from protected routes
+  69 |     const protectedRoutes = ["/dashboard", "/keys", "/users", "/profile"];
+
+Ecmascript file had an error 
+✓ Compiled in 47ms
+ GET /dashboard 200 in 719ms (next.js: 23ms, proxy.ts: 611ms, application-code: 85ms)
