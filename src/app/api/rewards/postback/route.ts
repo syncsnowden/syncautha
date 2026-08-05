@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const sid = url.searchParams.get("sid") || "";
+  const sid = url.searchParams.get("sid") || url.searchParams.get("click_id") || "";
   if (!sid) return Response.json({ error: "Missing sid" }, { status: 400 });
   
   const session = await getRewardSession(sid);
