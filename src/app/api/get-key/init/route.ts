@@ -1,4 +1,4 @@
-import { getProjects, createRewardSession, generateId } from "@/lib/pastefy";
+import { getProjects, getProject, createRewardSession, generateId } from "@/lib/pastefy";
 
 export const dynamic = "force-dynamic";
 
@@ -10,20 +10,14 @@ export async function GET(req: Request) {
       (req.headers.get("origin") || "").replace(/\/+$/, "") ||
       `https://${req.headers.get("host") || ""}`;
 
-    const projects = await getProjects();
-    if (projects.length === 0) return Response.json({ error: "No projects found." }, { status: 404 });
-
-    // Try exact ID match first, then partial name match
-    let project = projects.find(p => p.id === slug);
+    let project = await getProject(slug);
     if (!project) {
-      project = projects.find(p => p.name.toLowerCase().replace(/[^a-z0-9]/g, "-") === slug.toLowerCase());
+      const projects = await getProjects();
+      const found = projects.find(p => p.name.toLowerCase().replace(/[^a-z0-9]/g, "-") === slug.toLowerCase())
+        || projects.find(p => p.name.toLowerCase().includes(slug.toLowerCase()));
+      if (found) project = await getProject(found.id);
     }
-    if (!project) {
-      project = projects.find(p => p.name.toLowerCase().includes(slug.toLowerCase()));
-    }
-    if (!project) {
-      return Response.json({ error: "Project not found. Check the link." }, { status: 404 });
-    }
+    if (!project) return Response.json({ error: "Project not found." }, { status: 404 });
 
     const sessionId = generateId(14);
     await createRewardSession(project.id, {
