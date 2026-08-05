@@ -32,9 +32,10 @@ export default function RewardsPage() {
       const body = { lootlabs_link: link, lootlabs_api_key: apiKey, checkpoint_steps: 1 };
       const res = await fetch(`/api/projects/${pid}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       if (!res.ok) throw new Error();
+      const updated = await res.json();
+      setProjects(prev => prev.map(p => p.id === pid ? { ...p, ...updated } : p));
       toast.success("Saved!");
       setLink("");
-      await load();
     } catch { toast.error("Failed."); }
     finally { setLoading(false); }
   }
@@ -49,10 +50,10 @@ export default function RewardsPage() {
       if (idx === 1) body.ll_link_2 = link;
       if (idx === 2) body.ll_link_3 = link;
       const res = await fetch(`/api/projects/${pid}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-      if (!res.ok) throw new Error();
+      const updated = await res.json();
+      setProjects(prev => prev.map(p => p.id === pid ? { ...p, ...updated } : p));
       toast.success("Added checkpoint " + (idx + 1) + "!");
       setLink("");
-      await load();
     } catch { toast.error("Failed."); }
     finally { setLoading(false); }
   }
@@ -66,9 +67,9 @@ export default function RewardsPage() {
       if (index === 1) body.ll_link_2 = "";
       if (index === 2) body.ll_link_3 = "";
       const res = await fetch(`/api/projects/${pid}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-      if (!res.ok) throw new Error();
+      const updated = await res.json();
+      setProjects(prev => prev.map(p => p.id === pid ? { ...p, ...updated } : p));
       toast.success("Removed.");
-      await load();
     } catch { toast.error("Failed."); }
     finally { setLoading(false); }
   }
