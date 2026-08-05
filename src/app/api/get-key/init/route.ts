@@ -22,12 +22,18 @@ export async function GET(req: Request) {
     }
     if (!project) return Response.json({ error: "Project not found." }, { status: 404 });
 
-    // Check for existing completed session (user returned from LootLabs)
+    // If user returned from LootLabs with token, auto-complete the session
     let activeSession: string | null = null;
     if (token) {
       const existingSession = await getRewardSession(token);
-      if (existingSession && existingSession.status === "completed" && !existingSession.used) {
-        activeSession = token;
+      if (existingSession) {
+        if (existingSession.status !== "completed" && !existingSession.used) {
+          const { updateRewardSession } = await import("@/lib/pastefy");
+          await updateRewardSession(project.id, token, (s) => { s.status = "completed"; });
+        }
+        if (!existingSession.used) {
+          activeSession = token;
+        }
       }
     }
 
