@@ -17,32 +17,35 @@ export async function POST(req: Request) {
       status: "pending", created: Date.now(), used: false,
     });
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ||
-      (req.headers.get("origin") || "").replace(/\/+$/, "") ||
-      `https://${req.headers.get("host") || ""}`;
+    const host = req.headers.get("host") || "";
+    const origin = req.headers.get("origin") || `https://${host}`;
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || origin.replace(/\/+$/, "");
     const postbackUrl = `${siteUrl}/api/rewards/postback?sid=${sid}`;
 
-    let lootlabsUrl = "";
-    const apiKey = process.env.LOOTLABS_API_KEY || "";
-    if (project.lootlabs_link && apiKey) {
+    // Use body API key if provided, else env var
+    const llApiKey = body.lootlabs_api_key || process.env.LOOTLABS_API_KEY || "";
+    const llLink = body.lootlabs_link || project.lootlabs_link || "";
+
+    let checkpointUrl = "";
+    if (llLink && llApiKey) {
       try {
         const llRes = await fetch("https://lootlabs.gg/api/url/create", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "X-Api-Key": apiKey },
+          headers: { "Content-Type": "application/json", "X-Api-Key": llApiKey },
           body: JSON.stringify({
             url: postbackUrl,
             name: project.name,
-            key_duration: project.key_duration || 3,
-            max_keys: project.max_keys || 1,
-            allow_extending: project.allow_extending,
-            cooldown: project.reward_cooldown || 0,
-            allow_forgetting: project.allow_forgetting,
-            max_hours: project.max_hours || undefined,
+            key_duration: body.key_duration || project.key_duration || 3,
+            max_keys: body.max_keys || project.max_keys || 1,
+            allow_extending: body.allow_extending ?? project.allow_extending ?? false,
+            cooldown: body.reward_cooldown ?? project.reward_cooldown ?? 0,
+            allow_forgetting: body.allow_forgetting ?? project.allow_forgetting ?? false,
+            max_hours: body.max_hours || project.max_hours || undefined,
           }),
         });
         if (llRes.ok) {
           const llData = await llRes.json();
-          lootlabsUrl = llData.url || "";
+          checkpointUrl = llData.url || "";
         }
       } catch {}
     }
@@ -50,8 +53,8 @@ export async function POST(req: Request) {
     return Response.json({
       session_id: sid,
       postback_url: postbackUrl,
-      lootlabs_url: lootlabsUrl,
-      key_system_url: `${siteUrl}/get-key/${project.id}`,
+      checkpoint_url: checkpointUrl,
+      public_link: `${siteUrl}/get-key/${project.id}`,
     });
   } catch (e: any) {
     return Response.json({ error: e.message || "Failed." }, { status: 500 });

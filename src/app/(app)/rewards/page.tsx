@@ -6,126 +6,140 @@ interface Project { id: string; name: string; }
 
 export default function RewardsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProject, setSelectedProject] = useState("");
-  const [sessionUrl, setSessionUrl] = useState("");
-  const [sessionId, setSessionId] = useState("");
-  const [key, setKey] = useState("");
+  const [projectId, setProjectId] = useState("");
+  const [llLink, setLlLink] = useState("");
+  const [llApiKey, setLlApiKey] = useState("");
   const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
 
-  useEffect(() => {
-    fetch("/api/projects").then(r => r.json()).then(setProjects);
-  }, []);
+  useEffect(() => { fetch("/api/projects").then(r => r.json()).then(setProjects); }, []);
 
-  async function createSession() {
-    if (!selectedProject) return toast.error("Select a project.");
-    setLoading(true);
+  async function createCheckpoint() {
+    if (!projectId) return toast.error("Select a project.");
+    setLoading(true); setResult(null);
     try {
       const res = await fetch("/api/rewards/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project_id: selectedProject }),
+        body: JSON.stringify({
+          project_id: projectId,
+          lootlabs_link: llLink,
+          lootlabs_api_key: llApiKey,
+        }),
       });
       const data = await res.json();
       if (data.session_id) {
-        setSessionId(data.session_id);
-        setSessionUrl(data.reward_url);
-        toast.success("Session created! Share the postback URL.");
+        setResult(data);
+        toast.success("Checkpoint created!");
       } else {
         toast.error(data.error || "Failed");
       }
-    } catch {
-      toast.error("Failed to create session.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function claimKey() {
-    if (!sessionId) return toast.error("No active session.");
-    setLoading(true);
-    try {
-      const res = await fetch("/api/keys/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session_id: sessionId, project_id: selectedProject }),
-      });
-      const data = await res.json();
-      if (data.key) {
-        setKey(data.key);
-        toast.success("Key generated from reward!");
-      } else {
-        toast.error(data.error || "Not completed or already used.");
-      }
-    } catch {
-      toast.error("Failed.");
-    } finally {
-      setLoading(false);
-    }
+    } catch { toast.error("Failed."); }
+    finally { setLoading(false); }
   }
 
   return (
     <>
       <div className="page-header">
         <h1 className="page-title">Rewards</h1>
-        <p className="page-subtitle">LootLabs checkpoint integration — users complete tasks to earn keys.</p>
+        <p className="page-subtitle">Create LootLabs checkpoints for users to earn keys.</p>
       </div>
 
-      <div className="page-body" style={{ maxWidth: 600 }}>
+      <div className="page-body" style={{ maxWidth: 650 }}>
         <div className="card" style={{ marginBottom: 20 }}>
           <div className="card-header">
-            <span className="card-title"><i className="fa-solid fa-gift" style={{ marginRight: 8, color: "var(--accent)" }} />Create Reward Session</span>
+            <span className="card-title"><i className="fa-solid fa-shield-halved" style={{ marginRight: 8, color: "var(--accent)" }} />Create Checkpoint</span>
           </div>
           <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div className="input-group">
               <label className="input-label">Project</label>
-              <select className="input" value={selectedProject} onChange={e => setSelectedProject(e.target.value)}>
+              <select className="input" value={projectId} onChange={e => setProjectId(e.target.value)}>
                 <option value="">Select project...</option>
                 {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
             </div>
-            <button className="btn btn-primary" onClick={createSession} disabled={loading} style={{ width: "auto" }}>
-              <i className="fa-solid fa-plus" /> Create Session
-            </button>
+
+            <div className="card" style={{ background: "var(--bg-2)", border: "1px solid var(--border-2)", padding: 0 }}>
+              <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <div style={{ fontWeight: 600, fontSize: 13, color: "var(--text-1)" }}>
+                  <i className="fa-solid fa-link" style={{ marginRight: 6, color: "var(--accent)" }} />
+                  LootLabs Anti-Bypass Setup
+                </div>
+                <div className="input-group">
+                  <label className="input-label">LootLabs Link</label>
+                  <input className="input" value={llLink} onChange={e => setLlLink(e.target.value)} placeholder="https://lootlabs.gg/your-link" />
+                  <span style={{ fontSize: 11, color: "var(--text-3)" }}>Create a link on LootLabs dashboard first, paste it here</span>
+                </div>
+                <div className="input-group">
+                  <label className="input-label">LootLabs API Key</label>
+                  <input className="input" value={llApiKey} onChange={e => setLlApiKey(e.target.value)} placeholder="Found in LootLabs Profile page" />
+                  <span style={{ fontSize: 11, color: "var(--text-3)" }}>Go to LootLabs → Profile → copy your API key</span>
+                </div>
+                <button className="btn btn-primary" onClick={createCheckpoint} disabled={loading} style={{ width: "auto" }}>
+                  <i className="fa-solid fa-plus" /> {loading ? "Creating..." : "Create Checkpoint"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        {sessionId && (
+        {result && (
           <div className="card" style={{ marginBottom: 20 }}>
             <div className="card-header">
-              <span className="card-title"><i className="fa-solid fa-link" style={{ marginRight: 8, color: "var(--accent)" }} />Postback URL</span>
+              <span className="card-title"><i className="fa-solid fa-check-circle" style={{ marginRight: 8, color: "#22c55e" }} />Checkpoint Created</span>
             </div>
-            <div className="card-body">
-              <p style={{ fontSize: 13, color: "var(--text-2)", marginBottom: 10 }}>
-                Set this as your LootLabs postback URL. When a user completes the checkpoint, this endpoint marks the session as complete.
-              </p>
-              <div style={{ display: "flex", gap: 8 }}>
-                <input className="input" value={sessionUrl} readOnly style={{ fontFamily: "monospace", fontSize: 12 }} />
-                <button className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={() => { navigator.clipboard.writeText(sessionUrl); toast.success("Copied!"); }}>
-                  <i className="fa-solid fa-copy" />
-                </button>
+            <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {result.checkpoint_url && (
+                <div>
+                  <label className="input-label" style={{ marginBottom: 6 }}>Checkpoint URL (share with users)</label>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <input className="input" value={result.checkpoint_url} readOnly style={{ fontFamily: "monospace", fontSize: 12 }} />
+                    <button className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={() => { navigator.clipboard.writeText(result.checkpoint_url); toast.success("Copied!"); }}>
+                      <i className="fa-solid fa-copy" />
+                    </button>
+                  </div>
+                </div>
+              )}
+              <div>
+                <label className="input-label" style={{ marginBottom: 6 }}>Postback URL (paste in LootLabs settings)</label>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input className="input" value={result.postback_url} readOnly style={{ fontFamily: "monospace", fontSize: 12 }} />
+                  <button className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={() => { navigator.clipboard.writeText(result.postback_url); toast.success("Copied!"); }}>
+                    <i className="fa-solid fa-copy" />
+                  </button>
+                </div>
+                <span style={{ fontSize: 11, color: "var(--text-3)", marginTop: 4, display: "block" }}>
+                  Paste this in LootLabs → Edit Link → Postback URL field. Include {'{CLICK_ID}'} {'{IP}'} {'{UNIQUE_ID}'} parameters.
+                </span>
               </div>
-              <button className="btn btn-primary" style={{ marginTop: 12, width: "auto" }} onClick={claimKey} disabled={loading}>
-                <i className="fa-solid fa-key" /> Claim Key from Session
-              </button>
+              <div>
+                <label className="input-label" style={{ marginBottom: 6 }}>Public Link</label>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input className="input" value={result.public_link} readOnly style={{ fontFamily: "monospace", fontSize: 12 }} />
+                  <button className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={() => { navigator.clipboard.writeText(result.public_link); toast.success("Copied!"); }}>
+                    <i className="fa-solid fa-copy" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
 
-        {key && (
-          <div className="card">
-            <div className="card-header">
-              <span className="card-title"><i className="fa-solid fa-check-circle" style={{ marginRight: 8, color: "var(--accent)" }} />Generated Key</span>
-            </div>
-            <div className="card-body">
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 700, color: "var(--accent)", letterSpacing: 1, padding: "12px 16px", background: "var(--bg-2)", borderRadius: "var(--radius)", textAlign: "center" }}>
-                {key}
-              </div>
-              <button className="btn btn-secondary btn-sm" style={{ marginTop: 10 }} onClick={() => { navigator.clipboard.writeText(key); toast.success("Copied!"); }}>
-                <i className="fa-solid fa-copy" /> Copy Key
-              </button>
-            </div>
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title"><i className="fa-solid fa-circle-info" style={{ marginRight: 8, color: "var(--accent)" }} />How it works</span>
           </div>
-        )}
+          <div className="card-body">
+            <ol style={{ fontSize: 13, color: "var(--text-2)", lineHeight: 1.8, paddingLeft: 18 }}>
+              <li>Create a link on <b>LootLabs</b> dashboard (any destination URL)</li>
+              <li>Copy your LootLabs <b>API key</b> from Profile page</li>
+              <li>Paste both above and click <b>Create Checkpoint</b></li>
+              <li>Copy the <b>Postback URL</b> and paste it in your LootLabs link settings (as postback)</li>
+              <li>Share the <b>Checkpoint URL</b> or <b>Public Link</b> with your users</li>
+              <li>Users complete checkpoint → auto-gets a key</li>
+            </ol>
+          </div>
+        </div>
       </div>
     </>
   );
