@@ -1,23 +1,32 @@
-import { setup } from "@/lib/pastefy";
+import { getProjects, getRewardSession } from "@/lib/pastefy";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const mid = await setup();
-    const apiKey = process.env.PASTEFY_API_KEY || "sMBc9KgDW5Jy0PlP5GWCAa4Tlt4VJwJ2BQWJxW46NsLTYHEQbs3u4i8TyI4O";
-    const res = await fetch(`https://pastefy.app/api/v2/paste/${mid}`, {
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
-    const data = await res.json();
-    const content = data.paste?.content || data.content || "{}";
-    const parsed = JSON.parse(content);
-    return Response.json({
-      paste_id: mid,
-      env_pastefy_paste_id: process.env.PASTEFY_PASTE_ID || "(not set)",
-      project_count: Object.keys(parsed.projects || {}).length,
-      projects: parsed.projects,
-    });
+    const url = new URL(req.url);
+    const token = url.searchParams.get("token") || "";
+
+    // Full project settings dump
+    const projects = await getProjects();
+    const projectSummary = projects.map(p => ({
+      id: p.id,
+      name: p.name,
+      checkpoint_steps: p.checkpoint_steps,
+      lootlabs_link: p.lootlabs_link ? p.lootlabs_link.slice(0, 40) + "..." : "",
+      ll_link_2: p.ll_link_2 ? p.ll_link_2.slice(0, 40) + "..." : "",
+      ll_link_3: p.ll_link_3 ? p.ll_link_3.slice(0, 40) + "..." : "",
+      lootlabs_api_key: p.lootlabs_api_key ? "SET" : "NOT SET",
+    }));
+
+    // Optionally look up a session by token
+    let sessionInfo = null;
+    if (token) {
+      const s = await getRewardSession(token);
+      sessionInfo = s ? { id: s.id, step: s.step, total_steps: s.total_steps, status: s.status, used: s.used } : "NOT FOUND";
+    }
+
+    return Response.json({ projects: projectSummary, session: sessionInfo });
   } catch (e: any) {
     return Response.json({ error: e.message }, { status: 500 });
   }

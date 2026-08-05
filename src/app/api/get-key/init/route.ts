@@ -98,6 +98,15 @@ export async function GET(req: Request) {
       total_steps: totalSteps,
       checkpoint_url: checkpointUrl,
       postback_url: `${siteUrl}/api/rewards/postback?sid=${sessionId}`,
+      // DEBUG — remove after confirming
+      _debug: {
+        project_checkpoint_steps: project.checkpoint_steps,
+        token_received: token || null,
+        session_found: activeSession !== null,
+        links_count: links.length,
+        current_link_index: completedSteps,
+        checkpoint_url_generated: !!checkpointUrl,
+      },
     });
   } catch (e: any) {
     return Response.json({ error: e.message || "Failed." }, { status: 500 });
