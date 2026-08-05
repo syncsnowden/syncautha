@@ -135,9 +135,8 @@ export default function RewardsPage() {
                   {[l1, l2, l3].map((link, i) => {
                     const setters = [setL1, setL2, setL3];
                     const isSaved = !!link.trim();
-                    const editing = addStep === i;
+                    const editing = addStep === i || (!isSaved && i === 0);
                     
-                    if (!isSaved && !editing) return null;
                     if (isSaved && !editing) {
                       return (
                         <div key={i} className="card" style={{ background: "var(--bg-2)", border: "1px solid var(--border-2)", padding: 0 }}>
@@ -150,18 +149,19 @@ export default function RewardsPage() {
                               </div>
                             </div>
                             <button className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={() => setAddStep(i)}><i className="fa-solid fa-pen" /></button>
-                            {i > 0 && <button className="btn btn-secondary btn-sm" style={{ width: "auto", color: "#ef4444" }} onClick={() => { setters[i](""); save(); }}><i className="fa-solid fa-trash" /></button>}
+                            {i > 0 && <button className="btn btn-secondary btn-sm" style={{ width: "auto", color: "#ef4444" }} onClick={async () => { setters[i](""); await save(); }}><i className="fa-solid fa-trash" /></button>}
                           </div>
                         </div>
                       );
                     }
+                    if (!editing) return null;
                     return (
                       <div key={i} className="card" style={{ background: "var(--bg-2)", border: "1px solid var(--border-2)", padding: 0 }}>
                         <div className="card-body">
                           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                             <span style={{ background: "var(--accent)", color: "#000", width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>{i + 1}</span>
                             <span style={{ fontWeight: 600, fontSize: 13 }}>{isSaved ? "Edit" : "New"} Checkpoint {i + 1}</span>
-                            <button onClick={() => setAddStep(-1)} style={{ marginLeft: "auto", background: "none", border: "none", color: "var(--text-3)", cursor: "pointer", fontSize: 12 }}><i className="fa-solid fa-xmark" /></button>
+                            {isSaved && <button onClick={() => setAddStep(-1)} style={{ marginLeft: "auto", background: "none", border: "none", color: "var(--text-3)", cursor: "pointer", fontSize: 12 }}><i className="fa-solid fa-xmark" /></button>}
                           </div>
                           <input className="input" value={link} onChange={e => setters[i](e.target.value)} placeholder="https://loot-link.com/s?xxxxx" />
                         </div>
