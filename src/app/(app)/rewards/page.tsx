@@ -14,7 +14,17 @@ export default function RewardsPage() {
   const [showAll, setShowAll] = useState(false);
   const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
 
-  useEffect(() => { loadProjects(); }, []);
+  useEffect(() => {
+    const lastPid = typeof window !== "undefined" ? localStorage.getItem("syncauth_rewards_project") : "";
+    if (lastPid) setProjectId(lastPid);
+    loadProjects();
+  }, []);
+
+  useEffect(() => {
+    if (!projectId) return;
+    const p = projects.find(x => x.id === projectId);
+    if (p) selectProject(p);
+  }, [projects, projectId]);
 
   async function loadProjects() {
     const res = await fetch("/api/projects");
@@ -23,6 +33,7 @@ export default function RewardsPage() {
 
   function selectProject(p: Project) {
     setProjectId(p.id);
+    localStorage.setItem("syncauth_rewards_project", p.id);
     setLlApiKey(p.lootlabs_api_key || "");
     const existing = [p.lootlabs_link || "", p.ll_link_2 || "", p.ll_link_3 || ""].filter(l => l.trim());
     setLinks(existing.length > 0 ? existing : [""]);
@@ -72,15 +83,18 @@ export default function RewardsPage() {
         <p className="page-subtitle">Set up LootLabs checkpoints — users complete them to earn keys.</p>
       </div>
 
-      <div className="page-body" style={{ maxWidth: 640 }}>
-        <div className="card" style={{ marginBottom: 20 }}>
-          <div className="card-header">
-            <span className="card-title">
-              <Image src="/lootlabsicon.jpeg" alt="LootLabs" width={20} height={20} style={{ borderRadius: 4, marginRight: 8 }} />
-              Checkpoints {selected ? `— ${selected.name}` : ""}
-            </span>
-          </div>
-          <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div className="page-body" style={{ maxWidth: 900 }}>
+        <div style={{ display: "grid", gridTemplateColumns: selected && existingCount > 0 ? "1fr 280px" : "1fr", gap: 20, alignItems: "start" }}>
+        </div>
+
+        <div className="card" style={{ marginTop: 20 }}>
+            <div className="card-header">
+              <span className="card-title">
+                <Image src="/lootlabsicon.jpeg" alt="LootLabs" width={20} height={20} style={{ borderRadius: 4, marginRight: 8 }} />
+                Checkpoints {selected ? `— ${selected.name}` : ""}
+              </span>
+            </div>
+            <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div className="input-group">
               <label className="input-label">Project</label>
               <select className="input" value={projectId} onChange={e => { const p = projects.find(x => x.id === e.target.value); if (p) selectProject(p); }}>
@@ -128,19 +142,26 @@ export default function RewardsPage() {
                   )}
                 </div>
 
-                {selected && existingCount > 0 && (
-                  <div style={{ padding: "12px 16px", background: "rgba(0,200,224,0.04)", border: "1px solid rgba(0,200,224,0.1)", borderRadius: 10 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", marginBottom: 4 }}>Share with users:</div>
-                    <code style={{ fontSize: 13, color: "var(--text-1)", fontFamily: "monospace", wordBreak: "break-all" }}>{siteUrl}/get-key/{selected.id}</code>
-                    <button className="btn btn-secondary btn-sm" style={{ marginTop: 6, width: "auto" }} onClick={() => { navigator.clipboard.writeText(`${siteUrl}/get-key/${selected.id}`); toast.success("Copied!"); }}>
-                      <i className="fa-solid fa-copy" /> Copy
-                    </button>
-                  </div>
-                )}
               </>
             )}
           </div>
         </div>
+
+        {selected && existingCount > 0 && (
+          <div className="card" style={{ position: "sticky", top: 20 }}>
+            <div className="card-header">
+              <span className="card-title"><i className="fa-solid fa-share" style={{ marginRight: 6, color: "var(--accent)", fontSize: 13 }} />Share with Users</span>
+            </div>
+            <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ fontSize: 12, color: "var(--text-3)" }}>Send this link to your users:</div>
+              <code style={{ fontSize: 12, color: "var(--accent)", fontFamily: "monospace", wordBreak: "break-all", background: "var(--bg-2)", padding: "8px 10px", borderRadius: 6 }}>{siteUrl}/get-key/{selected.id}</code>
+              <button className="btn btn-primary btn-sm" style={{ width: "100%" }} onClick={() => { navigator.clipboard.writeText(`${siteUrl}/get-key/${selected.id}`); toast.success("Copied!"); }}>
+                <i className="fa-solid fa-copy" /> Copy Link
+              </button>
+              <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 4 }}>{existingCount} checkpoint{existingCount > 1 ? "s" : ""} configured</div>
+            </div>
+          </div>
+        )}
 
         <div className="card">
           <div className="card-header">
