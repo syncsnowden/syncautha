@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       executor: executor || "Unknown"
     };
 
-    if (entry.hwid === null) {
+    if (!entry.hwid) {
       await updateKey(key, (k) => { k.hwid = hashed; k.status = "used"; });
       await logUser(entry.project_id, hashed, userPayload);
       return Response.json({ status: "valid", reason: "HWID bound." });
