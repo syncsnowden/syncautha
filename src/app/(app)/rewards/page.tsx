@@ -164,51 +164,49 @@ export default function RewardsPage() {
             </div>
           </div>
 
-          {selected && (selected.lootlabs_link || selected.ll_link_2 || selected.ll_link_3) && (
+          {selected && (
             <div className="card" style={{ position: "sticky", top: 20 }}>
               <div className="card-header">
                 <span className="card-title"><Image src="/lootlabsicon.jpeg" alt="LL" width={18} height={18} style={{ borderRadius: 3, marginRight: 8 }} />Checkpoint Flow</span>
               </div>
               <div className="card-body" style={{ padding: "16px" }}>
-                {[selected.lootlabs_link, selected.ll_link_2, selected.ll_link_3].filter(Boolean).map((link, i) => (
-                  <div key={i}>
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: i < ([selected.lootlabs_link, selected.ll_link_2, selected.ll_link_3].filter(Boolean).length - 1) ? 0 : 0 }}>
-                      <span style={{ background: "var(--accent)", color: "#000", width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>{i + 1}</span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-1)" }}>LootLabs</div>
-                        <div style={{ fontSize: 10, color: "var(--text-3)", wordBreak: "break-all", fontFamily: "monospace", marginTop: 2, lineHeight: 1.3 }}>{typeof link === "string" && link.length > 50 ? link.slice(0, 50) + "..." : link}</div>
+                {[selected.lootlabs_link, selected.ll_link_2, selected.ll_link_3].filter(Boolean).length > 0 ? (
+                  <>
+                    {[selected.lootlabs_link, selected.ll_link_2, selected.ll_link_3].filter(Boolean).map((link, i) => (
+                      <div key={i}>
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                          <span style={{ background: "var(--accent)", color: "#000", width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>{i + 1}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-1)" }}>LootLabs</div>
+                            <div style={{ fontSize: 10, color: "var(--text-3)", wordBreak: "break-all", fontFamily: "monospace", marginTop: 2, lineHeight: 1.3 }}>{typeof link === "string" && link.length > 45 ? link.slice(0, 45) + "..." : link}</div>
+                          </div>
+                        </div>
+                        {i < [selected.lootlabs_link, selected.ll_link_2, selected.ll_link_3].filter(Boolean).length - 1 && (
+                          <div style={{ padding: "5px 0 5px 11px", color: "var(--border-2)", fontSize: 14 }}>
+                            <i className="fa-solid fa-chevron-down" />
+                          </div>
+                        )}
                       </div>
+                    ))}
+                    <div style={{ padding: "5px 0 5px 11px", color: "var(--border-2)", fontSize: 14 }}>
+                      <i className="fa-solid fa-chevron-down" />
                     </div>
-                    {i < [selected.lootlabs_link, selected.ll_link_2, selected.ll_link_3].filter(Boolean).length - 1 && (
-                      <div style={{ padding: "4px 0 4px 11px", color: "var(--border-2)", fontSize: 14 }}>
-                        <i className="fa-solid fa-chevron-down" />
-                      </div>
-                    )}
-                  </div>
-                ))}
-                <div style={{ padding: "4px 0 4px 11px", color: "var(--border-2)", fontSize: 14 }}>
-                  <i className="fa-solid fa-chevron-down" />
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <i className="fa-solid fa-key" style={{ color: "var(--accent)", fontSize: 14, width: 22, textAlign: "center" }} />
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)" }}>Receive Key</div>
-                </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <i className="fa-solid fa-key" style={{ color: "var(--accent)", fontSize: 14, width: 22, textAlign: "center" }} />
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)" }}>Receive Key</div>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: 12, color: "var(--text-3)", textAlign: "center", padding: "10px 0" }}>No checkpoints yet. Add one and click Save.</div>
+                )}
 
                 <div style={{ marginTop: 14, padding: "10px 12px", background: "var(--bg-2)", borderRadius: 8, border: "1px solid var(--border-2)" }}>
                   <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text-2)", marginBottom: 6 }}>Postback URL (anti-bypass)</div>
                   <code style={{ fontSize: 10, color: "var(--text-2)", fontFamily: "monospace", wordBreak: "break-all", lineHeight: 1.4 }}>{siteUrl}/api/rewards/postback?sid=YOUR_SESSION_ID</code>
-                  <button className="btn btn-secondary btn-sm" style={{ marginTop: 6, width: "100%", fontSize: 11 }} onClick={() => { navigator.clipboard.writeText(`${siteUrl}/api/rewards/postback?sid=SESSION_ID`); toast.success("Replace SESSION_ID with the actual id from your get-key URL"); }}>
+                  <button className="btn btn-secondary btn-sm" style={{ marginTop: 6, width: "100%", fontSize: 11 }} onClick={() => { navigator.clipboard.writeText(`${siteUrl}/api/rewards/postback?sid=SESSION_ID`); toast.success("Replace SESSION_ID with actual id from get-key URL"); }}>
                     <i className="fa-solid fa-copy" /> Copy Template
                   </button>
-                  <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 6, lineHeight: 1.4 }}>Paste in LootLabs link settings with <code style={{ background: "var(--bg-1)", padding: "1px 4px", borderRadius: 3 }}>{'{CLICK_ID}'}</code> <code style={{ background: "var(--bg-1)", padding: "1px 4px", borderRadius: 3 }}>{'{IP}'}</code> <code style={{ background: "var(--bg-1)", padding: "1px 4px", borderRadius: 3 }}>{'{UNIQUE_ID}'}</code></div>
-                </div>
-
-                <div style={{ marginTop: 10 }}>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text-2)", marginBottom: 6 }}>Share Link</div>
-                  <code style={{ fontSize: 11, color: "var(--accent)", fontFamily: "monospace", wordBreak: "break-all", background: "var(--bg-2)", padding: "6px 8px", borderRadius: 6, display: "block", border: "1px solid var(--border-2)" }}>{siteUrl}/get-key/{selected.id}</code>
-                  <button className="btn btn-primary btn-sm" style={{ width: "100%", marginTop: 6 }} onClick={() => { navigator.clipboard.writeText(`${siteUrl}/get-key/${selected.id}`); toast.success("Copied!"); }}>
-                    <i className="fa-solid fa-copy" /> Copy Link
-                  </button>
+                  <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 6, lineHeight: 1.4 }}>Paste in LootLabs with <code style={{ background: "var(--bg-1)", padding: "1px 4px", borderRadius: 3 }}>{'{CLICK_ID}'}</code> <code style={{ background: "var(--bg-1)", padding: "1px 4px", borderRadius: 3 }}>{'{IP}'}</code> <code style={{ background: "var(--bg-1)", padding: "1px 4px", borderRadius: 3 }}>{'{UNIQUE_ID}'}</code></div>
                 </div>
               </div>
             </div>
