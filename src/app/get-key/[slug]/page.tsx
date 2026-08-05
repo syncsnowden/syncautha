@@ -46,6 +46,8 @@ function GetKeyInner() {
         setLlUrl(data.checkpoint_url);
         setState("gate");
       } else {
+        // No checkpoint configured — mark session as completed and go to idle
+        await fetch(`/api/rewards/postback?sid=${data.session_id}`);
         setState("idle");
       }
     } catch { setState("gate"); }
