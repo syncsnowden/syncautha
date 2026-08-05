@@ -167,14 +167,44 @@ export default function RewardsPage() {
           {selected && stepCount > 0 && (
             <div className="card" style={{ position: "sticky", top: 20 }}>
               <div className="card-header">
-                <span className="card-title" style={{ fontSize: 13 }}><i className="fa-solid fa-share" style={{ marginRight: 6, color: "var(--accent)" }} />Share</span>
+                <span className="card-title" style={{ fontSize: 13 }}><Image src="/lootlabsicon.jpeg" alt="LL" width={16} height={16} style={{ borderRadius: 3, marginRight: 6 }} />Checkpoint Flow</span>
               </div>
-              <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <div style={{ fontSize: 11, color: "var(--text-3)" }}>{stepCount} checkpoint{stepCount>1?"s":""} configured</div>
-                <code style={{ fontSize: 12, color: "var(--accent)", fontFamily: "monospace", wordBreak: "break-all", background: "var(--bg-2)", padding: "8px 10px", borderRadius: 6 }}>{siteUrl}/get-key/{selected.id}</code>
-                <button className="btn btn-primary btn-sm" style={{ width: "100%" }} onClick={() => { navigator.clipboard.writeText(`${siteUrl}/get-key/${selected.id}`); toast.success("Copied!"); }}>
-                  <i className="fa-solid fa-copy" /> Copy Link
-                </button>
+              <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {allLinks.map((link, i) => (
+                  <div key={i}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                      <span style={{ background: "var(--accent)", color: "#000", width: 18, height: 18, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>{i + 1}</span>
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 600 }}>LootLabs Checkpoint {i + 1}</div>
+                        <div style={{ fontSize: 10, color: "var(--text-3)", wordBreak: "break-all", fontFamily: "monospace", marginTop: 2 }}>{link}</div>
+                      </div>
+                    </div>
+                    {i < allLinks.length - 1 && (
+                      <div style={{ textAlign: "center", padding: "2px 0", color: "var(--text-3)", fontSize: 10 }}><i className="fa-solid fa-arrow-down" /></div>
+                    )}
+                  </div>
+                ))}
+                {allLinks.length > 0 && (
+                  <div style={{ textAlign: "center", padding: "2px 0", color: "var(--text-3)", fontSize: 10 }}><i className="fa-solid fa-arrow-down" /></div>
+                )}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><i className="fa-solid fa-key" style={{ color: "var(--accent)", fontSize: 11 }} /></span>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)" }}>Receive Key</div>
+                </div>
+
+                <div style={{ marginTop: 8, padding: "8px 10px", background: "var(--bg-2)", borderRadius: 6 }}>
+                  <div style={{ fontSize: 10, color: "var(--text-3)", marginBottom: 4 }}>Postback URL (anti-bypass)</div>
+                  <code style={{ fontSize: 10, color: "var(--text-2)", fontFamily: "monospace", wordBreak: "break-all" }}>{siteUrl}/api/rewards/postback?sid=SESSION_ID</code>
+                  <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 4 }}>Paste this in LootLabs link settings as postback with {'{CLICK_ID}'} {'{IP}'} {'{UNIQUE_ID}'} params.</div>
+                </div>
+
+                <div style={{ marginTop: 4 }}>
+                  <div style={{ fontSize: 10, color: "var(--text-3)", marginBottom: 4 }}>Share Link</div>
+                  <code style={{ fontSize: 12, color: "var(--accent)", fontFamily: "monospace", wordBreak: "break-all", background: "var(--bg-2)", padding: "6px 8px", borderRadius: 6, display: "block" }}>{siteUrl}/get-key/{selected.id}</code>
+                  <button className="btn btn-primary btn-sm" style={{ width: "100%", marginTop: 6 }} onClick={() => { navigator.clipboard.writeText(`${siteUrl}/get-key/${selected.id}`); toast.success("Copied!"); }}>
+                    <i className="fa-solid fa-copy" /> Copy Link
+                  </button>
+                </div>
               </div>
             </div>
           )}
