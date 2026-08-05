@@ -68,7 +68,7 @@ export default function RewardsPage() {
       if (!res.ok) throw new Error();
       toast.success("Saved " + links.length + " checkpoint" + (links.length > 1 ? "s" : "") + "!");
       setAddStep(0);
-      setRefetch(r => r + 1);
+      await loadProjects();
     } catch { toast.error("Save failed."); }
     finally { setLoading(false); }
   }
@@ -82,7 +82,7 @@ export default function RewardsPage() {
       body: JSON.stringify({ lootlabs_link: "", ll_link_2: "", ll_link_3: "", lootlabs_api_key: "", checkpoint_steps: 0 }),
     });
     toast.success("Cleared.");
-    setRefetch(r => r + 1);
+    await loadProjects();
   }
 
   function startAdd() {
