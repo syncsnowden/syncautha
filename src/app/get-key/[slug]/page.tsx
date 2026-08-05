@@ -17,6 +17,13 @@ function GetKeyInner() {
   const [expires, setExpires] = useState(0);
   const [error, setError] = useState("");
   const [cooldownSec, setCooldownSec] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState(0);
+  const [totalSteps, setTotalSteps] = useState(1);
+
+  function setStepInfo(done: number, total: number) {
+    setCompletedSteps(done);
+    setTotalSteps(total);
+  }
 
   useEffect(() => {
     const ck = localStorage.getItem("syncauth_cooldown_" + slug);
@@ -30,7 +37,7 @@ function GetKeyInner() {
       try { const k = JSON.parse(sk); if (k.exp > Date.now()) { setKey(k.key); setExpires(k.exp); setState("result"); return; } } catch {}
     }
     init();
-  }, []);
+  }, [slug]);
 
   useEffect(() => {
     if (cooldownSec <= 0) return;
@@ -50,8 +57,9 @@ function GetKeyInner() {
       if (data.error) { setError(data.error); setState("error"); return; }
       setProject(data.project);
       setSessionId(data.session_id);
+      setStepInfo(data.completed_steps || 0, data.total_steps || 1);
 
-      if (data.has_completed_session || token) {
+      if (data.all_done) {
         setState("idle");
         return;
       }
@@ -60,7 +68,7 @@ function GetKeyInner() {
         setLlUrl(data.checkpoint_url);
         setState("gate");
       } else {
-        setError("No checkpoint configured. Add LootLabs in the Rewards tab.");
+        setError("No checkpoint configured.");
         setState("error");
       }
     } catch { setError("Connection failed."); setState("error"); }
@@ -135,7 +143,9 @@ function GetKeyInner() {
             <p style={{ fontSize: 13, color: "#94a3b8", marginBottom: 20, lineHeight: 1.5 }}>
               Complete a quick verification to get your license key for {project?.name || "this script"}.
             </p>
-            <button onClick={startCheckpoint} className="ks-btn red">Start Checkpoint</button>
+            <button onClick={startCheckpoint} className="ks-btn red">
+              Start Checkpoint {totalSteps > 1 ? `(${completedSteps + 1}/${totalSteps})` : ""}
+            </button>
           </>
         )}
 

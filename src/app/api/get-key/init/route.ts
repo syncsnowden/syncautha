@@ -22,16 +22,23 @@ export async function GET(req: Request) {
     }
     if (!project) return Response.json({ error: "Project not found." }, { status: 404 });
 
-    // If user returned from LootLabs with token, auto-complete the session
+    // If user returned from LootLabs with token, advance checkpoint step
     let activeSession: string | null = null;
+    let completedSteps = 0;
+    let totalSteps = project.checkpoint_steps || 1;
+    if (totalSteps < 1) totalSteps = 1;
+
     if (token) {
       const existingSession = await getRewardSession(token);
       if (existingSession) {
-        if (existingSession.status !== "completed" && !existingSession.used) {
-          const { updateRewardSession } = await import("@/lib/pastefy");
-          await updateRewardSession(project.id, token, (s) => { s.status = "completed"; });
-        }
-        if (!existingSession.used) {
+        completedSteps = (existingSession.step || 0) + 1; // Advance step
+        totalSteps = existingSession.total_steps || totalSteps;
+        const { updateRewardSession } = await import("@/lib/pastefy");
+        await updateRewardSession(project.id, token, (s) => {
+          s.step = completedSteps;
+          if (completedSteps >= totalSteps) s.status = "completed";
+        });
+        if (completedSteps >= totalSteps && !existingSession.used) {
           activeSession = token;
         }
       }
@@ -43,16 +50,19 @@ export async function GET(req: Request) {
       await createRewardSession(project.id, {
         id: sessionId, project_id: project.id,
         status: "pending", created: Date.now(), used: false,
+        step: 0, total_steps: totalSteps,
       });
     }
 
-    // Encrypt return URL via LootLabs API
-    let checkpointUrl = "";
-    const llApiKey = project.lootlabs_api_key || process.env.LOOTLABS_API_KEY || "";
-    const llLink = project.lootlabs_link || "";
-    const returnUrl = `${siteUrl}/get-key/${project.id}?token=${sessionId}`;
+    // Get all LootLabs links
+    const links = [project.lootlabs_link, project.ll_link_2, project.ll_link_3].filter(Boolean);
+    const currentLink = links[completedSteps] || "";
 
-    if (llApiKey && llLink) {
+    // Encrypt the return URL
+    let checkpointUrl = "";
+    const llApiKey = project.lootlabs_api_key || "";
+    if (llApiKey && currentLink) {
+      const returnUrl = `${siteUrl}/get-key/${project.id}?token=${sessionId}`;
       try {
         const body = JSON.stringify({ destination_url: returnUrl, api_token: llApiKey });
         let llRes = await fetch("https://creators.lootlabs.gg/api/public/url_encryptor", {
@@ -70,7 +80,7 @@ export async function GET(req: Request) {
           if (dd.message && dd.type !== "error") {
             const encrypted = dd.message;
             const dataParam = encrypted.includes("%") ? encrypted : encodeURIComponent(encrypted);
-            const base = llLink.replace(/[?&]$/, "");
+            const base = currentLink.replace(/[?&]$/, "");
             const sep = base.includes("?") ? "&" : "?";
             checkpointUrl = `${base}${sep}puid=${encodeURIComponent(sessionId)}&data=${dataParam}`;
           }
@@ -81,8 +91,10 @@ export async function GET(req: Request) {
     return Response.json({
       project: { id: project.id, name: project.name },
       session_id: sessionId,
-      has_completed_session: !!activeSession,
-      checkpoint_url: checkpointUrl || project.lootlabs_link || "",
+      all_done: activeSession !== null,
+      completed_steps: completedSteps,
+      total_steps: totalSteps,
+      checkpoint_url: checkpointUrl,
       postback_url: `${siteUrl}/api/rewards/postback?sid=${sessionId}`,
     });
   } catch (e: any) {

@@ -113,6 +113,8 @@ export interface Project {
   created_at: number; key_duration: number; max_keys: number;
   allow_extending: boolean; reward_cooldown: number; allow_forgetting: boolean;
   max_hours: number; lootlabs_link: string; lootlabs_api_key: string;
+  ll_link_2: string; ll_link_3: string;
+  checkpoint_steps: number;
 }
 
 export interface Script {
@@ -129,6 +131,7 @@ export interface KeyEntry {
 export interface RewardSession {
   id: string; project_id: string; status: "pending" | "completed";
   created: number; used: boolean;
+  step: number; total_steps: number;
 }
 
 interface ProjectData {

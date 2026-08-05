@@ -37,6 +37,9 @@ export async function POST(req: Request) {
       max_hours: Number(body.max_hours) || 0,
       lootlabs_link: body.lootlabs_link || "",
       lootlabs_api_key: body.lootlabs_api_key || "",
+      ll_link_2: body.ll_link_2 || "",
+      ll_link_3: body.ll_link_3 || "",
+      checkpoint_steps: Number(body.checkpoint_steps) || 1,
     };
     await createProject(project);
     return Response.json(project, { status: 201 });

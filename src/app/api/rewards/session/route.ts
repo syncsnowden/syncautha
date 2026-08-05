@@ -15,6 +15,7 @@ export async function POST(req: Request) {
     await createRewardSession(pid, {
       id: sid, project_id: pid,
       status: "pending", created: Date.now(), used: false,
+      step: 0, total_steps: project.checkpoint_steps || 1,
     });
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${req.headers.get("host") || "syncauth-eight.vercel.app"}`;
