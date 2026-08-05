@@ -18,10 +18,17 @@ export default function RewardsPage() {
 
   async function load() {
     const res = await fetch("/api/projects");
-    setProjects(await res.json());
+    const data = await res.json();
+    setProjects(data);
+    return data;
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load().then(data => {
+      const saved = typeof window !== "undefined" ? localStorage.getItem("synr_pid") : "";
+      if (saved && data.some((p: Project) => p.id === saved)) setPid(saved);
+    });
+  }, []);
 
   async function save() {
     if (!pid) return toast.error("Select a project.");
@@ -89,7 +96,7 @@ export default function RewardsPage() {
             <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div className="input-group">
                 <label className="input-label">Project</label>
-                <select className="input" value={pid} onChange={e => { setPid(e.target.value); load(); }}>
+                <select className="input" value={pid} onChange={e => { setPid(e.target.value); localStorage.setItem("synr_pid", e.target.value); load(); }}>
                   <option value="">Select...</option>
                   {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
