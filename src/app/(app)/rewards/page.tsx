@@ -14,7 +14,7 @@ export default function RewardsPage() {
   const [l3, setL3] = useState("");
   const [loading, setLoading] = useState(false);
   const [showAll, setShowAll] = useState(false);
-  const [addStep, setAddStep] = useState(0);
+  const [addStep, setAddStep] = useState(-1);
   const [refetch, setRefetch] = useState(0);
   const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
 
@@ -31,7 +31,7 @@ export default function RewardsPage() {
     setL1(p.lootlabs_link || "");
     setL2(p.ll_link_2 || "");
     setL3(p.ll_link_3 || "");
-    setAddStep(0);
+    setAddStep(-1);
   }, [pid, projects, refetch]);
 
   async function loadProjects() {
@@ -67,7 +67,7 @@ export default function RewardsPage() {
       });
       if (!res.ok) throw new Error();
       toast.success("Saved " + links.length + " checkpoint" + (links.length > 1 ? "s" : "") + "!");
-      setAddStep(0);
+      setAddStep(-1);
       await loadProjects();
     } catch { toast.error("Save failed."); }
     finally { setLoading(false); }
@@ -86,10 +86,10 @@ export default function RewardsPage() {
   }
 
   function startAdd() {
-    if (!l1.trim()) return toast.error("Save checkpoint 1 first.");
-    const n = [l1, l2, l3].filter(Boolean).length;
-    if (n >= 3) return toast.error("Max 3 checkpoints.");
-    setAddStep(n);
+    const filled = [l1, l2, l3].filter(Boolean).length;
+    if (filled >= 3) return toast.error("Max 3 checkpoints.");
+    const nextEmpty = [l1, l2, l3].findIndex((s, idx) => !s.trim() && idx >= filled);
+    if (nextEmpty >= 0) setAddStep(nextEmpty);
   }
 
   const selected = projects.find(x => x.id === pid);
@@ -134,15 +134,34 @@ export default function RewardsPage() {
 
                   {[l1, l2, l3].map((link, i) => {
                     const setters = [setL1, setL2, setL3];
-                    const visible = i === 0 || addStep >= i || link.trim();
-                    if (!visible) return null;
+                    const isSaved = !!link.trim();
+                    const editing = addStep === i;
+                    
+                    if (!isSaved && !editing) return null;
+                    if (isSaved && !editing) {
+                      return (
+                        <div key={i} className="card" style={{ background: "var(--bg-2)", border: "1px solid var(--border-2)", padding: 0 }}>
+                          <div className="card-body" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <span style={{ background: "var(--accent)", color: "#000", width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{i + 1}</span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 12, fontWeight: 600 }}>LootLabs Checkpoint {i + 1}</div>
+                              <div style={{ fontSize: 10, color: "var(--text-3)", fontFamily: "monospace", wordBreak: "break-all", marginTop: 2 }}>
+                                {link.length > 60 ? link.slice(0, 60) + "..." : link}
+                              </div>
+                            </div>
+                            <button className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={() => setAddStep(i)}><i className="fa-solid fa-pen" /></button>
+                            {i > 0 && <button className="btn btn-secondary btn-sm" style={{ width: "auto", color: "#ef4444" }} onClick={() => { setters[i](""); save(); }}><i className="fa-solid fa-trash" /></button>}
+                          </div>
+                        </div>
+                      );
+                    }
                     return (
                       <div key={i} className="card" style={{ background: "var(--bg-2)", border: "1px solid var(--border-2)", padding: 0 }}>
                         <div className="card-body">
                           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                             <span style={{ background: "var(--accent)", color: "#000", width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>{i + 1}</span>
-                            <span style={{ fontWeight: 600, fontSize: 13 }}>Checkpoint {i + 1}</span>
-                            {i > 0 && <button onClick={() => setters[i]("")} style={{ marginLeft: "auto", background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: 12 }}><i className="fa-solid fa-xmark" /></button>}
+                            <span style={{ fontWeight: 600, fontSize: 13 }}>{isSaved ? "Edit" : "New"} Checkpoint {i + 1}</span>
+                            <button onClick={() => setAddStep(-1)} style={{ marginLeft: "auto", background: "none", border: "none", color: "var(--text-3)", cursor: "pointer", fontSize: 12 }}><i className="fa-solid fa-xmark" /></button>
                           </div>
                           <input className="input" value={link} onChange={e => setters[i](e.target.value)} placeholder="https://loot-link.com/s?xxxxx" />
                         </div>
@@ -154,7 +173,7 @@ export default function RewardsPage() {
                     <button className="btn btn-primary" onClick={save} disabled={loading} style={{ width: "auto" }}>
                       {loading ? "Saving..." : "Save"}
                     </button>
-                    {l1.trim() && allLinks.length < 3 && addStep === 0 && (
+                    {l1.trim() && allLinks.length < 3 && addStep === -1 && (
                       <button className="btn btn-secondary" style={{ width: "auto" }} onClick={startAdd}>
                         <i className="fa-solid fa-plus" /> Add Another Checkpoint
                       </button>
