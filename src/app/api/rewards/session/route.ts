@@ -18,8 +18,8 @@ export async function POST(req: Request) {
     });
 
     const host = req.headers.get("host") || "";
-    const origin = req.headers.get("origin") || `https://${host}`;
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || origin.replace(/\/+$/, "");
+    const origin = (req.headers.get("origin") || `https://${host}`).replace(/\/+$/, "").replace(/\/login$/, "").replace(/\/rewards$/, "").replace(/\/projects.*$/, "");
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || origin;
     const postbackUrl = `${siteUrl}/api/rewards/postback?sid=${sid}`;
 
     // Use body API key if provided, else env var

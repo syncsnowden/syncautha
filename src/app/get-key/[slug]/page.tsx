@@ -57,34 +57,23 @@ function GetKeyInner() {
         if (claimData.status === "completed") { setState("idle"); return; }
       }
 
-      if (data.lootlabs_url) {
-        setLlUrl(data.lootlabs_url);
+      if (data.checkpoint_url) {
+        setLlUrl(data.checkpoint_url);
         setState("gate");
       } else {
-        setError("This project has no checkpoint configured. Add LootLabs in the Rewards tab.");
+        setError("No checkpoint configured. Add LootLabs in the Rewards tab.");
         setState("error");
       }
     } catch { setError("Connection failed."); setState("error"); }
   }
 
   async function startCheckpoint() {
-    try {
-      const res = await fetch("/api/rewards/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project_id: project?.id }),
-      });
-      const data = await res.json();
-      if (data.lootlabs_url || data.checkpoint_url) {
-        const url = data.lootlabs_url || data.checkpoint_url;
-        setLlUrl(url);
-        setSessionId(data.session_id);
-        window.location.href = url;
-      } else {
-        setError("No checkpoint configured. Set up LootLabs in Rewards tab.");
-        setState("error");
-      }
-    } catch { setError("Failed."); setState("error"); }
+    if (llUrl) {
+      window.location.href = llUrl;
+    } else {
+      setError("No checkpoint configured.");
+      setState("error");
+    }
   }
 
   async function generateKey() {
