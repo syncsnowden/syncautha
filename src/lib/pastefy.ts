@@ -151,7 +151,8 @@ export async function getProject(id: string): Promise<Project | null> {
   const m = await getMaster();
   const p = m.projects[id];
   if (!p) return null;
-  return { ...p, id } as unknown as Project;
+  const data = await loadProjectData(p.paste_id);
+  return { ...data.settings, id } as Project;
 }
 
 async function loadProjectData(pasteId: string): Promise<ProjectData> {
