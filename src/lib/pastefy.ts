@@ -148,7 +148,12 @@ const EMPTY_PROJECT: ProjectData = { settings: null as any, scripts: {}, keys: {
 
 export async function getProjects(): Promise<Project[]> {
   const m = await getMaster();
-  return Object.entries(m.projects).map(([id, p]) => ({ ...p, id } as unknown as Project));
+  const results: Project[] = [];
+  for (const [id, p] of Object.entries(m.projects)) {
+    const data = await loadProjectData(p.paste_id);
+    results.push({ ...data.settings, id } as Project);
+  }
+  return results;
 }
 
 export async function getProject(id: string): Promise<Project | null> {
