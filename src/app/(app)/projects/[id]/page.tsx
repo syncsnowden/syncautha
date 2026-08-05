@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 interface Script {
   id: string; project_id: string; name: string;
   silent_mode: boolean; script_code: string; created_at: number;
+  webhook_protection: boolean;
 }
 
 interface Project { id: string; name: string; }
@@ -149,7 +150,7 @@ export default function ProjectDetailPage() {
   const [scripts, setScripts] = useState<Script[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editSid, setEditSid] = useState("");
-  const [form, setForm] = useState({ name: "", silent_mode: false, script_code: "" });
+  const [form, setForm] = useState({ name: "", silent_mode: false, script_code: "", webhook_protection: false });
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<"scripts" | "keys">("scripts");
 
@@ -163,8 +164,8 @@ export default function ProjectDetailPage() {
     setScripts(await res.json());
   }
 
-  function resetForm() { setForm({ name: "", silent_mode: false, script_code: "" }); setEditSid(""); setShowForm(false); }
-  function editScript(s: Script) { setEditSid(s.id); setForm({ name: s.name, silent_mode: s.silent_mode, script_code: s.script_code }); setShowForm(true); }
+  function resetForm() { setForm({ name: "", silent_mode: false, script_code: "", webhook_protection: false }); setEditSid(""); setShowForm(false); }
+  function editScript(s: Script) { setEditSid(s.id); setForm({ name: s.name, silent_mode: s.silent_mode, script_code: s.script_code, webhook_protection: s.webhook_protection }); setShowForm(true); }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -257,6 +258,16 @@ export default function ProjectDetailPage() {
                       <input className="input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Main Script, Aimbot, ESP" />
                     </div>
                     <Toggle label="Silent Mode (remove F9 logs/prints)" checked={form.silent_mode} onChange={v => setForm({ ...form, silent_mode: v })} />
+                    <Toggle label="Webhook Protection" checked={form.webhook_protection} onChange={v => setForm({ ...form, webhook_protection: v })} />
+                    {(() => {
+                      const webhooks = (form.script_code.match(/https:\/\/discord\.com\/api\/webhooks\/[^\s)"'\\]+/g) || []);
+                      return webhooks.length > 0 ? (
+                        <div style={{ padding: "8px 12px", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)", borderRadius: 8, fontSize: 12, color: "#fca5a5" }}>
+                          <i className="fa-solid fa-triangle-exclamation" style={{ marginRight: 6 }} />
+                          {webhooks.length} webhook{webhooks.length > 1 ? "s" : ""} detected in code
+                        </div>
+                      ) : null;
+                    })()}
                     <div
                       onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "var(--accent)"; }}
                       onDragLeave={(e) => { e.currentTarget.style.borderColor = "var(--border-2)"; }}
@@ -310,7 +321,7 @@ export default function ProjectDetailPage() {
                     <div>
                       <div style={{ fontWeight: 600, color: "var(--text-1)", fontSize: 14 }}>{s.name}</div>
                       <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>
-                        ID: {s.id} | {s.silent_mode ? "Silent" : "Normal"} | {new Date(s.created_at).toLocaleDateString()}
+                        ID: {s.id} | {s.silent_mode ? "Silent" : "Normal"}{s.webhook_protection ? " | Webhook Protected" : ""} | {new Date(s.created_at).toLocaleDateString()}
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>

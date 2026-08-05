@@ -20,6 +20,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       script_code: body.script_code || "",
       created_at: Date.now(),
       paste_id: "",
+      webhook_protection: body.webhook_protection ?? false,
     };
     await createScript(project_id, script);
     return Response.json(script, { status: 201 });

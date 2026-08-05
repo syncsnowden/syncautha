@@ -120,7 +120,7 @@ export interface Project {
 export interface Script {
   id: string; project_id: string; name: string;
   silent_mode: boolean; script_code: string; created_at: number;
-  paste_id: string;
+  paste_id: string; webhook_protection: boolean;
 }
 
 export interface KeyEntry {
