@@ -7,9 +7,9 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const slug = url.searchParams.get("slug") || "";
     const token = url.searchParams.get("token") || "";
-    const host = req.headers.get("host") || "syncauth-eight.vercel.app";
-    const origin = (req.headers.get("origin") || `https://${host}`).replace(/\/+$/, "").replace(/\/[^/]+$/, "");
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || origin;
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ||
+      (req.headers.get("origin") || "").replace(/\/+$/, "") ||
+      `https://${req.headers.get("host") || ""}`;
 
     let project = await getProject(slug);
     if (!project) {
@@ -20,7 +20,7 @@ export async function GET(req: Request) {
     }
     if (!project) return Response.json({ error: "Project not found." }, { status: 404 });
 
-    // Check if there's an existing completed session (user returned from LootLabs)
+    // Check for existing completed session (user returned from LootLabs)
     let activeSession: string | null = null;
     if (token) {
       const existingSession = await getRewardSession(token);
@@ -38,11 +38,43 @@ export async function GET(req: Request) {
       });
     }
 
+    // Encrypt return URL via LootLabs API
+    let checkpointUrl = "";
+    const llApiKey = project.lootlabs_api_key || process.env.LOOTLABS_API_KEY || "";
+    const llLink = project.lootlabs_link || "";
+    const returnUrl = `${siteUrl}/get-key/${project.id}?token=${sessionId}`;
+
+    if (llApiKey && llLink) {
+      try {
+        const body = JSON.stringify({ destination_url: returnUrl, api_token: llApiKey });
+        let llRes = await fetch("https://creators.lootlabs.gg/api/public/url_encryptor", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${llApiKey}`, Accept: "application/json" },
+          body,
+        });
+        if (!llRes.ok) {
+          llRes = await fetch(`https://creators.lootlabs.gg/api/public/url_encryptor?destination_url=${encodeURIComponent(returnUrl)}&api_token=${llApiKey}`, {
+            headers: { Accept: "application/json" },
+          });
+        }
+        if (llRes.ok) {
+          const dd = await llRes.json();
+          if (dd.message && dd.type !== "error") {
+            const encrypted = dd.message;
+            const dataParam = encrypted.includes("%") ? encrypted : encodeURIComponent(encrypted);
+            const base = llLink.replace(/[?&]$/, "");
+            const sep = base.includes("?") ? "&" : "?";
+            checkpointUrl = `${base}${sep}puid=${encodeURIComponent(sessionId)}&data=${dataParam}`;
+          }
+        }
+      } catch {}
+    }
+
     return Response.json({
       project: { id: project.id, name: project.name },
       session_id: sessionId,
       has_completed_session: !!activeSession,
-      checkpoint_url: project.lootlabs_link || "",
+      checkpoint_url: checkpointUrl || project.lootlabs_link || "",
       postback_url: `${siteUrl}/api/rewards/postback?sid=${sessionId}`,
     });
   } catch (e: any) {
