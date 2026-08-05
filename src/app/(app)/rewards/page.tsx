@@ -68,7 +68,16 @@ export default function RewardsPage() {
       if (!res.ok) throw new Error();
       toast.success("Saved " + links.length + " checkpoint" + (links.length > 1 ? "s" : "") + "!");
       setAddStep(-1);
-      await loadProjects();
+      // Update projects list directly to avoid timing issues
+      const fresh = await fetch("/api/projects").then(r => r.json());
+      setProjects(fresh);
+      const updated = fresh.find((x: Project) => x.id === pid);
+      if (updated) {
+        setApiKey(updated.lootlabs_api_key || "");
+        setL1(updated.lootlabs_link || "");
+        setL2(updated.ll_link_2 || "");
+        setL3(updated.ll_link_3 || "");
+      }
     } catch { toast.error("Save failed."); }
     finally { setLoading(false); }
   }
