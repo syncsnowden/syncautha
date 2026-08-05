@@ -15,6 +15,7 @@ export default function RewardsPage() {
   const [loading, setLoading] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [addStep, setAddStep] = useState(0);
+  const [refetch, setRefetch] = useState(0);
   const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
 
   useEffect(() => {
@@ -23,20 +24,22 @@ export default function RewardsPage() {
   }, []);
 
   useEffect(() => {
-    if (!pid) return;
+    if (!pid || projects.length === 0) return;
     const p = projects.find(x => x.id === pid);
-    if (p) {
-      setApiKey(p.lootlabs_api_key || "");
-      setL1(p.lootlabs_link || "");
-      setL2(p.ll_link_2 || "");
-      setL3(p.ll_link_3 || "");
-      setAddStep(0);
-    }
-  }, [pid, projects]);
+    if (!p) return;
+    setApiKey(p.lootlabs_api_key || "");
+    setL1(p.lootlabs_link || "");
+    setL2(p.ll_link_2 || "");
+    setL3(p.ll_link_3 || "");
+    setAddStep(0);
+  }, [pid, projects, refetch]);
 
   async function loadProjects() {
-    const res = await fetch("/api/projects");
-    setProjects(await res.json());
+    try {
+      const res = await fetch("/api/projects");
+      const data = await res.json();
+      setProjects(data);
+    } catch {}
   }
 
   function select(id: string) {
@@ -47,7 +50,7 @@ export default function RewardsPage() {
   async function save() {
     if (!pid) return toast.error("Select project.");
     if (!apiKey.trim()) return toast.error("API key required.");
-    if (!l1.trim() && !l2.trim() && !l3.trim()) return toast.error("Add a checkpoint link.");
+    if (!l1.trim()) return toast.error("Add a checkpoint link.");
     setLoading(true);
     try {
       const links = [l1.trim(), l2.trim(), l3.trim()].filter(Boolean);
@@ -63,37 +66,34 @@ export default function RewardsPage() {
         }),
       });
       if (!res.ok) throw new Error();
-      toast.success("Saved!");
+      toast.success("Saved " + links.length + " checkpoint" + (links.length > 1 ? "s" : "") + "!");
       setAddStep(0);
-      await loadProjects();
+      setRefetch(r => r + 1);
     } catch { toast.error("Save failed."); }
     finally { setLoading(false); }
   }
 
   async function clearAll() {
     if (!confirm("Remove all checkpoints?")) return;
-    setL1(""); setL2(""); setL3("");
+    setL1(""); setL2(""); setL3(""); setApiKey("");
     await fetch(`/api/projects/${pid}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lootlabs_link: "", ll_link_2: "", ll_link_3: "", checkpoint_steps: 0 }),
+      body: JSON.stringify({ lootlabs_link: "", ll_link_2: "", ll_link_3: "", lootlabs_api_key: "", checkpoint_steps: 0 }),
     });
     toast.success("Cleared.");
-    loadProjects();
+    setRefetch(r => r + 1);
   }
 
   function startAdd() {
     if (!l1.trim()) return toast.error("Save checkpoint 1 first.");
-    if (l2.trim()) return toast.error("Checkpoint 2 already exists. Remove it first or edit it.");
     const n = [l1, l2, l3].filter(Boolean).length;
     if (n >= 3) return toast.error("Max 3 checkpoints.");
     setAddStep(n);
   }
 
   const selected = projects.find(x => x.id === pid);
-  const allLinks = [selected?.lootlabs_link || "", selected?.ll_link_2 || "", selected?.ll_link_3 || ""].filter(Boolean);
-  const localLinks = [l1, l2, l3].filter(Boolean);
-  const showSidebar = !!pid;
+  const allLinks = [l1, l2, l3].filter(Boolean);
 
   return (
     <>
@@ -102,15 +102,15 @@ export default function RewardsPage() {
         <p className="page-subtitle">Set up LootLabs checkpoints.</p>
       </div>
 
-      <div className="page-body" style={{ maxWidth: showSidebar ? "calc(100% - 40px)" : 640 }}>
-        <div style={{ display: "grid", gridTemplateColumns: showSidebar ? "1fr 320px" : "1fr", gap: 24, alignItems: "start" }}>
+      <div className="page-body" style={{ maxWidth: pid ? "calc(100% - 40px)" : 640 }}>
+        <div style={{ display: "grid", gridTemplateColumns: pid ? "1fr 320px" : "1fr", gap: 24, alignItems: "start" }}>
           <div className="card">
             <div className="card-header">
               <span className="card-title">
                 <Image src="/lootlabsicon.jpeg" alt="LL" width={20} height={20} style={{ borderRadius: 4, marginRight: 8 }} />
                 Checkpoints {selected ? `— ${selected.name}` : ""}
               </span>
-              {selected && allLinks.length > 0 && (
+              {selected && ([selected.lootlabs_link, selected.ll_link_2, selected.ll_link_3].filter(Boolean).length > 0) && (
                 <button className="btn btn-secondary btn-sm" style={{ width: "auto", color: "#ef4444" }} onClick={clearAll}>
                   <i className="fa-solid fa-trash" /> Clear All
                 </button>
@@ -134,8 +134,8 @@ export default function RewardsPage() {
 
                   {[l1, l2, l3].map((link, i) => {
                     const setters = [setL1, setL2, setL3];
-                    const shouldShow = i === 0 || (addStep >= i) || (link.trim());
-                    if (!shouldShow) return null;
+                    const visible = i === 0 || addStep >= i || link.trim();
+                    if (!visible) return null;
                     return (
                       <div key={i} className="card" style={{ background: "var(--bg-2)", border: "1px solid var(--border-2)", padding: 0 }}>
                         <div className="card-body">
@@ -154,7 +154,7 @@ export default function RewardsPage() {
                     <button className="btn btn-primary" onClick={save} disabled={loading} style={{ width: "auto" }}>
                       {loading ? "Saving..." : "Save"}
                     </button>
-                    {l1.trim() && localLinks.length < 3 && addStep === 0 && (
+                    {l1.trim() && allLinks.length < 3 && addStep === 0 && (
                       <button className="btn btn-secondary" style={{ width: "auto" }} onClick={startAdd}>
                         <i className="fa-solid fa-plus" /> Add Another Checkpoint
                       </button>
@@ -165,7 +165,7 @@ export default function RewardsPage() {
             </div>
           </div>
 
-          {showSidebar && (
+          {pid && (
             <div className="card" style={{ position: "sticky", top: 20 }}>
               <div className="card-header">
                 <span className="card-title"><Image src="/lootlabsicon.jpeg" alt="LL" width={18} height={18} style={{ borderRadius: 3, marginRight: 8 }} />Checkpoint Flow</span>
@@ -201,24 +201,24 @@ export default function RewardsPage() {
                   </>
                 ) : (
                   <div style={{ fontSize: 12, color: "var(--text-3)", textAlign: "center", padding: "10px 0" }}>
-                    Enter your API key and a checkpoint link, then click Save.
+                    Add a checkpoint and click Save.
                   </div>
                 )}
 
                 <div style={{ marginTop: 16, padding: "10px 12px", background: "var(--bg-2)", borderRadius: 8, border: "1px solid var(--border-2)" }}>
                   <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 6 }}>Postback URL</div>
                   <code style={{ fontSize: 10, color: "var(--text-2)", fontFamily: "monospace", wordBreak: "break-all", lineHeight: 1.4 }}>
-                    {siteUrl}/api/rewards/postback?sid=SESSION_ID
+                    {siteUrl}/api/rewards/postback
                   </code>
-                  <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 4 }}>Replace SESSION_ID. LootLabs will auto-add click_id, IP, and unique_id.</div>
+                  <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 4 }}>LootLabs auto-appends sid, click_id, IP, and unique_id.</div>
                 </div>
 
                 <div style={{ marginTop: 12 }}>
                   <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 6 }}>Share</div>
                   <code style={{ fontSize: 11, color: "var(--accent)", fontFamily: "monospace", wordBreak: "break-all", background: "var(--bg-2)", padding: "6px 8px", borderRadius: 6, display: "block", border: "1px solid var(--border-2)" }}>
-                    {siteUrl}/get-key/{selected?.id}
+                    {siteUrl}/get-key/{pid}
                   </code>
-                  <button className="btn btn-primary btn-sm" style={{ width: "100%", marginTop: 6 }} onClick={() => { navigator.clipboard.writeText(`${siteUrl}/get-key/${selected?.id}`); toast.success("Copied!"); }}>
+                  <button className="btn btn-primary btn-sm" style={{ width: "100%", marginTop: 6 }} onClick={() => { navigator.clipboard.writeText(`${siteUrl}/get-key/${pid}`); toast.success("Copied!"); }}>
                     <i className="fa-solid fa-copy" /> Copy
                   </button>
                 </div>
