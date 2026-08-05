@@ -16,38 +16,89 @@ async function ensureMaster(): Promise<string> {
     return masterId;
   }
 
-  // Search user's pastes for existing master — use one WITH data
+  console.log("[SyncAuth] Searching for master paste robustly...");
   try {
-    const listRes = await fetch(`${PASTEFY_BASE}/paste?limit=200`, { headers: authH() });
-    if (listRes.ok) {
-      const raw = await listRes.json();
-      // API returns either an array directly or { items: [...] }
-      const items = Array.isArray(raw) ? raw : (raw.items || raw.data || []);
-      let best: any = null;
-      let bestWithData: any = null;
-      for (const item of items) {
-        const p = item.paste || item;
-        if (p.title === "syncauth-master") {
-          // Prioritize pastes that have project data
-          const hasData = p.content && p.content !== "{\"projects\":{}}" && p.content.includes('"paste_id"');
-          if (hasData && (!bestWithData || new Date(p.created_at) > new Date(bestWithData.created_at))) {
-            bestWithData = p;
-          }
-          if (!best || new Date(p.created_at) > new Date(best.created_at)) {
-            best = p;
+    const candidateIds: { id: string; title: string }[] = [];
+    
+    // Scan pages of pastes
+    for (let page = 1; page <= 5; page++) {
+      const listRes = await fetch(`${PASTEFY_BASE}/paste?limit=100&page=${page}`, { headers: authH() });
+      if (!listRes.ok) break;
+      const text = await listRes.text();
+      
+      let idx = 0;
+      while (true) {
+        const nextMaster = text.indexOf('"title":"syncauth-master"', idx);
+        const nextDb = text.indexOf('"title":"syncauth-db"', idx);
+        
+        let foundIdx = -1;
+        let titleFound = "";
+        if (nextMaster !== -1 && (nextDb === -1 || nextMaster < nextDb)) {
+          foundIdx = nextMaster;
+          titleFound = "syncauth-master";
+        } else if (nextDb !== -1) {
+          foundIdx = nextDb;
+          titleFound = "syncauth-db";
+        }
+        
+        if (foundIdx === -1) break;
+        
+        const idPrefix = '"id":"';
+        const idIdx = text.lastIndexOf(idPrefix, foundIdx);
+        if (idIdx !== -1) {
+          const idStart = idIdx + idPrefix.length;
+          const idEnd = text.indexOf('"', idStart);
+          if (idEnd !== -1) {
+            const id = text.substring(idStart, idEnd);
+            if (!candidateIds.some(c => c.id === id)) {
+              candidateIds.push({ id, title: titleFound });
+            }
           }
         }
-      }
-      // Use the one with data if available, otherwise the newest
-      const winner = bestWithData || best;
-      if (winner) {
-        masterId = winner.id;
-        console.log(`[SyncAuth] Found master: ${masterId}${bestWithData ? " (has data)" : " (empty)"}`);
-        return masterId;
+        idx = foundIdx + titleFound.length + 10;
       }
     }
+
+    console.log(`[SyncAuth] Found ${candidateIds.length} candidate master pastes. Inspecting contents...`);
+    let bestId = "";
+    let maxProjects = -1;
+    let fallbackId = "";
+
+    for (const cand of candidateIds) {
+      try {
+        const res = await fetch(`${PASTEFY_BASE}/paste/${cand.id}`, { headers: authH() });
+        if (!res.ok) continue;
+        const json = await res.json();
+        const contentStr = json.paste?.content || json.content || "";
+        const parsed = JSON.parse(contentStr);
+        if (parsed && parsed.projects) {
+          const projectCount = Object.keys(parsed.projects).length;
+          // Prefer master that contains the active test project we know about
+          const hasActiveProject = parsed.projects["pr60eltz117dht"] !== undefined;
+          
+          if (hasActiveProject) {
+            console.log(`[SyncAuth] Selected master paste with active project: ${cand.id}`);
+            bestId = cand.id;
+            break;
+          }
+          if (projectCount > maxProjects) {
+            maxProjects = projectCount;
+            fallbackId = cand.id;
+          }
+        }
+      } catch (e) {
+        // Skip malformed candidate pastes
+      }
+    }
+
+    const winnerId = bestId || fallbackId;
+    if (winnerId) {
+      masterId = winnerId;
+      console.log(`[SyncAuth] Robust search selected master: ${masterId}`);
+      return masterId;
+    }
   } catch (e) {
-    console.error("[SyncAuth] List search failed:", e);
+    console.error("[SyncAuth] Robust search failed:", e);
   }
 
   // Create new master
@@ -59,8 +110,7 @@ async function ensureMaster(): Promise<string> {
   const d = await res.json();
   masterId = d.paste?.id || d.id;
   if (!masterId) throw new Error("No master id");
-  console.log(`[SyncAuth] Created master: ${masterId}`);
-  console.log(`[SyncAuth] Set PASTEFY_PASTE_ID=${masterId} on Vercel to lock it`);
+  console.log(`[SyncAuth] Created new master: ${masterId}`);
   return masterId;
 }
 
