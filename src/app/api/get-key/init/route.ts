@@ -25,6 +25,7 @@ export async function GET(req: Request) {
     // If user returned from LootLabs with token, advance checkpoint step
     let activeSession: string | null = null;
     let completedSteps = 0;
+    // Always use the LIVE project setting — never the stale value in an old session
     let totalSteps = project.checkpoint_steps || 1;
     if (totalSteps < 1) totalSteps = 1;
 
@@ -32,10 +33,11 @@ export async function GET(req: Request) {
       const existingSession = await getRewardSession(token);
       if (existingSession) {
         completedSteps = (existingSession.step || 0) + 1; // Advance step
-        totalSteps = existingSession.total_steps || totalSteps;
+        // Do NOT override totalSteps from session — project is source of truth
         const { updateRewardSession } = await import("@/lib/pastefy");
         await updateRewardSession(project.id, token, (s) => {
           s.step = completedSteps;
+          s.total_steps = totalSteps; // keep session in sync with project
           if (completedSteps >= totalSteps) s.status = "completed";
         });
         // Reuse this session for all steps — both mid-flow and fully completed
