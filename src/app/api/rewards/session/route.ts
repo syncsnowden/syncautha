@@ -26,6 +26,12 @@ export async function POST(req: Request) {
     const llApiKey = body.lootlabs_api_key || process.env.LOOTLABS_API_KEY || "";
     const llLink = body.lootlabs_link || project.lootlabs_link || "";
 
+    // Save LootLabs settings to project for future sessions
+    if (llLink) {
+      const { updateProject } = await import("@/lib/pastefy");
+      await updateProject(pid, { lootlabs_link: llLink }).catch(() => {});
+    }
+
     let checkpointUrl = "";
     if (llLink && llApiKey) {
       try {
