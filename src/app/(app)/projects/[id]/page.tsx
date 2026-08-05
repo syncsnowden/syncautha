@@ -315,8 +315,8 @@ export default function ProjectDetailPage() {
                     </div>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       <button className="btn btn-secondary btn-sm" onClick={() => {
-                        navigator.clipboard.writeText(`${siteUrl}/api/scripts/${s.id}/raw`);
-                        toast.success("Raw URL copied!");
+                        navigator.clipboard.writeText(`loadstring(game:HttpGet("${siteUrl}/api/scripts/${s.id}/raw"))()`);
+                        toast.success("Loader copied!");
                       }}>
                         <i className="fa-solid fa-link" /> Raw URL
                       </button>
