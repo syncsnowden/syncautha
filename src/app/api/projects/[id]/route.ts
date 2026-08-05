@@ -16,8 +16,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     await updateProject(id, body);
     const project = await getProject(id);
     return Response.json(project);
-  } catch {
-    return Response.json({ error: "Failed to update." }, { status: 500 });
+  } catch (e: any) {
+    console.error("Update project error:", e);
+    return Response.json({ error: e.message || "Failed to update." }, { status: 500 });
   }
 }
 

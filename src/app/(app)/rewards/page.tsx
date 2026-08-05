@@ -20,7 +20,14 @@ export default function RewardsPage() {
 
   useEffect(() => {
     const saved = typeof window !== "undefined" ? localStorage.getItem("synr_pid") : "";
-    loadProjects().then(() => { if (saved) setPid(saved); });
+    loadProjects().then((data) => {
+      // Only restore saved PID if it still exists
+      if (saved && data.some((p: Project) => p.id === saved)) {
+        setPid(saved);
+      } else if (saved) {
+        localStorage.removeItem("synr_pid");
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -34,12 +41,13 @@ export default function RewardsPage() {
     setAddStep(-1);
   }, [pid, projects, refetch]);
 
-  async function loadProjects() {
+  async function loadProjects(): Promise<Project[]> {
     try {
       const res = await fetch("/api/projects");
       const data = await res.json();
       setProjects(data);
-    } catch {}
+      return data;
+    } catch { return []; }
   }
 
   function select(id: string) {
