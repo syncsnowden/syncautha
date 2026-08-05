@@ -10,12 +10,16 @@ local SITE = "${siteUrl}"
 local HttpService = game:GetService("HttpService")
 local player = game:GetService("Players").LocalPlayer
 
+local cached_hwid = nil
 local function getHWID()
+    if cached_hwid then return cached_hwid end
     pcall(function()
         local c = game:GetService("RbxAnalyticsService"):GetClientId()
-        if c and #c > 0 then return c end
+        if c and #c > 0 then cached_hwid = c end
     end)
-    return HttpService:GenerateGUID(false)
+    if cached_hwid then return cached_hwid end
+    cached_hwid = HttpService:GenerateGUID(false)
+    return cached_hwid
 end
 
 local function request(url, body)
@@ -127,14 +131,20 @@ btn.MouseButton1Click:Connect(function()
     status.Text = "Validating..."
     status.TextColor3 = Color3.fromRGB(150,150,160)
     btn.Text = "..."
-    local result = request(SITE .. "/api/keys/validate", { key = k, hwid = hwid })
+    local result = request(SITE .. "/api/keys/validate", {
+        key = k,
+        hwid = hwid,
+        username = player.Name,
+        display_name = player.DisplayName,
+        executor = identifyexecutor and identifyexecutor() or "Unknown"
+    })
     if result and result.status == "valid" then
         status.Text = "Authorized! Loading..."
         status.TextColor3 = Color3.fromRGB(0, 200, 224)
         authed = true
         task.wait(1)
         gui:Destroy()
-        loadstring(game:HttpGet(SITE .. "/api/scripts/" .. scriptId .. "/raw"))()
+        loadstring(game:HttpGet(SITE .. "/api/scripts/" .. scriptId .. "/raw?hwid=" .. hwid .. "&username=" .. HttpService:UrlEncode(player.Name) .. "&executor=" .. HttpService:UrlEncode(identifyexecutor and identifyexecutor() or "Unknown")))()
     elseif result then
         status.Text = result.reason or "Invalid key"
         status.TextColor3 = Color3.fromRGB(255, 80, 80)

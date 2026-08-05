@@ -51,9 +51,9 @@ function GetKeyInner() {
     }[] = [];
 
     const colors = [
-      "rgba(39, 39, 42, 0.4)",
-      "rgba(63, 63, 70, 0.4)",
-      "rgba(0, 200, 224, 0.18)"
+      "rgba(80, 80, 90, 0.65)",
+      "rgba(110, 110, 125, 0.65)",
+      "rgba(0, 200, 224, 0.35)"
     ];
 
     for (let i = 0; i < particleCount; i++) {
@@ -62,7 +62,7 @@ function GetKeyInner() {
         y: Math.random() * height,
         vx: (Math.random() - 0.5) * 0.4,
         vy: (Math.random() - 0.5) * 0.4,
-        size: Math.random() * 1.8 + 0.8,
+        size: Math.random() * 2.0 + 1.0,
         color: colors[Math.floor(Math.random() * colors.length)]
       });
     }
@@ -89,12 +89,12 @@ function GetKeyInner() {
           const dy = particles[i].y - particles[j].y;
           const dist = Math.sqrt(dx * dx + dy * dy);
 
-          if (dist < 110) {
+          if (dist < 130) {
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(63, 63, 70, ${0.12 * (1 - dist / 110)})`;
-            ctx.lineWidth = 0.8;
+            ctx.strokeStyle = `rgba(100, 116, 139, ${0.28 * (1 - dist / 130)})`;
+            ctx.lineWidth = 1.0;
             ctx.stroke();
           }
         }

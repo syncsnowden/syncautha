@@ -47,12 +47,15 @@ local SITE = site_url
 local CT_HEADER = _C({67,111,110,116,101,110,116,45,84,121,112,101})
 local CT_VALUE = _C({97,112,112,108,105,99,97,116,105,111,110,47,106,115,111,110})
 
+local cached_hwid = nil
 local function getHWID()
+    if cached_hwid then return cached_hwid end
     local ok, id = pcall(RbxAnalyticsService.GetClientId, RbxAnalyticsService)
-    if ok and type(id) == "string" and #id > 0 then return id end
+    if ok and type(id) == "string" and #id > 0 then cached_hwid = id return id end
     ok, id = pcall(HttpService.GenerateGUID, HttpService, false)
-    if ok and type(id) == "string" then return id end
-    return LocalPlayer.UserId .. "-" .. os.time()
+    if ok and type(id) == "string" then cached_hwid = id return id end
+    cached_hwid = LocalPlayer.UserId .. "-" .. os.time()
+    return cached_hwid
 end
 
 local REQ_FN = (syn and syn.request) or (http and http.request) or request or function(t) return HttpService:RequestAsync(t) end
@@ -385,6 +388,7 @@ local function validate(key)
         task.wait(1.5)
         closeGUI()
         task.wait(0.3)
+        gui:Destroy()
         authed = true
         return
     end
