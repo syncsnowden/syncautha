@@ -26,10 +26,13 @@ export async function POST(req: Request) {
     const llApiKey = body.lootlabs_api_key || process.env.LOOTLABS_API_KEY || "";
     const llLink = body.lootlabs_link || project.lootlabs_link || "";
 
-    // Save LootLabs settings to project for future sessions
-    if (llLink) {
+    // Save LootLabs settings to project
+    if (llLink || llApiKey) {
       const { updateProject } = await import("@/lib/pastefy");
-      await updateProject(pid, { lootlabs_link: llLink }).catch(() => {});
+      const updates: any = {};
+      if (llLink) updates.lootlabs_link = llLink;
+      if (llApiKey) updates.lootlabs_api_key = llApiKey;
+      await updateProject(pid, updates).catch(() => {});
     }
 
     let checkpointUrl = "";

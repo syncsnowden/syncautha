@@ -112,7 +112,7 @@ export interface Project {
   log_key: boolean; log_executor: boolean; log_jobid: boolean;
   created_at: number; key_duration: number; max_keys: number;
   allow_extending: boolean; reward_cooldown: number; allow_forgetting: boolean;
-  max_hours: number; lootlabs_link: string;
+  max_hours: number; lootlabs_link: string; lootlabs_api_key: string;
 }
 
 export interface Script {

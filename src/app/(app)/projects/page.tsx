@@ -10,7 +10,7 @@ interface Project {
   log_displayname: boolean; log_time: boolean; log_key: boolean; log_executor: boolean;
   log_jobid: boolean; created_at: number; key_duration: number; max_keys: number;
   allow_extending: boolean; reward_cooldown: number; allow_forgetting: boolean;
-  max_hours: number; lootlabs_link: string;
+  max_hours: number; lootlabs_link: string; lootlabs_api_key: string;
 }
 
 const defaultForm = {
@@ -19,7 +19,7 @@ const defaultForm = {
   log_hwid: true, log_ip: true, log_username: true, log_displayname: false,
   log_time: true, log_key: true, log_executor: true, log_jobid: false,
   key_duration: "24", max_keys: "3", allow_extending: false,
-  reward_cooldown: "0", allow_forgetting: false, max_hours: "0", lootlabs_link: "",
+  reward_cooldown: "0", allow_forgetting: false, max_hours: "0", lootlabs_link: "", lootlabs_api_key: "",
 };
 
 export default function ProjectsPage() {
@@ -51,7 +51,7 @@ export default function ProjectsPage() {
       key_duration: String(p.key_duration), max_keys: String(p.max_keys),
       allow_extending: p.allow_extending, reward_cooldown: String(p.reward_cooldown),
       allow_forgetting: p.allow_forgetting, max_hours: String(p.max_hours),
-      lootlabs_link: p.lootlabs_link,
+      lootlabs_link: p.lootlabs_link, lootlabs_api_key: p.lootlabs_api_key || "",
     });
     setShowForm(true);
   }
@@ -118,8 +118,13 @@ export default function ProjectsPage() {
                     <label className="input-label" style={{ marginBottom: 4 }}>Reward / LootLabs Settings</label>
                     <div className="input-group">
                       <label className="input-label">LootLabs Link</label>
-                      <input className="input" {...f("lootlabs_link")} placeholder="e.g. https://lootlabs.gg/your-link or leave empty" />
-                      <span style={{ fontSize: 11, color: "var(--text-3)" }}>Your LootLabs checkpoint link template</span>
+                      <input className="input" {...f("lootlabs_link")} placeholder="https://lootlabs.gg/your-link" />
+                      <span style={{ fontSize: 11, color: "var(--text-3)" }}>Create a link on LootLabs — destination can be anything</span>
+                    </div>
+                    <div className="input-group">
+                      <label className="input-label">LootLabs API Key</label>
+                      <input className="input" {...f("lootlabs_api_key")} placeholder="From LootLabs → Profile" />
+                      <span style={{ fontSize: 11, color: "var(--text-3)" }}>Your personal LootLabs API key (each user uses their own)</span>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                       <div className="input-group"><label className="input-label">Key Duration (hours)</label><input className="input" type="number" step="0.5" {...f("key_duration")} /></div>

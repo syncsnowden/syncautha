@@ -3,12 +3,13 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import LootLabsIcon from "@/components/LootLabsIcon";
 
-interface Project { id: string; name: string; lootlabs_link?: string; }
+interface Project { id: string; name: string; lootlabs_link?: string; lootlabs_api_key?: string; }
 
 export default function RewardsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectId, setProjectId] = useState("");
   const [llLink, setLlLink] = useState("");
+  const [llApiKey, setLlApiKey] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [showAll, setShowAll] = useState(false);
@@ -19,12 +20,13 @@ export default function RewardsPage() {
   async function createCheckpoint() {
     if (!projectId) return toast.error("Select a project.");
     if (!llLink.trim()) return toast.error("Enter your LootLabs link.");
+    if (!llApiKey.trim()) return toast.error("Enter your LootLabs API key (from Profile page).");
     setLoading(true); setResult(null);
     try {
       const res = await fetch("/api/rewards/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project_id: projectId, lootlabs_link: llLink }),
+        body: JSON.stringify({ project_id: projectId, lootlabs_link: llLink, lootlabs_api_key: llApiKey }),
       });
       const data = await res.json();
       if (data.session_id) {
@@ -46,6 +48,7 @@ export default function RewardsPage() {
   function editProject(p: Project) {
     setProjectId(p.id);
     setLlLink(p.lootlabs_link || "");
+    setLlApiKey(p.lootlabs_api_key || "");
   }
 
   return (
@@ -63,7 +66,7 @@ export default function RewardsPage() {
           <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div className="input-group">
               <label className="input-label">Project</label>
-              <select className="input" value={projectId} onChange={e => { setProjectId(e.target.value); const p = projects.find(x => x.id === e.target.value); setLlLink(p?.lootlabs_link || ""); }}>
+              <select className="input" value={projectId} onChange={e => { setProjectId(e.target.value); const p = projects.find(x => x.id === e.target.value); setLlLink(p?.lootlabs_link || ""); setLlApiKey(p?.lootlabs_api_key || ""); }}>
                 <option value="">Select project...</option>
                 {projects.map(p => <option key={p.id} value={p.id}>{p.name}{p.lootlabs_link ? " ✓" : ""}</option>)}
               </select>
@@ -71,7 +74,12 @@ export default function RewardsPage() {
             <div className="input-group">
               <label className="input-label">LootLabs Link URL</label>
               <input className="input" value={llLink} onChange={e => setLlLink(e.target.value)} placeholder="https://lootlabs.gg/your-link" />
-              <span style={{ fontSize: 11, color: "var(--text-3)" }}>Create a link on LootLabs first. Destination URL can be anything — we generate the redirect.</span>
+              <span style={{ fontSize: 11, color: "var(--text-3)" }}>Create a link on LootLabs first — destination can be anything</span>
+            </div>
+            <div className="input-group">
+              <label className="input-label">LootLabs API Key</label>
+              <input className="input" value={llApiKey} onChange={e => setLlApiKey(e.target.value)} placeholder="From LootLabs → Profile page" />
+              <span style={{ fontSize: 11, color: "var(--text-3)" }}>Used to generate checkpoint URLs. Each user uses their own.</span>
             </div>
             <button className="btn btn-primary" onClick={createCheckpoint} disabled={loading} style={{ width: "auto" }}>
               <i className="fa-solid fa-save" /> Save Checkpoint
