@@ -51,10 +51,9 @@ function GetKeyInner() {
       setProject(data.project);
       setSessionId(data.session_id);
 
-      if (token) {
-        const claimRes = await fetch(`/api/rewards/postback?sid=${token}`);
-        const claimData = await claimRes.json();
-        if (claimData.status === "completed") { setState("idle"); return; }
+      if (data.has_completed_session || token) {
+        setState("idle");
+        return;
       }
 
       if (data.checkpoint_url) {

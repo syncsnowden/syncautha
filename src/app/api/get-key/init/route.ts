@@ -1,4 +1,4 @@
-import { getProjects, getProject, createRewardSession, generateId } from "@/lib/pastefy";
+import { getProjects, getProject, createRewardSession, generateId, getRewardSession } from "@/lib/pastefy";
 
 export const dynamic = "force-dynamic";
 
@@ -6,6 +6,7 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const slug = url.searchParams.get("slug") || "";
+    const token = url.searchParams.get("token") || "";
     const host = req.headers.get("host") || "syncauth-eight.vercel.app";
     const origin = (req.headers.get("origin") || `https://${host}`).replace(/\/+$/, "").replace(/\/[^/]+$/, "");
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || origin;
@@ -19,15 +20,28 @@ export async function GET(req: Request) {
     }
     if (!project) return Response.json({ error: "Project not found." }, { status: 404 });
 
-    const sessionId = generateId(14);
-    await createRewardSession(project.id, {
-      id: sessionId, project_id: project.id,
-      status: "pending", created: Date.now(), used: false,
-    });
+    // Check if there's an existing completed session (user returned from LootLabs)
+    let activeSession: string | null = null;
+    if (token) {
+      const existingSession = await getRewardSession(token);
+      if (existingSession && existingSession.status === "completed" && !existingSession.used) {
+        activeSession = token;
+      }
+    }
+
+    let sessionId = activeSession;
+    if (!sessionId) {
+      sessionId = generateId(14);
+      await createRewardSession(project.id, {
+        id: sessionId, project_id: project.id,
+        status: "pending", created: Date.now(), used: false,
+      });
+    }
 
     return Response.json({
       project: { id: project.id, name: project.name },
       session_id: sessionId,
+      has_completed_session: !!activeSession,
       checkpoint_url: project.lootlabs_link || "",
       postback_url: `${siteUrl}/api/rewards/postback?sid=${sessionId}`,
     });
