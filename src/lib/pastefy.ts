@@ -152,7 +152,9 @@ export async function getProject(id: string): Promise<Project | null> {
   const p = m.projects[id];
   if (!p) return null;
   const data = await loadProjectData(p.paste_id);
-  return { ...data.settings, id } as Project;
+  if (!data || !data.settings) return null;
+  const result = { ...data.settings, id } as Project;
+  return result;
 }
 
 async function loadProjectData(pasteId: string): Promise<ProjectData> {

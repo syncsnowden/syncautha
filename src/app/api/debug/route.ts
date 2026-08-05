@@ -14,6 +14,7 @@ export async function GET() {
     const parsed = JSON.parse(content);
     return Response.json({
       paste_id: mid,
+      env_pastefy_paste_id: process.env.PASTEFY_PASTE_ID || "(not set)",
       project_count: Object.keys(parsed.projects || {}).length,
       projects: parsed.projects,
     });
