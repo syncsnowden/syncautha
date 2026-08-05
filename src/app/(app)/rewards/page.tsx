@@ -7,70 +7,73 @@ interface Project { id: string; name: string; lootlabs_link?: string; lootlabs_a
 
 export default function RewardsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [projectId, setProjectId] = useState("");
-  const [llApiKey, setLlApiKey] = useState("");
-  const [link1, setLink1] = useState("");
-  const [link2, setLink2] = useState("");
-  const [link3, setLink3] = useState("");
+  const [pid, setPid] = useState("");
+  const [apiKey, setApiKey] = useState("");
+  const [l1, setL1] = useState("");
+  const [l2, setL2] = useState("");
+  const [l3, setL3] = useState("");
   const [loading, setLoading] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [addStep, setAddStep] = useState(0);
   const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
 
   useEffect(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("syncauth_rewards_pid") : "";
-    loadProjects().then(() => { if (saved) setProjectId(saved); });
+    const saved = typeof window !== "undefined" ? localStorage.getItem("synr_pid") : "";
+    loadProjects().then(() => { if (saved) setPid(saved); });
   }, []);
 
   useEffect(() => {
-    if (!projectId) return;
-    const p = projects.find(x => x.id === projectId);
+    if (!pid) return;
+    const p = projects.find(x => x.id === pid);
     if (p) {
-      setLlApiKey(p.lootlabs_api_key || "");
-      setLink1(p.lootlabs_link || "");
-      setLink2(p.ll_link_2 || "");
-      setLink3(p.ll_link_3 || "");
+      setApiKey(p.lootlabs_api_key || "");
+      setL1(p.lootlabs_link || "");
+      setL2(p.ll_link_2 || "");
+      setL3(p.ll_link_3 || "");
+      setAddStep(0);
     }
-  }, [projectId, projects]);
+  }, [pid, projects]);
 
   async function loadProjects() {
     const res = await fetch("/api/projects");
     setProjects(await res.json());
   }
 
-  function selectProject(id: string) {
-    setProjectId(id);
-    localStorage.setItem("syncauth_rewards_pid", id);
+  function select(id: string) {
+    setPid(id);
+    localStorage.setItem("synr_pid", id);
   }
 
   async function save() {
-    if (!projectId) return toast.error("Select a project.");
-    if (!llApiKey.trim()) return toast.error("API key required.");
-    const links = [link1.trim(), link2.trim(), link3.trim()].filter(Boolean);
-    if (links.length === 0) return toast.error("Add at least one link.");
+    if (!pid) return toast.error("Select project.");
+    if (!apiKey.trim()) return toast.error("API key required.");
+    if (!l1.trim() && !l2.trim() && !l3.trim()) return toast.error("Add a checkpoint link.");
     setLoading(true);
     try {
-      const res = await fetch(`/api/projects/${projectId}`, {
+      const links = [l1.trim(), l2.trim(), l3.trim()].filter(Boolean);
+      const res = await fetch(`/api/projects/${pid}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           lootlabs_link: links[0] || "",
           ll_link_2: links[1] || "",
           ll_link_3: links[2] || "",
-          lootlabs_api_key: llApiKey,
+          lootlabs_api_key: apiKey,
           checkpoint_steps: links.length,
         }),
       });
-      if (!res.ok) throw new Error(await res.text());
-      toast.success(`Saved ${links.length} checkpoint${links.length>1?"s":""}!`);
+      if (!res.ok) throw new Error();
+      toast.success("Saved!");
+      setAddStep(0);
       await loadProjects();
     } catch { toast.error("Save failed."); }
     finally { setLoading(false); }
   }
 
   async function clearAll() {
-    if (!confirm("Remove ALL checkpoints?")) return;
-    setLink1(""); setLink2(""); setLink3("");
-    await fetch(`/api/projects/${projectId}`, {
+    if (!confirm("Remove all checkpoints?")) return;
+    setL1(""); setL2(""); setL3("");
+    await fetch(`/api/projects/${pid}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ lootlabs_link: "", ll_link_2: "", ll_link_3: "", checkpoint_steps: 0 }),
@@ -79,9 +82,18 @@ export default function RewardsPage() {
     loadProjects();
   }
 
-  const selected = projects.find(p => p.id === projectId);
-  const allLinks = [link1, link2, link3].filter(Boolean);
-  const stepCount = allLinks.length;
+  function startAdd() {
+    if (!l1.trim()) return toast.error("Save checkpoint 1 first.");
+    if (l2.trim()) return toast.error("Checkpoint 2 already exists. Remove it first or edit it.");
+    const n = [l1, l2, l3].filter(Boolean).length;
+    if (n >= 3) return toast.error("Max 3 checkpoints.");
+    setAddStep(n);
+  }
+
+  const selected = projects.find(x => x.id === pid);
+  const allLinks = [selected?.lootlabs_link || "", selected?.ll_link_2 || "", selected?.ll_link_3 || ""].filter(Boolean);
+  const localLinks = [l1, l2, l3].filter(Boolean);
+  const showSidebar = !!(selected && (allLinks.length > 0 || apiKey));
 
   return (
     <>
@@ -90,15 +102,15 @@ export default function RewardsPage() {
         <p className="page-subtitle">Set up LootLabs checkpoints.</p>
       </div>
 
-      <div className="page-body" style={{ maxWidth: stepCount > 0 ? 900 : 640 }}>
-        <div style={{ display: "grid", gridTemplateColumns: selected ? "1fr 300px" : "1fr", gap: 20, alignItems: "start" }}>
+      <div className="page-body" style={{ maxWidth: showSidebar ? "calc(100% - 40px)" : 640 }}>
+        <div style={{ display: "grid", gridTemplateColumns: showSidebar ? "1fr 320px" : "1fr", gap: 24, alignItems: "start" }}>
           <div className="card">
             <div className="card-header">
               <span className="card-title">
-                <Image src="/lootlabsicon.jpeg" alt="LootLabs" width={20} height={20} style={{ borderRadius: 4, marginRight: 8 }} />
+                <Image src="/lootlabsicon.jpeg" alt="LL" width={20} height={20} style={{ borderRadius: 4, marginRight: 8 }} />
                 Checkpoints {selected ? `— ${selected.name}` : ""}
               </span>
-              {selected && stepCount > 0 && (
+              {selected && allLinks.length > 0 && (
                 <button className="btn btn-secondary btn-sm" style={{ width: "auto", color: "#ef4444" }} onClick={clearAll}>
                   <i className="fa-solid fa-trash" /> Clear All
                 </button>
@@ -107,55 +119,44 @@ export default function RewardsPage() {
             <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div className="input-group">
                 <label className="input-label">Project</label>
-                <select className="input" value={projectId} onChange={e => selectProject(e.target.value)}>
+                <select className="input" value={pid} onChange={e => select(e.target.value)}>
                   <option value="">Select a project...</option>
                   {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </div>
 
-              {projectId && (
+              {pid && (
                 <>
                   <div className="input-group">
                     <label className="input-label">LootLabs API Key</label>
-                    <input className="input" value={llApiKey} onChange={e => setLlApiKey(e.target.value)} placeholder="From LootLabs → Profile page" />
+                    <input className="input" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="From LootLabs → Profile" />
                   </div>
 
-                  {[link1, link2, link3].map((link, i) => {
-                    const setLink = [setLink1, setLink2, setLink3][i];
-                    const prevHasLink = i === 0 || [link1, link2, link3][i-1].trim();
-                    if (!prevHasLink && !link.trim()) return null;
+                  {[l1, l2, l3].map((link, i) => {
+                    const setters = [setL1, setL2, setL3];
+                    const shouldShow = i === 0 || (addStep >= i) || (link.trim());
+                    if (!shouldShow) return null;
                     return (
                       <div key={i} className="card" style={{ background: "var(--bg-2)", border: "1px solid var(--border-2)", padding: 0 }}>
-                        <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div className="card-body">
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                             <span style={{ background: "var(--accent)", color: "#000", width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>{i + 1}</span>
                             <span style={{ fontWeight: 600, fontSize: 13 }}>Checkpoint {i + 1}</span>
-                            {i > 0 && (
-                              <button onClick={() => { setLink(""); save(); }} style={{ marginLeft: "auto", background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: 12 }}>
-                                <i className="fa-solid fa-xmark" />
-                              </button>
-                            )}
+                            {i > 0 && <button onClick={() => setters[i]("")} style={{ marginLeft: "auto", background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: 12 }}><i className="fa-solid fa-xmark" /></button>}
                           </div>
-                          <input className="input" value={link} onChange={e => setLink(e.target.value)} placeholder="https://loot-link.com/s?xxxxx" />
+                          <input className="input" value={link} onChange={e => setters[i](e.target.value)} placeholder="https://loot-link.com/s?xxxxx" />
                         </div>
                       </div>
                     );
                   })}
 
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", gap: 10 }}>
                     <button className="btn btn-primary" onClick={save} disabled={loading} style={{ width: "auto" }}>
-                      <i className="fa-solid fa-save" /> {loading ? "Saving..." : "Save"}
+                      {loading ? "Saving..." : "Save"}
                     </button>
-                    {stepCount >= 1 && stepCount < 3 && (
-                      <button className="btn btn-secondary" style={{ width: "auto" }} onClick={() => {
-                        const slots = [link1, link2, link3];
-                        const next = slots.findIndex((s, idx) => !s.trim() && idx >= stepCount);
-                        if (next >= 0) {
-                          const setters = [setLink1, setLink2, setLink3];
-                          setters[next]("");
-                        }
-                      }}>
-                        <i className="fa-solid fa-plus" /> Add Checkpoint {stepCount + 1}
+                    {l1.trim() && localLinks.length < 3 && addStep === 0 && (
+                      <button className="btn btn-secondary" style={{ width: "auto" }} onClick={startAdd}>
+                        <i className="fa-solid fa-plus" /> Add Another Checkpoint
                       </button>
                     )}
                   </div>
@@ -164,24 +165,26 @@ export default function RewardsPage() {
             </div>
           </div>
 
-          {selected && (
+          {showSidebar && (
             <div className="card" style={{ position: "sticky", top: 20 }}>
               <div className="card-header">
                 <span className="card-title"><Image src="/lootlabsicon.jpeg" alt="LL" width={18} height={18} style={{ borderRadius: 3, marginRight: 8 }} />Checkpoint Flow</span>
               </div>
-              <div className="card-body" style={{ padding: "16px" }}>
-                {[selected.lootlabs_link, selected.ll_link_2, selected.ll_link_3].filter(Boolean).length > 0 ? (
+              <div className="card-body" style={{ padding: 16 }}>
+                {allLinks.length > 0 ? (
                   <>
-                    {[selected.lootlabs_link, selected.ll_link_2, selected.ll_link_3].filter(Boolean).map((link, i) => (
+                    {allLinks.map((link, i) => (
                       <div key={i}>
                         <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                           <span style={{ background: "var(--accent)", color: "#000", width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>{i + 1}</span>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-1)" }}>LootLabs</div>
-                            <div style={{ fontSize: 10, color: "var(--text-3)", wordBreak: "break-all", fontFamily: "monospace", marginTop: 2, lineHeight: 1.3 }}>{typeof link === "string" && link.length > 45 ? link.slice(0, 45) + "..." : link}</div>
+                            <div style={{ fontSize: 12, fontWeight: 600 }}>LootLabs</div>
+                            <div style={{ fontSize: 10, color: "var(--text-3)", fontFamily: "monospace", wordBreak: "break-all", lineHeight: 1.3 }}>
+                              {link.length > 45 ? link.slice(0, 45) + "..." : link}
+                            </div>
                           </div>
                         </div>
-                        {i < [selected.lootlabs_link, selected.ll_link_2, selected.ll_link_3].filter(Boolean).length - 1 && (
+                        {i < allLinks.length - 1 && (
                           <div style={{ padding: "5px 0 5px 11px", color: "var(--border-2)", fontSize: 14 }}>
                             <i className="fa-solid fa-chevron-down" />
                           </div>
@@ -193,20 +196,31 @@ export default function RewardsPage() {
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <i className="fa-solid fa-key" style={{ color: "var(--accent)", fontSize: 14, width: 22, textAlign: "center" }} />
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)" }}>Receive Key</div>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)" }}>Receive Key</span>
                     </div>
                   </>
                 ) : (
-                  <div style={{ fontSize: 12, color: "var(--text-3)", textAlign: "center", padding: "10px 0" }}>No checkpoints yet. Add one and click Save.</div>
+                  <div style={{ fontSize: 12, color: "var(--text-3)", textAlign: "center", padding: "10px 0" }}>
+                    Enter your API key and a checkpoint link, then click Save.
+                  </div>
                 )}
 
-                <div style={{ marginTop: 14, padding: "10px 12px", background: "var(--bg-2)", borderRadius: 8, border: "1px solid var(--border-2)" }}>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text-2)", marginBottom: 6 }}>Postback URL (anti-bypass)</div>
-                  <code style={{ fontSize: 10, color: "var(--text-2)", fontFamily: "monospace", wordBreak: "break-all", lineHeight: 1.4 }}>{siteUrl}/api/rewards/postback?sid=YOUR_SESSION_ID</code>
-                  <button className="btn btn-secondary btn-sm" style={{ marginTop: 6, width: "100%", fontSize: 11 }} onClick={() => { navigator.clipboard.writeText(`${siteUrl}/api/rewards/postback?sid=SESSION_ID`); toast.success("Replace SESSION_ID with actual id from get-key URL"); }}>
-                    <i className="fa-solid fa-copy" /> Copy Template
+                <div style={{ marginTop: 16, padding: "10px 12px", background: "var(--bg-2)", borderRadius: 8, border: "1px solid var(--border-2)" }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 6 }}>Postback URL</div>
+                  <code style={{ fontSize: 10, color: "var(--text-2)", fontFamily: "monospace", wordBreak: "break-all", lineHeight: 1.4 }}>
+                    {siteUrl}/api/rewards/postback?sid=SESSION_ID
+                  </code>
+                  <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 4 }}>Replace SESSION_ID. Paste in LootLabs with {'{CLICK_ID}'} {'{IP}'} {'{UNIQUE_ID}'}</div>
+                </div>
+
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 6 }}>Share</div>
+                  <code style={{ fontSize: 11, color: "var(--accent)", fontFamily: "monospace", wordBreak: "break-all", background: "var(--bg-2)", padding: "6px 8px", borderRadius: 6, display: "block", border: "1px solid var(--border-2)" }}>
+                    {siteUrl}/get-key/{selected?.id}
+                  </code>
+                  <button className="btn btn-primary btn-sm" style={{ width: "100%", marginTop: 6 }} onClick={() => { navigator.clipboard.writeText(`${siteUrl}/get-key/${selected?.id}`); toast.success("Copied!"); }}>
+                    <i className="fa-solid fa-copy" /> Copy
                   </button>
-                  <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 6, lineHeight: 1.4 }}>Paste in LootLabs with <code style={{ background: "var(--bg-1)", padding: "1px 4px", borderRadius: 3 }}>{'{CLICK_ID}'}</code> <code style={{ background: "var(--bg-1)", padding: "1px 4px", borderRadius: 3 }}>{'{IP}'}</code> <code style={{ background: "var(--bg-1)", padding: "1px 4px", borderRadius: 3 }}>{'{UNIQUE_ID}'}</code></div>
                 </div>
               </div>
             </div>
@@ -227,7 +241,7 @@ export default function RewardsPage() {
                     <span style={{ fontWeight: 600, fontSize: 13, minWidth: 90 }}>{p.name}</span>
                     <span style={{ fontSize: 11, color: n > 0 ? "var(--accent)" : "var(--text-3)", background: "var(--bg-2)", padding: "2px 8px", borderRadius: 10 }}>{n} step{n!==1?"s":""}</span>
                     <code style={{ flex: 1, fontSize: 11, color: n > 0 ? "var(--accent)" : "var(--text-3)", fontFamily: "monospace", wordBreak: "break-all", minWidth: 160 }}>{siteUrl}/get-key/{p.id}</code>
-                    <button className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={() => selectProject(p.id)}><i className="fa-solid fa-pen" /></button>
+                    <button className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={() => select(p.id)}><i className="fa-solid fa-pen" /></button>
                     <button className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={() => { if (!confirm("Delete " + p.name + "?")) return; fetch(`/api/projects/${p.id}`, { method: "DELETE" }).then(() => { toast.success("Deleted."); loadProjects(); }); }}><i className="fa-solid fa-trash" /></button>
                   </div>
                 );
