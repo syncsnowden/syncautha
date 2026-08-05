@@ -38,14 +38,14 @@ export async function GET(req: Request) {
           s.step = completedSteps;
           if (completedSteps >= totalSteps) s.status = "completed";
         });
-        if (completedSteps >= totalSteps && !existingSession.used) {
-          activeSession = token;
-        }
+        // Reuse this session for all steps — both mid-flow and fully completed
+        activeSession = token;
       }
     }
 
     let sessionId = activeSession;
     if (!sessionId) {
+      // No token at all → brand new session
       sessionId = generateId(14);
       await createRewardSession(project.id, {
         id: sessionId, project_id: project.id,
@@ -91,7 +91,7 @@ export async function GET(req: Request) {
     return Response.json({
       project: { id: project.id, name: project.name },
       session_id: sessionId,
-      all_done: activeSession !== null,
+      all_done: completedSteps >= totalSteps,
       completed_steps: completedSteps,
       total_steps: totalSteps,
       checkpoint_url: checkpointUrl,
