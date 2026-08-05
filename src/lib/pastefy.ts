@@ -20,8 +20,9 @@ async function ensureMaster(): Promise<string> {
   try {
     const listRes = await fetch(`${PASTEFY_BASE}/paste?limit=200`, { headers: authH() });
     if (listRes.ok) {
-      const listData = await listRes.json();
-      const items = listData.items || listData.data || [];
+      const raw = await listRes.json();
+      // API returns either an array directly or { items: [...] }
+      const items = Array.isArray(raw) ? raw : (raw.items || raw.data || []);
       let best: any = null;
       let bestWithData: any = null;
       for (const item of items) {
