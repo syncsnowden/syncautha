@@ -2,6 +2,15 @@ const PASTEFY_BASE = "https://pastefy.app/api/v2";
 const API_KEY = process.env.PASTEFY_API_KEY || "sMBc9KgDW5Jy0PlP5GWCAa4Tlt4VJwJ2BQWJxW46NsLTYHEQbs3u4i8TyI4O";
 const ENV_MASTER_ID = process.env.PASTEFY_PASTE_ID || "";
 
+interface CacheEntry {
+  data: any;
+  timestamp: number;
+}
+
+const pasteCache = new Map<string, CacheEntry>();
+const pendingRequests = new Map<string, Promise<any>>();
+const CACHE_TTL = 30000; // 30 seconds
+
 function authH() { return { Authorization: `Bearer ${API_KEY}` }; }
 function jsonH() { return { Authorization: `Bearer ${API_KEY}`, "Content-Type": "application/json" }; }
 
@@ -115,18 +124,45 @@ async function ensureMaster(): Promise<string> {
 }
 
 async function readPaste(id: string): Promise<any> {
-  const res = await fetch(`${PASTEFY_BASE}/paste/${id}`, { headers: authH() });
-  if (!res.ok) return null;
-  const d = await res.json();
-  try { return JSON.parse(d.paste?.content || d.content || "{}"); } catch { return {}; }
+  const cached = pasteCache.get(id);
+  if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+    return cached.data;
+  }
+  
+  let pending = pendingRequests.get(id);
+  if (pending) {
+    return pending;
+  }
+
+  const promise = (async () => {
+    try {
+      const res = await fetch(`${PASTEFY_BASE}/paste/${id}`, { headers: authH() });
+      if (!res.ok) return null;
+      const d = await res.json();
+      const data = JSON.parse(d.paste?.content || d.content || "{}");
+      pasteCache.set(id, { data, timestamp: Date.now() });
+      return data;
+    } catch {
+      return {};
+    } finally {
+      pendingRequests.delete(id);
+    }
+  })();
+
+  pendingRequests.set(id, promise);
+  return promise;
 }
 
 async function writePaste(id: string, data: any): Promise<void> {
+  pasteCache.set(id, { data, timestamp: Date.now() });
   const res = await fetch(`${PASTEFY_BASE}/paste/${id}`, {
     method: "PUT", headers: jsonH(),
     body: JSON.stringify({ content: JSON.stringify(data) }),
   });
-  if (!res.ok) throw new Error(`Write failed: ${res.status}`);
+  if (!res.ok) {
+    pasteCache.delete(id);
+    throw new Error(`Write failed: ${res.status}`);
+  }
 }
 
 async function createPaste(data: any): Promise<string> {
@@ -136,11 +172,15 @@ async function createPaste(data: any): Promise<string> {
   });
   if (!res.ok) throw new Error(`Create failed: ${res.status}`);
   const d = await res.json();
-  return d.paste?.id || d.id;
+  const id = d.paste?.id || d.id;
+  if (id) {
+    pasteCache.set(id, { data, timestamp: Date.now() });
+  }
+  return id;
 }
 
 // ─── MASTER DB ───
-interface MasterDB { projects: Record<string, { paste_id: string; name: string; created_at: number }>; }
+interface MasterDB { projects: Record<string, { paste_id: string; name: string; created_at: number; settings?: Project }>; }
 
 async function getMaster(): Promise<MasterDB> {
   const mid = await ensureMaster();
@@ -199,16 +239,30 @@ const EMPTY_PROJECT: ProjectData = { settings: null as any, scripts: {}, keys: {
 export async function getProjects(): Promise<Project[]> {
   const m = await getMaster();
   const entries = Object.entries(m.projects);
+  let updatedMaster = false;
+  
+  // Return cached projects immediately, fetch uncached projects concurrently
   const projects = await Promise.all(
     entries.map(async ([id, p]) => {
       try {
+        if (p.settings) {
+          // Pre-warm the project data cache in the background (non-blocking) so scripts/keys load instantly
+          loadProjectData(p.paste_id).catch(() => {});
+          return { ...p.settings, id } as Project;
+        }
         const data = await loadProjectData(p.paste_id);
+        p.settings = data.settings;
+        updatedMaster = true;
         return { ...data.settings, id } as Project;
       } catch {
         return null;
       }
     })
   );
+
+  if (updatedMaster) {
+    saveMaster(m).catch(e => console.error("[SyncAuth] Failed to update master settings cache:", e));
+  }
   return projects.filter(Boolean) as Project[];
 }
 
@@ -216,8 +270,15 @@ export async function getProject(id: string): Promise<Project | null> {
   const m = await getMaster();
   const p = m.projects[id];
   if (!p) return null;
+  if (p.settings) {
+    // Pre-warm the project data cache in the background (non-blocking) so scripts/keys load instantly
+    loadProjectData(p.paste_id).catch(() => {});
+    return { ...p.settings, id } as Project;
+  }
   const data = await loadProjectData(p.paste_id);
   if (!data || !data.settings) return null;
+  p.settings = data.settings;
+  saveMaster(m).catch(e => console.error("[SyncAuth] Failed to update master settings cache:", e));
   const result = { ...data.settings, id } as Project;
   return result;
 }
@@ -235,7 +296,7 @@ export async function createProject(project: Project): Promise<void> {
   const data: ProjectData = { ...EMPTY_PROJECT, settings: project };
   const pasteId = await createPaste(data);
   const m = await getMaster();
-  m.projects[project.id] = { paste_id: pasteId, name: project.name, created_at: project.created_at };
+  m.projects[project.id] = { paste_id: pasteId, name: project.name, created_at: project.created_at, settings: project };
   await saveMaster(m);
 }
 
@@ -246,7 +307,8 @@ export async function updateProject(id: string, updates: Partial<Project>): Prom
   const data = await loadProjectData(p.paste_id);
   Object.assign(data.settings, updates);
   await saveProjectData(p.paste_id, data);
-  m.projects[id].name = data.settings.name;
+  p.name = data.settings.name;
+  p.settings = data.settings;
   await saveMaster(m);
 }
 
