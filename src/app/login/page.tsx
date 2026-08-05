@@ -46,6 +46,7 @@ export default function LoginPage() {
           email: data.user.email,
           created_at: data.user.created_at,
         }));
+        document.cookie = "syncauth_logged_in=1; path=/; max-age=2592000; SameSite=Lax";
       }
       toast.success("Welcome back!");
       router.push("/dashboard");

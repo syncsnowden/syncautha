@@ -54,6 +54,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const supabase = getSupabase();
     await supabase.auth.signOut();
     localStorage.removeItem("syncauth_user");
+    document.cookie = "syncauth_logged_in=; path=/; max-age=0";
+    document.cookie = "syncauth-remember=; path=/; max-age=0";
     toast.success("Signed out.");
     router.push("/login");
   };
