@@ -45,7 +45,7 @@ function GetKeyInner() {
 
   async function init() {
     try {
-      const res = await fetch(`/api/get-key/init?slug=${encodeURIComponent(slug)}`);
+      const res = await fetch(`/api/get-key/init?slug=${encodeURIComponent(slug)}${token ? `&token=${encodeURIComponent(token)}` : ""}`);
       const data = await res.json();
       if (data.error) { setError(data.error); setState("error"); return; }
       setProject(data.project);
