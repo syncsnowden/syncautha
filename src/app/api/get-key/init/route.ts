@@ -31,39 +31,14 @@ export async function GET(req: Request) {
       status: "pending", created: Date.now(), used: false,
     });
 
-    let lootlabsUrl = "";
-    if (project.lootlabs_link) {
-      try {
-        const apiKey = process.env.LOOTLABS_API_KEY || "";
-        if (apiKey) {
-          const postbackUrl = `${siteUrl}/api/rewards/postback?sid=${sessionId}`;
-          const llRes = await fetch("https://lootlabs.gg/api/url/create", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "X-Api-Key": apiKey },
-            body: JSON.stringify({
-              url: postbackUrl,
-              name: project.name,
-              key_duration: project.key_duration || 3,
-              max_keys: project.max_keys || 1,
-              allow_extending: project.allow_extending,
-              cooldown: project.reward_cooldown || 0,
-              allow_forgetting: project.allow_forgetting,
-              max_hours: project.max_hours || undefined,
-            }),
-          });
-          if (llRes.ok) {
-            const llData = await llRes.json();
-            lootlabsUrl = llData.url || "";
-          }
-        }
-      } catch {}
-    }
+    let checkpointUrl = project.lootlabs_link || "";
+    if (checkpointUrl && !checkpointUrl.startsWith("http")) checkpointUrl = "";
 
     return Response.json({
       project: { id: project.id, name: project.name, cooldown: project.cooldown },
       session_id: sessionId,
       postback_url: `${siteUrl}/api/rewards/postback?sid=${sessionId}`,
-      lootlabs_url: lootlabsUrl,
+      checkpoint_url: checkpointUrl,
     });
   } catch (e: any) {
     return Response.json({ error: e.message || "Failed." }, { status: 500 });
