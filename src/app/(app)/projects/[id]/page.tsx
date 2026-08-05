@@ -381,7 +381,7 @@ end
 local hp = makePage()
 addIcon(hp, 40, 0, ASSETS.lock)
 addLabel(hp, 48, "Key System", 19)
-addDesc(hp, 72, "Enter your key to unlock!\nGet the key from our site")
+addDesc(hp, 72, "Enter your key to unlock!\\nGet the key from our site")
 local inp = addInput(hp, 116, "XXXXXXXXXXXX")
 local btnUnlock = addButton(hp, 164, "Unlock Key", ASSETS.key, true)
 local btnGetKey = addButton(hp, 206, "Get Key", ASSETS.copy)
@@ -395,7 +395,7 @@ addLabel(lp, 172, "Verifying key...", 14, Color3.fromRGB(140, 140, 140))
 local sp = makePage()
 addIcon(sp, 40, 0.12, ASSETS.key)
 addLabel(sp, 65, "Access Granted", 19)
-addDesc(sp, 90, "Key verified successfully.\nContinuing...")
+addDesc(sp, 90, "Key verified successfully.\\nContinuing...")
 
 local ep = makePage()
 local ei = addIcon(ep, 40, 0.12, ASSETS.lock)
@@ -450,7 +450,7 @@ local function validate(key)
     local res = req("POST", API, { key = key, hwid = hwid })
 
     if not res then
-        errDesc.Text = "Connection failed.\nCheck your internet."
+        errDesc.Text = "Connection failed.\\nCheck your internet."
         showPage(ep)
         return
     end
@@ -485,11 +485,11 @@ local function validate(key)
     end
 
     if res.status == "expired" then
-        errDesc.Text = "Key has expired.\nGet a new one from our site."
+        errDesc.Text = "Key has expired.\\nGet a new one from our site."
     elseif res.status == "hwid_mismatch" then
-        errDesc.Text = "Wrong key.\nThis key is locked to another device."
+        errDesc.Text = "Wrong key.\\nThis key is locked to another device."
     else
-        errDesc.Text = "Wrong key.\nCheck your key and try again."
+        errDesc.Text = "Wrong key.\\nCheck your key and try again."
     end
     showPage(ep)
 end

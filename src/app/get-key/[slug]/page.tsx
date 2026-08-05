@@ -97,38 +97,36 @@ function GetKeyInner() {
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
   return (
-    <div style={{ minHeight:"100vh", background:"#07080f", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Inter,sans-serif", padding:16, position:"relative", overflow:"hidden" }}>
-      {/* Background glow */}
-      <div style={{ position:"absolute", top:"20%", left:"50%", transform:"translateX(-50%)", width:600, height:600, background:"radial-gradient(ellipse,rgba(0,200,224,0.07) 0%,transparent 70%)", pointerEvents:"none" }} />
+    <div style={{ minHeight:"100vh", background:"#000000", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Inter,sans-serif", padding:16, position:"relative", overflow:"hidden" }}>
       <style>{`
         @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
         @keyframes spin{to{transform:rotate(360deg)}}
         .sa-fade{animation:fadeUp .35s ease both}
-        .sa-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;border:none;font-family:Inter,sans-serif;transition:all .18s;outline:none}
-        .sa-btn:hover{filter:brightness(1.12);transform:translateY(-1px)}
+        .sa-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;border:none;font-family:Inter,sans-serif;transition:all .15s;outline:none}
+        .sa-btn:hover{opacity:0.9;transform:translateY(-1px)}
         .sa-btn:active{transform:translateY(0)}
-        .sa-btn.accent{background:linear-gradient(135deg,#00c8e0,#0055ff);color:#fff;box-shadow:0 4px 20px rgba(0,200,224,.25)}
-        .sa-btn.green{background:linear-gradient(135deg,#22c55e,#15803d);color:#fff;box-shadow:0 4px 20px rgba(34,197,94,.2)}
-        .sa-btn.ghost{background:rgba(255,255,255,.05);color:#94a3b8;border:1px solid rgba(255,255,255,.1)}
-        .sa-btn.ghost:hover{background:rgba(255,255,255,.08)}
-        .sa-btn.copy{background:rgba(0,200,224,.1);color:#00c8e0;border:1px solid rgba(0,200,224,.2)}
-        .sa-btn.copy.done{background:rgba(34,197,94,.12);color:#22c55e;border-color:rgba(34,197,94,.25)}
-        .sa-step{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;font-size:12px;transition:all .3s}
-        .sa-step.done{background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.18);color:#22c55e}
-        .sa-step.current{background:rgba(0,200,224,.07);border:1px solid rgba(0,200,224,.2);color:#00c8e0}
-        .sa-step.pending{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);color:#475569}
-        .sa-dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
-        .sa-dot.done{background:#22c55e;color:#000}
-        .sa-dot.current{background:rgba(0,200,224,.15);color:#00c8e0;border:1.5px solid #00c8e0}
-        .sa-dot.pending{background:rgba(255,255,255,.05);color:#475569}
-        .sa-key{padding:16px;background:rgba(0,200,224,.06);border:1px solid rgba(0,200,224,.15);border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:#00c8e0;letter-spacing:.5px;word-break:break-all;text-align:center}
-        .sa-icon{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:24px}
+        .sa-btn.accent{background:#ffffff;color:#000000;font-weight:700;}
+        .sa-btn.green{background:#ffffff;color:#000000;font-weight:700;}
+        .sa-btn.ghost{background:#121212;color:#a3a3a3;border:1px solid #262626}
+        .sa-btn.ghost:hover{background:#1a1a1a;color:#ffffff}
+        .sa-btn.copy{background:#121212;color:#ffffff;border:1px solid #262626}
+        .sa-btn.copy.done{background:#22c55e;color:#000000;border:none}
+        .sa-step{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;font-size:12px;transition:all .2s;border:1px solid transparent}
+        .sa-step.done{background:rgba(255,255,255,0.02);color:#a3a3a3}
+        .sa-step.current{background:rgba(255,255,255,0.04);border:1px solid #262626;color:#ffffff}
+        .sa-step.pending{background:transparent;color:#525252}
+        .sa-dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+        .sa-dot.done{background:#262626;color:#ffffff}
+        .sa-dot.current{background:#ffffff;color:#000000}
+        .sa-dot.pending{background:#171717;color:#525252}
+        .sa-key{padding:16px;background:#121212;border:1px solid #262626;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;color:#ffffff;letter-spacing:.5px;word-break:break-all;text-align:center}
+        .sa-icon{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:22px}
         .sa-icon.red{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#ef4444}
-        .sa-icon.cyan{background:rgba(0,200,224,.1);border:1px solid rgba(0,200,224,.2);color:#00c8e0}
+        .sa-icon.cyan{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#ffffff}
         .sa-icon.green{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:#22c55e}
         .sa-icon.amber{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);color:#f59e0b}
-        .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:fadeUp .3s ease;z-index:9999}
+        .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#ffffff;color:#000000;padding:12px 24px;border-radius:8px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;box-shadow:0 8px 32px rgba(0,0,0,.6);animation:fadeUp .3s ease;z-index:9999}
       `}</style>
 
       {/* Copy toast */}
@@ -140,20 +138,20 @@ function GetKeyInner() {
 
       <div className="sa-fade" style={{ width:"100%", maxWidth: total > 1 && state !== "result" && state !== "cooldown" ? 680 : 420 }}>
         {/* Card */}
-        <div style={{ background:"#0f1018", border:"1px solid rgba(255,255,255,.08)", borderRadius:18, overflow:"hidden", boxShadow:"0 30px 80px rgba(0,0,0,.7)" }}>
+        <div style={{ background:"#0a0a0a", border:"1px solid #1f1f1f", borderRadius:12, overflow:"hidden", boxShadow:"0 20px 50px rgba(0,0,0,.8)" }}>
 
           {/* Header */}
           {project && (
-            <div style={{ padding:"18px 24px", borderBottom:"1px solid rgba(255,255,255,.06)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+            <div style={{ padding:"18px 24px", borderBottom:"1px solid #1f1f1f", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
               <div>
                 <div style={{ fontSize:15, fontWeight:800, color:"#fff" }}>{project.name}</div>
-                <div style={{ fontSize:11, color:"#475569", marginTop:2 }}>
-                  <i className="fa-solid fa-shield-halved" style={{ marginRight:5, color:"#00c8e0" }} />
+                <div style={{ fontSize:11, color:"#71717a", marginTop:2 }}>
+                  <i className="fa-solid fa-shield-halved" style={{ marginRight:5, color:"#a1a1aa" }} />
                   SyncAuth License System
                 </div>
               </div>
               {total > 1 && (
-                <div style={{ background:"rgba(0,200,224,.1)", border:"1px solid rgba(0,200,224,.2)", color:"#00c8e0", padding:"4px 12px", borderRadius:99, fontSize:11, fontWeight:700 }}>
+                <div style={{ background:"rgba(255,255,255,.04)", border:"1px solid #262626", color:"#ffffff", padding:"4px 12px", borderRadius:99, fontSize:11, fontWeight:700 }}>
                   <i className="fa-solid fa-flag-checkered" style={{ marginRight:5 }} />
                   {done}/{total} Done
                 </div>
@@ -167,8 +165,8 @@ function GetKeyInner() {
 
               {/* LOADING */}
               {state === "loading" && (
-                <div style={{ textAlign:"center", padding:"20px 0", color:"#475569" }}>
-                  <i className="fa-solid fa-circle-notch" style={{ fontSize:28, animation:"spin 1s linear infinite", display:"block", marginBottom:10, color:"#00c8e0" }} />
+                <div style={{ textAlign:"center", padding:"20px 0", color:"#52525b" }}>
+                  <i className="fa-solid fa-circle-notch" style={{ fontSize:28, animation:"spin 1s linear infinite", display:"block", marginBottom:10, color:"#ffffff" }} />
                   Loading...
                 </div>
               )}
@@ -205,12 +203,12 @@ function GetKeyInner() {
                     </p>
                   </div>
                   <div>
-                    <div style={{ display:"flex", justifyContent:"space-between", fontSize:11, color:"#475569", marginBottom:6 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", fontSize:11, color:"#71717a", marginBottom:6 }}>
                       <span><i className="fa-solid fa-chart-simple" style={{ marginRight:5 }} />Progress</span>
-                      <span style={{ color:"#00c8e0", fontWeight:700 }}>{pct}%</span>
+                      <span style={{ color:"#ffffff", fontWeight:700 }}>{pct}%</span>
                     </div>
                     <div style={{ height:6, background:"rgba(255,255,255,.05)", borderRadius:99, overflow:"hidden" }}>
-                      <div style={{ height:"100%", width:`${pct}%`, background:"linear-gradient(90deg,#22c55e,#00c8e0)", borderRadius:99, transition:"width .5s ease" }} />
+                      <div style={{ height:"100%", width:`${pct}%`, background:"#ffffff", borderRadius:99, transition:"width .5s ease" }} />
                     </div>
                   </div>
                   <button className="sa-btn accent" onClick={() => window.location.href = nextUrl}>
@@ -296,8 +294,8 @@ function GetKeyInner() {
 
             {/* Right: progress tracker */}
             {total > 1 && state !== "result" && state !== "cooldown" && state !== "error" && state !== "loading" && (
-              <div style={{ width:190, borderLeft:"1px solid rgba(255,255,255,.05)", padding:"28px 14px", display:"flex", flexDirection:"column", gap:6, justifyContent:"center" }}>
-                <div style={{ fontSize:10, fontWeight:700, color:"#334155", textTransform:"uppercase", letterSpacing:1, marginBottom:8 }}>
+              <div style={{ width:190, borderLeft:"1px solid #1f1f1f", padding:"28px 14px", display:"flex", flexDirection:"column", gap:6, justifyContent:"center" }}>
+                <div style={{ fontSize:10, fontWeight:700, color:"#52525b", textTransform:"uppercase", letterSpacing:1, marginBottom:8 }}>
                   <i className="fa-solid fa-list-check" style={{ marginRight:5 }} />Steps
                 </div>
                 {Array.from({ length: total }).map((_, i) => {
@@ -330,7 +328,7 @@ function GetKeyInner() {
 
           {/* Footer */}
           {project && (
-            <div style={{ padding:"10px 24px", borderTop:"1px solid rgba(255,255,255,.04)", textAlign:"center", fontSize:10, color:"#1e2030" }}>
+            <div style={{ padding:"12px 24px", borderTop:"1px solid #1f1f1f", textAlign:"center", fontSize:10, color:"#52525b" }}>
               <i className="fa-solid fa-shield" style={{ marginRight:5 }} />Powered by SyncAuth
             </div>
           )}
