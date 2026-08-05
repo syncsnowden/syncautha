@@ -10,8 +10,7 @@ interface Project {
   log_displayname: boolean; log_time: boolean; log_key: boolean; log_executor: boolean;
   log_jobid: boolean; created_at: number; key_duration: number; max_keys: number;
   allow_extending: boolean; reward_cooldown: number; allow_forgetting: boolean;
-  max_hours: number; lootlabs_link: string; lootlabs_api_key: string;
-  ll_link_2: string; ll_link_3: string; checkpoint_steps: number;
+  max_hours: number;
 }
 
 const defaultForm = {
@@ -20,8 +19,7 @@ const defaultForm = {
   log_hwid: true, log_ip: true, log_username: true, log_displayname: false,
   log_time: true, log_key: true, log_executor: true, log_jobid: false,
   key_duration: "24", max_keys: "3", allow_extending: false,
-  reward_cooldown: "0", allow_forgetting: false, max_hours: "0", lootlabs_link: "", lootlabs_api_key: "",
-  ll_link_2: "", ll_link_3: "", checkpoint_steps: "1",
+  reward_cooldown: "0", allow_forgetting: false, max_hours: "0",
 };
 
 export default function ProjectsPage() {
@@ -53,9 +51,6 @@ export default function ProjectsPage() {
       key_duration: String(p.key_duration), max_keys: String(p.max_keys),
       allow_extending: p.allow_extending, reward_cooldown: String(p.reward_cooldown),
       allow_forgetting: p.allow_forgetting, max_hours: String(p.max_hours),
-      lootlabs_link: p.lootlabs_link, lootlabs_api_key: p.lootlabs_api_key || "",
-      ll_link_2: p.ll_link_2 || "", ll_link_3: p.ll_link_3 || "",
-      checkpoint_steps: String(p.checkpoint_steps || 1),
     });
     setShowForm(true);
   }
@@ -72,7 +67,6 @@ export default function ProjectsPage() {
         max_keys: Number(form.max_keys) || 3,
         reward_cooldown: Number(form.reward_cooldown) || 0,
         max_hours: Number(form.max_hours) || 0,
-        checkpoint_steps: Math.min(3, Math.max(1, Number(form.checkpoint_steps) || 1)),
       };
       const url = editId ? `/api/projects/${editId}` : "/api/projects";
       const method = editId ? "PUT" : "POST";
@@ -120,33 +114,10 @@ export default function ProjectsPage() {
 
                 <div className="card" style={{ background: "var(--bg-2)", border: "1px solid var(--border-2)" }}>
                   <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <label className="input-label" style={{ marginBottom: 4 }}>Reward / LootLabs Settings</label>
-                    <div className="input-group">
-                      <label className="input-label">LootLabs Link</label>
-                      <input className="input" {...f("lootlabs_link")} placeholder="https://lootlabs.gg/your-link" />
-                      <span style={{ fontSize: 11, color: "var(--text-3)" }}>Create a link on LootLabs — destination can be anything</span>
-                    </div>
-                    <div className="input-group">
-                      <label className="input-label">LootLabs API Key</label>
-                      <input className="input" {...f("lootlabs_api_key")} placeholder="From LootLabs → Profile" />
-                      <span style={{ fontSize: 11, color: "var(--text-3)" }}>Your personal LootLabs API key (each user uses their own)</span>
-                    </div>
+                    <label className="input-label" style={{ marginBottom: 4 }}>Key Settings</label>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                       <div className="input-group"><label className="input-label">Key Duration (hours)</label><input className="input" type="number" step="0.5" {...f("key_duration")} /></div>
                       <div className="input-group"><label className="input-label">Max Keys (per user)</label><input className="input" type="number" {...f("max_keys")} /></div>
-                    </div>
-                    <div className="input-group">
-                      <label className="input-label">Checkpoint Steps (1-3)</label>
-                      <input className="input" type="number" min="1" max="3" {...f("checkpoint_steps")} />
-                      <span style={{ fontSize: 11, color: "var(--text-3)" }}>How many checkpoints user must complete (free plan max 3)</span>
-                    </div>
-                    <div className="input-group">
-                      <label className="input-label">LootLabs Link 2</label>
-                      <input className="input" {...f("ll_link_2")} placeholder="Step 2 checkpoint link" />
-                    </div>
-                    <div className="input-group">
-                      <label className="input-label">LootLabs Link 3</label>
-                      <input className="input" {...f("ll_link_3")} placeholder="Step 3 checkpoint link" />
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                       <div className="input-group"><label className="input-label">Cooldown (hours)</label><input className="input" type="number" step="0.05" {...f("reward_cooldown")} /></div>
@@ -156,6 +127,7 @@ export default function ProjectsPage() {
                       <Toggle label="Allow Extending" {...t("allow_extending")} />
                       <Toggle label="Allow Forgetting" {...t("allow_forgetting")} />
                     </div>
+                    <span style={{ fontSize: 11, color: "var(--text-3)", marginTop: 4 }}>Manage checkpoints in the <b>Rewards</b> tab</span>
                   </div>
                 </div>
 
