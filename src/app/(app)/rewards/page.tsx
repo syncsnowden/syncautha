@@ -7,7 +7,10 @@ interface Project { id: string; name: string; lootlabs_link?: string; lootlabs_a
 
 export default function RewardsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [openId, setOpenId] = useState("");
+  const [openId, setOpenId] = useState(() => {
+    if (typeof window !== "undefined") return localStorage.getItem("synr_open") || "";
+    return "";
+  });
   const [apiKey, setApiKey] = useState("");
   const [link, setLink] = useState("");
   const [loading, setLoading] = useState(false);
@@ -62,7 +65,9 @@ export default function RewardsPage() {
   }
 
   function openProject(p: Project) {
-    setOpenId(p.id === openId ? "" : p.id);
+    const next = p.id === openId ? "" : p.id;
+    setOpenId(next);
+    localStorage.setItem("synr_open", next);
     setApiKey(p.lootlabs_api_key || "");
     setLink("");
   }
