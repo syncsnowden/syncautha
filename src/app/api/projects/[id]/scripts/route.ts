@@ -19,6 +19,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       silent_mode: body.silent_mode ?? false,
       script_code: body.script_code || "",
       created_at: Date.now(),
+      paste_id: "",
     };
     await createScript(project_id, script);
     return Response.json(script, { status: 201 });

@@ -120,6 +120,7 @@ export interface Project {
 export interface Script {
   id: string; project_id: string; name: string;
   silent_mode: boolean; script_code: string; created_at: number;
+  paste_id: string;
 }
 
 export interface KeyEntry {
@@ -210,6 +211,9 @@ export async function createScript(projectId: string, script: Script): Promise<v
   const m = await getMaster();
   const p = m.projects[projectId];
   if (!p) throw new Error("Project not found");
+  // Create separate paste for script
+  const pasteId = await createPaste({ exists: true, code: script.script_code, name: script.name, created_at: script.created_at });
+  script.paste_id = pasteId;
   const data = await loadProjectData(p.paste_id);
   data.scripts[script.id] = script;
   await saveProjectData(p.paste_id, data);
@@ -230,6 +234,10 @@ export async function updateScript(id: string, updates: Partial<Script>): Promis
     const data = await loadProjectData(p.paste_id);
     if (data.scripts[id]) {
       Object.assign(data.scripts[id], updates);
+      // Also update the script's own paste if code changed
+      if (updates.script_code !== undefined && data.scripts[id].paste_id) {
+        await writePaste(data.scripts[id].paste_id, { exists: true, code: updates.script_code, name: data.scripts[id].name, created_at: data.scripts[id].created_at });
+      }
       await saveProjectData(p.paste_id, data);
       return;
     }
@@ -242,11 +250,23 @@ export async function deleteScript(id: string): Promise<void> {
   for (const [pid, p] of Object.entries(m.projects)) {
     const data = await loadProjectData(p.paste_id);
     if (data.scripts[id]) {
+      // Soft-delete: mark the script paste as inactive
+      if (data.scripts[id].paste_id) {
+        await writePaste(data.scripts[id].paste_id, { exists: false, code: "", name: data.scripts[id].name, created_at: data.scripts[id].created_at });
+      }
       delete data.scripts[id];
       await saveProjectData(p.paste_id, data);
       return;
     }
   }
+}
+
+export async function getScriptRaw(id: string): Promise<{ exists: boolean; code: string } | null> {
+  const script = await getScript(id);
+  if (!script || !script.paste_id) return null;
+  const paste = await readPaste(script.paste_id);
+  if (!paste) return null;
+  return { exists: paste.exists !== false, code: paste.code || "" };
 }
 
 // ─── KEYS ───
