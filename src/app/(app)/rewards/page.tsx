@@ -7,7 +7,10 @@ interface Project { id: string; name: string; lootlabs_link?: string; lootlabs_a
 
 export default function RewardsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [pid, setPid] = useState("");
+  const [pid, setPid] = useState(() => {
+    if (typeof window !== "undefined") return localStorage.getItem("synr_pid") || "";
+    return "";
+  });
   const [apiKey, setApiKey] = useState("");
   const [link, setLink] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,12 +26,15 @@ export default function RewardsPage() {
     return data;
   }
 
+  useEffect(() => { load(); }, []);
+
   useEffect(() => {
-    load().then(data => {
-      const saved = typeof window !== "undefined" ? localStorage.getItem("synr_pid") : "";
-      if (saved && data.some((p: Project) => p.id === saved)) setPid(saved);
-    });
-  }, []);
+    if (!pid || projects.length === 0) return;
+    const p = projects.find(x => x.id === pid);
+    if (p) {
+      setApiKey(p.lootlabs_api_key || "");
+    }
+  }, [pid, projects]);
 
   async function save() {
     if (!pid) return toast.error("Select a project.");
