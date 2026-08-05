@@ -24,9 +24,11 @@ export default function RewardsPage() {
     const existing = p ? [p.lootlabs_link, p.ll_link_2, p.ll_link_3].filter((l): l is string => !!l) : [];
     if (!apiKey.trim()) return toast.error("API key required.");
     if (!link.trim()) return toast.error("Enter a link.");
+    if (existing.length >= 3) return toast.error("Max 3 checkpoints.");
     setLoading(true);
     try {
-      const body: any = { lootlabs_api_key: apiKey, checkpoint_steps: existing.length + 1 };
+      const newCount = existing.length + 1; // after adding this link
+      const body: any = { lootlabs_api_key: apiKey, checkpoint_steps: newCount };
       if (existing.length === 0) body.lootlabs_link = link;
       else if (existing.length === 1) body.ll_link_2 = link;
       else body.ll_link_3 = link;
@@ -43,8 +45,11 @@ export default function RewardsPage() {
   async function remove(pid: string, idx: number) {
     setLoading(true);
     try {
-      const body: any = {};
-      if (idx === 0) { body.lootlabs_link = ""; }
+      const p = projects.find(x => x.id === pid);
+      const existing = p ? [p.lootlabs_link, p.ll_link_2, p.ll_link_3].filter((l): l is string => !!l) : [];
+      const newCount = Math.max(existing.length - 1, 0);
+      const body: any = { checkpoint_steps: newCount };
+      if (idx === 0) body.lootlabs_link = "";
       if (idx === 1) body.ll_link_2 = "";
       if (idx === 2) body.ll_link_3 = "";
       const res = await fetch(`/api/projects/${pid}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });

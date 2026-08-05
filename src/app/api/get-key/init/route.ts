@@ -22,32 +22,29 @@ export async function GET(req: Request) {
     }
     if (!project) return Response.json({ error: "Project not found." }, { status: 404 });
 
-    // If user returned from LootLabs with token, advance checkpoint step
-    let activeSession: string | null = null;
+    // Source of truth: count the actual non-empty links, not checkpoint_steps (which can drift)
+    const links = [project.lootlabs_link, project.ll_link_2, project.ll_link_3].filter(Boolean);
+    const totalSteps = Math.max(links.length, 1);
+
     let completedSteps = 0;
-    // Always use the LIVE project setting — never the stale value in an old session
-    let totalSteps = project.checkpoint_steps || 1;
-    if (totalSteps < 1) totalSteps = 1;
+    let activeSession: string | null = null;
 
     if (token) {
       const existingSession = await getRewardSession(token);
       if (existingSession) {
-        completedSteps = (existingSession.step || 0) + 1; // Advance step
-        // Do NOT override totalSteps from session — project is source of truth
+        completedSteps = (existingSession.step || 0) + 1;
         const { updateRewardSession } = await import("@/lib/pastefy");
         await updateRewardSession(project.id, token, (s) => {
           s.step = completedSteps;
-          s.total_steps = totalSteps; // keep session in sync with project
+          s.total_steps = totalSteps; // keep in sync with live link count
           if (completedSteps >= totalSteps) s.status = "completed";
         });
-        // Reuse this session for all steps — both mid-flow and fully completed
         activeSession = token;
       }
     }
 
     let sessionId = activeSession;
     if (!sessionId) {
-      // No token at all → brand new session
       sessionId = generateId(14);
       await createRewardSession(project.id, {
         id: sessionId, project_id: project.id,
@@ -56,11 +53,9 @@ export async function GET(req: Request) {
       });
     }
 
-    // Get all LootLabs links
-    const links = [project.lootlabs_link, project.ll_link_2, project.ll_link_3].filter(Boolean);
     const currentLink = links[completedSteps] || "";
 
-    // Encrypt the return URL
+    // Encrypt return URL via LootLabs url_encryptor
     let checkpointUrl = "";
     const llApiKey = project.lootlabs_api_key || "";
     if (llApiKey && currentLink) {
@@ -98,13 +93,13 @@ export async function GET(req: Request) {
       total_steps: totalSteps,
       checkpoint_url: checkpointUrl,
       postback_url: `${siteUrl}/api/rewards/postback?sid=${sessionId}`,
-      // DEBUG — remove after confirming
       _debug: {
         project_checkpoint_steps: project.checkpoint_steps,
-        token_received: token || null,
-        session_found: activeSession !== null,
         links_count: links.length,
-        current_link_index: completedSteps,
+        total_steps_used: totalSteps,
+        token_received: token || null,
+        completed_steps: completedSteps,
+        all_done: completedSteps >= totalSteps,
         checkpoint_url_generated: !!checkpointUrl,
       },
     });
