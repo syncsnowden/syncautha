@@ -11,7 +11,11 @@ interface Script {
 
 interface Project { id: string; name: string; }
 
-const keyLoaderTemplate = (scriptId: string, name: string, site: string) => `local site_url = "${site}"
+const keyLoaderTemplate = (scriptId: string, name: string, site: string) => `local loader_gui_title = "Spirit"
+local discord_copy_invite = "https://discord.gg/5zp95qrrmK"
+local show_discord_button = true
+
+local site_url = "${site}"
 local script_id = "${scriptId}"
 
 local HttpService = game:GetService("HttpService")
@@ -40,7 +44,6 @@ end
 
 local API = site_url .. "/api/keys/validate"
 local SITE = site_url
-local DISCORD = _C({104,116,116,112,115,58,47,47,100,105,115,99,103,103,47,53,122,112,57,53,113,114,114,109,75})
 local CT_HEADER = _C({67,111,110,116,101,110,116,45,84,121,112,101})
 local CT_VALUE = _C({97,112,112,108,105,99,97,116,105,111,110,47,106,115,111,110})
 
@@ -117,7 +120,7 @@ local tl = Instance.new("TextLabel")
 tl.Size = UDim2.fromOffset(120, 40)
 tl.Position = UDim2.fromOffset(16, 0)
 tl.BackgroundTransparency = 1
-tl.Text = "Spirit"
+tl.Text = loader_gui_title
 tl.TextColor3 = Color3.new(1, 1, 1)
 tl.Font = Enum.Font.GothamBold
 tl.TextSize = 15
@@ -300,7 +303,11 @@ local inp = addInput(hp, 116, "XXXXXXXXXXXX")
 local btnUnlock = addButton(hp, 164, "Unlock Key", ASSETS.key, true)
 local btnGetKey = addButton(hp, 206, "Get Key", ASSETS.copy)
 local btnGetKeyLink = SITE .. "/get-key/" .. script_id
-local btnDiscord = addButton(hp, 248, "Join Discord", ASSETS.discord)
+
+local btnDiscord
+if show_discord_button then
+    btnDiscord = addButton(hp, 248, "Join Discord", ASSETS.discord)
+end
 
 local lp = makePage()
 addIcon(lp, 36, 0.26, ASSETS.key)
@@ -401,12 +408,14 @@ btnGetKey.MouseButton1Click:Connect(function()
     end
 end)
 
-btnDiscord.MouseButton1Click:Connect(function()
-    if setclipboard then
-        setclipboard(DISCORD)
-        notify("Discord invite copied!", false)
-    end
-end)
+if btnDiscord then
+    btnDiscord.MouseButton1Click:Connect(function()
+        if setclipboard then
+            setclipboard(discord_copy_invite)
+            notify("Discord invite copied!", false)
+        end
+    end)
+end
 
 btnRetry.MouseButton1Click:Connect(function()
     showPage(hp)
