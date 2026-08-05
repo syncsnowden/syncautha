@@ -225,6 +225,24 @@ export default function ProjectDetailPage() {
           </button>
         </div>
 
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 8, marginBottom: 12 }}>
+          <button className="btn btn-primary btn-sm" style={{ width: "auto" }} onClick={() => {
+            const firstScript = scripts[0];
+            const sid = firstScript ? firstScript.id : "YOUR_SCRIPT_ID";
+            const sname = firstScript ? firstScript.name : (project?.name || "Project");
+            const code = keyLoaderTemplate(sid, sname, siteUrl);
+            const blob = new Blob([code], { type: "text/plain" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = `loader-${sname.replace(/[^a-z0-9]/gi, "_")}.lua`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+            toast.success(firstScript ? `Downloaded loader for "${sname}"!` : "Downloaded loader template (no scripts found yet)!");
+          }}>
+            <i className="fa-solid fa-download" /> Download loader.lua
+          </button>
+        </div>
+
         <p className="page-subtitle">Manage scripts and key system for this project.</p>
       </div>
 

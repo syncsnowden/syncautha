@@ -5,7 +5,7 @@ const ENV_MASTER_ID = process.env.PASTEFY_PASTE_ID || "";
 function authH() { return { Authorization: `Bearer ${API_KEY}` }; }
 function jsonH() { return { Authorization: `Bearer ${API_KEY}`, "Content-Type": "application/json" }; }
 
-let masterId = ENV_MASTER_ID;
+let masterId = ENV_MASTER_ID || "JwyIQPYF";
 
 async function ensureMaster(): Promise<string> {
   if (masterId) return masterId;
@@ -198,12 +198,18 @@ const EMPTY_PROJECT: ProjectData = { settings: null as any, scripts: {}, keys: {
 
 export async function getProjects(): Promise<Project[]> {
   const m = await getMaster();
-  const results: Project[] = [];
-  for (const [id, p] of Object.entries(m.projects)) {
-    const data = await loadProjectData(p.paste_id);
-    results.push({ ...data.settings, id } as Project);
-  }
-  return results;
+  const entries = Object.entries(m.projects);
+  const projects = await Promise.all(
+    entries.map(async ([id, p]) => {
+      try {
+        const data = await loadProjectData(p.paste_id);
+        return { ...data.settings, id } as Project;
+      } catch {
+        return null;
+      }
+    })
+  );
+  return projects.filter(Boolean) as Project[];
 }
 
 export async function getProject(id: string): Promise<Project | null> {
