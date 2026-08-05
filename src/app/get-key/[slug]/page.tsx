@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useParams, useSearchParams, Suspense } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 function GetKeyInner() {
   const params = useParams();
