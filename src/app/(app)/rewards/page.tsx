@@ -136,12 +136,18 @@ export default function RewardsPage() {
             <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {projects.map(p => (
                 <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontWeight: 600, fontSize: 13, color: "var(--text-1)", minWidth: 120 }}>{p.name}</span>
-                  <code style={{ flex: 1, background: "var(--bg-2)", padding: "6px 10px", borderRadius: 6, fontSize: 12, color: "var(--accent)", fontFamily: "monospace", wordBreak: "break-all" }}>
-                    {siteUrl}/get-key/{p.id}
-                  </code>
+                  <span style={{ fontWeight: 600, fontSize: 13, color: "var(--text-1)", minWidth: 100 }}>{p.name}</span>
+                  <code style={{ flex: 1, background: "var(--bg-2)", padding: "6px 10px", borderRadius: 6, fontSize: 12, color: "var(--accent)", fontFamily: "monospace", wordBreak: "break-all" }}>{siteUrl}/get-key/{p.id}</code>
                   <button className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={() => { navigator.clipboard.writeText(`${siteUrl}/get-key/${p.id}`); toast.success("Copied!"); }}>
                     <i className="fa-solid fa-copy" />
+                  </button>
+                  <button className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={async () => {
+                    if (!confirm("Delete project " + p.name + "?")) return;
+                    await fetch(`/api/projects/${p.id}`, { method: "DELETE" });
+                    toast.success("Deleted.");
+                    setProjects(projects.filter(x => x.id !== p.id));
+                  }}>
+                    <i className="fa-solid fa-trash" />
                   </button>
                 </div>
               ))}
