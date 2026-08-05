@@ -12,6 +12,7 @@ export async function GET(req: Request) {
   
   await updateRewardSession(session.project_id, sid, (s) => { s.status = "completed"; });
   
-  // Redirect back to the key page with the token so the user can generate
-  return Response.redirect(`/get-key/${session.project_id}?token=${sid}`);
+  // Redirect back to the key page with absolute URL
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${req.headers.get("host") || "syncauth-eight.vercel.app"}`;
+  return Response.redirect(`${siteUrl}/get-key/${session.project_id}?token=${sid}`);
 }
