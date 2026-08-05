@@ -208,9 +208,9 @@ export default function RewardsPage() {
                 <div style={{ marginTop: 16, padding: "10px 12px", background: "var(--bg-2)", borderRadius: 8, border: "1px solid var(--border-2)" }}>
                   <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 6 }}>Postback URL</div>
                   <code style={{ fontSize: 10, color: "var(--text-2)", fontFamily: "monospace", wordBreak: "break-all", lineHeight: 1.4 }}>
-                    {siteUrl}/api/rewards/postback?sid=SESSION_ID&click_id={"{"}CLICK_ID{"}"}&ip={"{"}IP{"}"}&unique_id={"{"}UNIQUE_ID{"}"}
+                    {siteUrl}/api/rewards/postback?sid=SESSION_ID
                   </code>
-                  <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 4 }}>Replace SESSION_ID. Paste in LootLabs with {'{CLICK_ID}'} {'{IP}'} {'{UNIQUE_ID}'}</div>
+                  <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 4 }}>Replace SESSION_ID. LootLabs will auto-add click_id, IP, and unique_id.</div>
                 </div>
 
                 <div style={{ marginTop: 12 }}>
