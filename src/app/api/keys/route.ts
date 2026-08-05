@@ -11,5 +11,8 @@ export async function POST(req: Request) {
     const now = Date.now();
     await createKey(pid, { key, project_id: pid, hwid: null, created: now, expires: now + 86400000, status: "unused", linked_reward: null });
     return Response.json({ key, expires: now + 86400000 });
-  } catch { return Response.json({ error: "Failed." }, { status: 500 }); }
+  } catch (e: any) {
+    console.error("[POST /api/keys] Error:", e);
+    return Response.json({ error: e.message || "Failed." }, { status: 500 });
+  }
 }

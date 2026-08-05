@@ -1,4 +1,5 @@
-import { getScriptRaw } from "@/lib/pastefy";
+import { getScript, getProject, getProjectPasteId, loadProjectData, hashHwid, getScriptRaw } from "@/lib/pastefy";
+import { encryptWebhook } from "@/lib/crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -11,11 +12,57 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const ua = req.headers.get("user-agent") || "";
   const isRoblox = ua.includes("Roblox") || req.headers.get("roblox-id") || ua.toLowerCase().includes("axios");
 
+  const script = await getScript(id);
+  if (!script) {
+    return new Response("-- Script not found", { status: 404, headers: { "content-type": "text/plain" } });
+  }
+
   const data = await getScriptRaw(id);
   if (!data) return new Response("-- Script not found", { status: 404, headers: { "content-type": "text/plain" } });
   if (!data.exists) return new Response(DELETED, { status: 404, headers: { "content-type": "text/html" } });
 
   if (!isRoblox) return new Response(DENIED, { status: 403, headers: { "content-type": "text/html" } });
 
-  return new Response(data.code, { headers: { "content-type": "text/plain" } });
+  // Get project to check keys and validate request hwid
+  const project = await getProject(script.project_id);
+  if (!project) return new Response("-- Project not found", { status: 404, headers: { "content-type": "text/plain" } });
+
+  const pasteId = await getProjectPasteId(script.project_id);
+  if (!pasteId) return new Response("-- Project not found", { status: 404, headers: { "content-type": "text/plain" } });
+
+  const url = new URL(req.url);
+  const hwid = url.searchParams.get("hwid") || "";
+  if (!hwid) {
+    return new Response("-- Access Denied: Missing HWID parameter", { status: 403, headers: { "content-type": "text/plain" } });
+  }
+
+  const projectData = await loadProjectData(pasteId);
+  const hashed = hashHwid(hwid);
+
+  // Search if a valid non-expired key session exists for this hashed HWID
+  const hasValidKey = Object.values(projectData.keys).some((entry: any) =>
+    entry.hwid === hashed &&
+    (entry.status === "used" || entry.status === "active") &&
+    entry.expires > Date.now()
+  );
+
+  if (!hasValidKey) {
+    return new Response("-- Access Denied: No active key session found for this HWID", { status: 403, headers: { "content-type": "text/plain" } });
+  }
+
+  let code = data.code || "";
+  if (script.webhook_protection) {
+    const siteUrl = (() => {
+      if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
+      const host = req.headers.get("host") || "syncauth-eight.vercel.app";
+      return `https://${host}`;
+    })();
+    const webhookRegex = /https?:\/\/(?:discord|discordapp)\.com\/api\/webhooks\/(\d+)\/([A-Za-z0-9_-]+)/g;
+    code = code.replace(webhookRegex, (match) => {
+      const encrypted = encryptWebhook(match);
+      return `${siteUrl}/api/webhooks/proxy?w=${encodeURIComponent(encrypted)}`;
+    });
+  }
+
+  return new Response(code, { headers: { "content-type": "text/plain" } });
 }

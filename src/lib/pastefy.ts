@@ -283,7 +283,7 @@ export async function getProject(id: string): Promise<Project | null> {
   return result;
 }
 
-async function loadProjectData(pasteId: string): Promise<ProjectData> {
+export async function loadProjectData(pasteId: string): Promise<ProjectData> {
   const data = await readPaste(pasteId);
   return { ...EMPTY_PROJECT, ...data };
 }
@@ -386,10 +386,19 @@ export async function deleteScript(id: string): Promise<void> {
 
 export async function getScriptRaw(id: string): Promise<{ exists: boolean; code: string } | null> {
   const script = await getScript(id);
-  if (!script || !script.paste_id) return null;
+  if (!script) return null;
+  if (!script.paste_id) {
+    return { exists: true, code: script.script_code || "" };
+  }
   const paste = await readPaste(script.paste_id);
   if (!paste) return null;
   return { exists: paste.exists !== false, code: paste.code || "" };
+}
+
+export async function getProjectPasteId(projectId: string): Promise<string | null> {
+  const m = await getMaster();
+  const p = m.projects[projectId];
+  return p ? p.paste_id : null;
 }
 
 // ─── KEYS ───

