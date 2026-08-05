@@ -24,7 +24,7 @@ export default function RewardsPage() {
   function selectProject(p: Project) {
     setProjectId(p.id);
     setLlApiKey(p.lootlabs_api_key || "");
-    const existing = [p.lootlabs_link, p.ll_link_2, p.ll_link_3].filter((l): l is string => !!l);
+    const existing = [p.lootlabs_link || "", p.ll_link_2 || "", p.ll_link_3 || ""].filter(l => l.trim());
     setLinks(existing.length > 0 ? existing : [""]);
   }
 
@@ -159,8 +159,10 @@ export default function RewardsPage() {
                     <button className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={() => selectProject(p)}><i className="fa-solid fa-pen" /></button>
                     <button className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={() => { navigator.clipboard.writeText(`${siteUrl}/get-key/${p.id}`); toast.success("Copied!"); }}><i className="fa-solid fa-copy" /></button>
                     <button className="btn btn-secondary btn-sm" style={{ width: "auto", color: "#ef4444" }} onClick={async () => {
-                      await fetch(`/api/projects/${p.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lootlabs_link: "", ll_link_2: "", ll_link_3: "", checkpoint_steps: 1 }) });
-                      toast.success("Cleared."); loadProjects();
+                      if (!confirm(`Clear all checkpoints for "${p.name}"?`)) return;
+                      await fetch(`/api/projects/${p.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lootlabs_link: "", ll_link_2: "", ll_link_3: "", checkpoint_steps: 0 }) });
+                      toast.success("Checkpoints cleared.");
+                      loadProjects();
                     }}><i className="fa-solid fa-trash" /></button>
                   </div>
                 );

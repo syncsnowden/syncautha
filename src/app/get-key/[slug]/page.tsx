@@ -139,10 +139,27 @@ function GetKeyInner() {
         {state === "gate" && (
           <>
             <div className="ks-icon gate"><i className="fa-solid fa-shield-halved" /></div>
-            <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>Checkpoint Required</div>
+            <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>{project?.name || "Checkpoint Required"}</div>
             <p style={{ fontSize: 13, color: "#94a3b8", marginBottom: 20, lineHeight: 1.5 }}>
-              Complete a quick verification to get your license key for {project?.name || "this script"}.
+              Complete the checkpoint{totalSteps > 1 ? "s" : ""} below to get your license key.
             </p>
+            {totalSteps > 1 && (
+              <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 6, marginBottom: 20 }}>
+                {Array.from({ length: totalSteps }).map((_, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: i < completedSteps ? "rgba(34,197,94,0.06)" : "rgba(255,255,255,0.03)", borderRadius: 8, border: `1px solid ${i < completedSteps ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.06)"}`, fontSize: 12, color: i < completedSteps ? "#22c55e" : "var(--text-3)" }}>
+                    <span style={{ width: 20, height: 20, borderRadius: "50%", background: i < completedSteps ? "#22c55e" : "var(--border-2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: i < completedSteps ? "#000" : "var(--text-3)", flexShrink: 0 }}>
+                      {i < completedSteps ? <i className="fa-solid fa-check" style={{ fontSize: 9 }} /> : i + 1}
+                    </span>
+                    LootLabs Checkpoint {i + 1}
+                    {i === completedSteps && i < totalSteps && <span style={{ marginLeft: "auto", fontSize: 10, color: "var(--accent)", fontWeight: 600 }}>CURRENT</span>}
+                  </div>
+                ))}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: "rgba(0,200,224,0.03)", borderRadius: 8, border: "1px solid rgba(0,200,224,0.08)", fontSize: 12, color: "var(--text-3)", opacity: totalSteps > 0 && completedSteps >= totalSteps ? 1 : 0.4 }}>
+                  <i className="fa-solid fa-key" style={{ color: "var(--accent)", fontSize: 11 }} />
+                  Receive Key
+                </div>
+              </div>
+            )}
             <button onClick={startCheckpoint} className="ks-btn red">
               Start Checkpoint {totalSteps > 1 ? `(${completedSteps + 1}/${totalSteps})` : ""}
             </button>
