@@ -16,24 +16,32 @@ async function ensureMaster(): Promise<string> {
     return masterId;
   }
 
-  // Search user's pastes for existing master — use most recent
+  // Search user's pastes for existing master — use one WITH data
   try {
-    const listRes = await fetch(`${PASTEFY_BASE}/paste?limit=100`, { headers: authH() });
+    const listRes = await fetch(`${PASTEFY_BASE}/paste?limit=200`, { headers: authH() });
     if (listRes.ok) {
       const listData = await listRes.json();
       const items = listData.items || listData.data || [];
       let best: any = null;
+      let bestWithData: any = null;
       for (const item of items) {
         const p = item.paste || item;
         if (p.title === "syncauth-master") {
+          // Prioritize pastes that have project data
+          const hasData = p.content && p.content !== "{\"projects\":{}}" && p.content.includes('"paste_id"');
+          if (hasData && (!bestWithData || new Date(p.created_at) > new Date(bestWithData.created_at))) {
+            bestWithData = p;
+          }
           if (!best || new Date(p.created_at) > new Date(best.created_at)) {
             best = p;
           }
         }
       }
-      if (best) {
-        masterId = best.id;
-        console.log(`[SyncAuth] Found master: ${masterId} (${items.length} pastes checked)`);
+      // Use the one with data if available, otherwise the newest
+      const winner = bestWithData || best;
+      if (winner) {
+        masterId = winner.id;
+        console.log(`[SyncAuth] Found master: ${masterId}${bestWithData ? " (has data)" : " (empty)"}`);
         return masterId;
       }
     }
