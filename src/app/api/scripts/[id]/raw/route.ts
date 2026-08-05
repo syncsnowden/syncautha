@@ -1,4 +1,4 @@
-import { getScript, getProject, getProjectPasteId, loadProjectData, hashHwid, getScriptRaw } from "@/lib/pastefy";
+import { getScript, getProject, getProjectPasteId, loadProjectData, hashHwid, getScriptRaw, logExecution } from "@/lib/pastefy";
 import { encryptWebhook } from "@/lib/crypto";
 
 export const dynamic = "force-dynamic";
@@ -36,19 +36,34 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     return new Response("-- Access Denied: Missing HWID parameter", { status: 403, headers: { "content-type": "text/plain" } });
   }
 
+  const username = url.searchParams.get("username") || "RobloxPlayer";
+  const executor = url.searchParams.get("executor") || "Unknown";
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || 
+             req.headers.get("x-real-ip") || 
+             "127.0.0.1";
+
   const projectData = await loadProjectData(pasteId);
   const hashed = hashHwid(hwid);
 
   // Search if a valid non-expired key session exists for this hashed HWID
-  const hasValidKey = Object.values(projectData.keys).some((entry: any) =>
+  const matchingKeyEntry = Object.values(projectData.keys).find((entry: any) =>
     entry.hwid === hashed &&
     (entry.status === "used" || entry.status === "active") &&
     entry.expires > Date.now()
   );
 
-  if (!hasValidKey) {
+  if (!matchingKeyEntry) {
     return new Response("-- Access Denied: No active key session found for this HWID", { status: 403, headers: { "content-type": "text/plain" } });
   }
+
+  // Log execution asynchronously (non-blocking) to count stats
+  logExecution(script.project_id, id, {
+    hwid: hashed,
+    key: matchingKeyEntry.key,
+    ip,
+    username,
+    executor
+  }).catch(err => console.error("[SyncAuth] Failed to log execution:", err));
 
   let code = data.code || "";
   if (script.webhook_protection) {

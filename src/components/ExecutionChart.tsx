@@ -1,10 +1,16 @@
 "use client";
 import { useState, useMemo } from "react";
 
-export default function ExecutionChart() {
+interface ExecutionChartProps {
+  data?: { date: string; count: number }[];
+  total?: number;
+}
+
+export default function ExecutionChart({ data = [], total = 0 }: ExecutionChartProps) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   const chartData = useMemo(() => {
+    if (data && data.length > 0) return data;
     const dates = [];
     const today = new Date();
     for (let i = 29; i >= 0; i--) {
@@ -13,9 +19,13 @@ export default function ExecutionChart() {
       dates.push({ date: `${d.getMonth() + 1}/${d.getDate()}`, count: 0 });
     }
     return dates;
-  }, []);
+  }, [data]);
 
-  const maxVal = 300;
+  const maxVal = useMemo(() => {
+    const max = Math.max(...chartData.map((d) => d.count), 0);
+    return max > 0 ? Math.ceil(max / 10) * 10 : 100;
+  }, [chartData]);
+
   const width = 1000;
   const height = 240;
   const paddingX = 45;
@@ -29,7 +39,7 @@ export default function ExecutionChart() {
       const y = height - paddingY - (d.count / maxVal) * chartH;
       return { x, y, ...d };
     });
-  }, [chartData, chartW, chartH]);
+  }, [chartData, chartW, chartH, maxVal]);
 
   const pathD = useMemo(() => {
     return points.reduce((acc, pt, i) => (i === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`), "");
@@ -39,6 +49,10 @@ export default function ExecutionChart() {
     if (points.length === 0) return "";
     return `${pathD} L ${points[points.length - 1].x} ${height - paddingY} L ${points[0].x} ${height - paddingY} Z`;
   }, [pathD, points]);
+
+  const yLabels = useMemo(() => {
+    return [maxVal, Math.round(maxVal * 2 / 3), Math.round(maxVal / 3), 0];
+  }, [maxVal]);
 
   return (
     <div style={{ width: "100%", background: "var(--bg-1)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: "24px 20px 20px", marginTop: 8 }}>
@@ -53,7 +67,7 @@ export default function ExecutionChart() {
           </div>
         </div>
         <div style={{ fontSize: 12, color: "var(--text-3)" }}>
-          Total Executions: <span style={{ color: "var(--text-1)", fontWeight: 600 }}>0</span>
+          Total Executions: <span style={{ color: "var(--text-1)", fontWeight: 600 }}>{total}</span>
         </div>
       </div>
 
@@ -66,7 +80,7 @@ export default function ExecutionChart() {
             </linearGradient>
           </defs>
 
-          {[300, 200, 100, 0].map((val) => {
+          {yLabels.map((val) => {
             const y = height - paddingY - (val / maxVal) * chartH;
             return (
               <g key={val}>

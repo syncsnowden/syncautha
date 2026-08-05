@@ -25,6 +25,93 @@ function GetKeyInner() {
   const [genLoading, setGenLoading] = useState(false);
 
   useEffect(() => {
+    const canvas = document.getElementById("particle-canvas") as HTMLCanvasElement;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    const handleResize = () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    };
+    window.addEventListener("resize", handleResize);
+
+    const particleCount = 45;
+    const particles: {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      size: number;
+      color: string;
+    }[] = [];
+
+    const colors = [
+      "rgba(39, 39, 42, 0.4)",
+      "rgba(63, 63, 70, 0.4)",
+      "rgba(0, 200, 224, 0.18)"
+    ];
+
+    for (let i = 0; i < particleCount; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        size: Math.random() * 1.8 + 0.8,
+        color: colors[Math.floor(Math.random() * colors.length)]
+      });
+    }
+
+    const animate = () => {
+      ctx.clearRect(0, 0, width, height);
+
+      particles.forEach((p) => {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0 || p.x > width) p.vx *= -1;
+        if (p.y < 0 || p.y > height) p.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+      });
+
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < 110) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(63, 63, 70, ${0.12 * (1 - dist / 110)})`;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
+
+  useEffect(() => {
     const ck = localStorage.getItem("sa_cd_" + slug);
     if (ck && parseInt(ck) > Date.now()) {
       setCooldownSec(Math.ceil((parseInt(ck) - Date.now()) / 1000));
@@ -144,9 +231,12 @@ function GetKeyInner() {
         .sa-key{padding:16px;background:#0c0c0e;border:1px solid #27272a;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;color:#ffffff;letter-spacing:.5px;word-break:break-all;text-align:center}
         .sa-icon{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:22px;box-shadow:0 4px 12px rgba(0,0,0,0.5)}
         .sa-icon.dark{background:#000000;border:1px solid #27272a;color:#ffffff}
-        .sa-icon.red{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);color:#ef4444}
+        .sa-icon.red{background:#000000;border:1px solid #27272a;color:#ef4444}
         .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#ffffff;color:#000000;padding:12px 24px;border-radius:8px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;box-shadow:0 8px 32px rgba(0,0,0,.6);animation:fadeUp .3s ease;z-index:9999}
       `}</style>
+
+      {/* Particle background */}
+      <canvas id="particle-canvas" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", zIndex: 0, pointerEvents: "none" }} />
 
       {/* Drifting ambient orbs */}
       <div style={{

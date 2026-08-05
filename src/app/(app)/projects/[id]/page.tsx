@@ -366,7 +366,13 @@ local function validate(key)
     showPage(lp)
 
     local hwid = getHWID()
-    local res = req("POST", API, { key = key, hwid = hwid })
+    local res = req("POST", API, {
+        key = key,
+        hwid = hwid,
+        username = LocalPlayer.Name,
+        display_name = LocalPlayer.DisplayName,
+        executor = identifyexecutor and identifyexecutor() or "Unknown"
+    })
 
     if not res then
         errDesc.Text = "Connection failed.\\nCheck your internet."
@@ -435,7 +441,7 @@ pcall(openGUI)
 while not authed do task.wait(0.5) end
 
 local success, err = pcall(function()
-    loadstring(game:HttpGet(site_url .. "/api/scripts/" .. script_id .. "/raw?hwid=" .. getHWID(), true))()
+    loadstring(game:HttpGet(site_url .. "/api/scripts/" .. script_id .. "/raw?hwid=" .. getHWID() .. "&username=" .. HttpService:UrlEncode(LocalPlayer.Name) .. "&executor=" .. HttpService:UrlEncode(identifyexecutor and identifyexecutor() or "Unknown"), true))()
 end)
 if not success then
     warn("[SyncAuth] Failed to load main script:", err)

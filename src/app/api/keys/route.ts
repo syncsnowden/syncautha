@@ -1,6 +1,31 @@
-import { createKey, generateKey } from "@/lib/pastefy";
+import { createKey, generateKey, getProjects, loadProjectData } from "@/lib/pastefy";
 
 export const dynamic = "force-dynamic";
+
+export async function GET() {
+  try {
+    const projects = await getProjects();
+    const allKeys: any[] = [];
+    for (const p of projects) {
+      if (!p.paste_id) continue;
+      const data = await loadProjectData(p.paste_id);
+      if (data && data.keys) {
+        Object.values(data.keys).forEach((k: any) => {
+          allKeys.push({
+            ...k,
+            project_name: p.name
+          });
+        });
+      }
+    }
+    // Sort keys newest first
+    allKeys.sort((a: any, b: any) => b.created - a.created);
+    return Response.json(allKeys);
+  } catch (e: any) {
+    console.error("[GET /api/keys] Error:", e);
+    return Response.json({ error: e.message || "Failed to load keys" }, { status: 500 });
+  }
+}
 
 export async function POST(req: Request) {
   try {

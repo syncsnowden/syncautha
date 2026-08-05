@@ -205,6 +205,7 @@ export interface Project {
   max_hours: number; lootlabs_link: string; lootlabs_api_key: string;
   ll_link_2: string; ll_link_3: string;
   checkpoint_steps: number;
+  paste_id?: string;
 }
 
 export interface Script {
@@ -225,11 +226,15 @@ export interface RewardSession {
   step: number; total_steps: number;
 }
 
-interface ProjectData {
+export interface ProjectData {
   settings: Project;
   scripts: Record<string, Script>;
   keys: Record<string, KeyEntry>;
   rewards: Record<string, RewardSession>;
+  users?: Record<string, any>;
+  executions_count?: number;
+  daily_executions?: Record<string, number>;
+  recent_executions?: any[];
 }
 
 const EMPTY_PROJECT: ProjectData = { settings: null as any, scripts: {}, keys: {}, rewards: {} };
@@ -248,12 +253,12 @@ export async function getProjects(): Promise<Project[]> {
         if (p.settings) {
           // Pre-warm the project data cache in the background (non-blocking) so scripts/keys load instantly
           loadProjectData(p.paste_id).catch(() => {});
-          return { ...p.settings, id } as Project;
+          return { ...p.settings, id, paste_id: p.paste_id } as Project;
         }
         const data = await loadProjectData(p.paste_id);
         p.settings = data.settings;
         updatedMaster = true;
-        return { ...data.settings, id } as Project;
+        return { ...data.settings, id, paste_id: p.paste_id } as Project;
       } catch {
         return null;
       }
@@ -273,13 +278,13 @@ export async function getProject(id: string): Promise<Project | null> {
   if (p.settings) {
     // Pre-warm the project data cache in the background (non-blocking) so scripts/keys load instantly
     loadProjectData(p.paste_id).catch(() => {});
-    return { ...p.settings, id } as Project;
+    return { ...p.settings, id, paste_id: p.paste_id } as Project;
   }
   const data = await loadProjectData(p.paste_id);
   if (!data || !data.settings) return null;
   p.settings = data.settings;
   saveMaster(m).catch(e => console.error("[SyncAuth] Failed to update master settings cache:", e));
-  const result = { ...data.settings, id } as Project;
+  const result = { ...data.settings, id, paste_id: p.paste_id } as Project;
   return result;
 }
 
@@ -500,4 +505,66 @@ export { ensureMaster as setup, masterId };
 export async function getSetupInfo() {
   const mid = await ensureMaster();
   return { master_paste_id: mid };
+}
+
+// ─── USERS & EXECUTIONS LOGGING ───
+export async function logUser(
+  projectId: string,
+  hwid: string,
+  user: { key: string; ip: string; username: string; display_name: string; executor: string; }
+) {
+  const m = await getMaster();
+  const p = m.projects[projectId];
+  if (!p) return;
+  const data = await loadProjectData(p.paste_id);
+  if (!data.users) data.users = {};
+  data.users[hwid] = {
+    hwid,
+    key: user.key,
+    ip: user.ip,
+    username: user.username,
+    display_name: user.display_name,
+    executor: user.executor,
+    last_seen: Date.now(),
+    status: "active"
+  };
+  await saveProjectData(p.paste_id, data);
+}
+
+export async function logExecution(
+  projectId: string,
+  scriptId: string,
+  exec: { hwid: string; key: string; ip: string; username: string; executor: string; }
+) {
+  const m = await getMaster();
+  const p = m.projects[projectId];
+  if (!p) return;
+  const data = await loadProjectData(p.paste_id);
+
+  // Total count
+  data.executions_count = (data.executions_count || 0) + 1;
+
+  // Daily count
+  if (!data.daily_executions) data.daily_executions = {};
+  const dateStr = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+  data.daily_executions[dateStr] = (data.daily_executions[dateStr] || 0) + 1;
+
+  // Recent executions log
+  if (!data.recent_executions) data.recent_executions = [];
+  data.recent_executions.unshift({
+    id: generateId(8),
+    script_id: scriptId,
+    hwid: exec.hwid,
+    key: exec.key,
+    ip: exec.ip,
+    username: exec.username,
+    executor: exec.executor,
+    timestamp: Date.now()
+  });
+  
+  if (data.recent_executions.length > 15) {
+    data.recent_executions = data.recent_executions.slice(0, 15);
+  }
+
+  await saveProjectData(p.paste_id, data);
 }
