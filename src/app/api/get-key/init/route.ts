@@ -7,9 +7,11 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const slug = url.searchParams.get("slug") || "";
     const token = url.searchParams.get("token") || "";
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ||
-      (req.headers.get("origin") || "").replace(/\/+$/, "") ||
-      `https://${req.headers.get("host") || ""}`;
+    const siteUrl = (() => {
+      if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
+      const host = req.headers.get("host") || "syncauth-eight.vercel.app";
+      return `https://${host}`;
+    })();
 
     let project = await getProject(slug);
     if (!project) {

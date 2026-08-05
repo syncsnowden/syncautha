@@ -17,9 +17,7 @@ export async function POST(req: Request) {
       status: "pending", created: Date.now(), used: false,
     });
 
-    const host = req.headers.get("host") || "";
-    const origin = (req.headers.get("origin") || `https://${host}`).replace(/\/+$/, "").replace(/\/login$/, "").replace(/\/rewards$/, "").replace(/\/projects.*$/, "");
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || origin;
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${req.headers.get("host") || "syncauth-eight.vercel.app"}`;
     const postbackUrl = `${siteUrl}/api/rewards/postback?sid=${sid}`;
 
     // Use body API key if provided, else env var
