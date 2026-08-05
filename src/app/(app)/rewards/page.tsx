@@ -160,10 +160,14 @@ export default function RewardsPage() {
                   <span style={{ fontWeight: 600, fontSize: 13, minWidth: 100 }}>{p.name}</span>
                   <code style={{ flex: 1, background: "var(--bg-2)", padding: "6px 10px", borderRadius: 6, fontSize: 12, color: "var(--accent)", fontFamily: "monospace", wordBreak: "break-all" }}>{siteUrl}/get-key/{p.id}</code>
                   <button className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={() => { navigator.clipboard.writeText(`${siteUrl}/get-key/${p.id}`); toast.success("Copied!"); }}><i className="fa-solid fa-copy" /></button>
-                  <button className="btn btn-danger btn-sm" style={{ width: "auto" }} onClick={async () => {
-                    if (!confirm("Delete " + p.name + "?")) return;
-                    await fetch(`/api/projects/${p.id}`, { method: "DELETE" });
-                    toast.success("Deleted."); loadProjects();
+                  <button className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={async () => {
+                    await fetch(`/api/projects/${p.id}`, {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ lootlabs_link: "", lootlabs_api_key: "", ll_link_2: "", ll_link_3: "", checkpoint_steps: 1 }),
+                    });
+                    toast.success("Checkpoints cleared.");
+                    loadProjects();
                   }}><i className="fa-solid fa-trash" /></button>
                 </div>
               ))}
