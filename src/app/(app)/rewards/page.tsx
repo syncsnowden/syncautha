@@ -91,7 +91,7 @@ export default function RewardsPage() {
       </div>
 
       <div className="page-body" style={{ maxWidth: stepCount > 0 ? 900 : 640 }}>
-        <div style={{ display: "grid", gridTemplateColumns: stepCount > 0 ? "1fr 300px" : "1fr", gap: 20, alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: selected ? "1fr 300px" : "1fr", gap: 20, alignItems: "start" }}>
           <div className="card">
             <div className="card-header">
               <span className="card-title">
