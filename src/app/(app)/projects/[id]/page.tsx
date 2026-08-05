@@ -210,17 +210,21 @@ export default function ProjectDetailPage() {
           </button>
         </div>
         <h1 className="page-title">{project?.name || "Loading..."}</h1>
-        <div style={{ display: "flex", gap: 8, marginBottom: 4 }}>
-          <button className="btn btn-secondary btn-sm" onClick={() => {
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 6 }}>
+          <span style={{ fontSize: 12, color: "var(--text-3)" }}>Key System URL:</span>
+          <code style={{ background: "var(--bg-2)", padding: "4px 10px", borderRadius: 6, fontSize: 12, color: "var(--accent)", fontFamily: "monospace" }}>
+            {siteUrl}/get-key/{pid}
+          </code>
+          <button className="btn btn-secondary btn-sm" style={{ width: "auto", padding: "4px 10px", fontSize: 11 }} onClick={() => {
             navigator.clipboard.writeText(`${siteUrl}/get-key/${pid}`);
-            toast.success("Key system link copied! Share with users.");
+            toast.success("Copied!");
           }}>
-            <i className="fa-solid fa-link" /> Copy Key Link ({siteUrl}/get-key/{pid})
+            <i className="fa-solid fa-copy" />
           </button>
-          <a href={`${siteUrl}/api/key-loader`} className="btn btn-secondary btn-sm" style={{ textDecoration: "none" }}>
-            <i className="fa-solid fa-download" /> Download loader.lua
-          </a>
         </div>
+        <a href={`${siteUrl}/api/key-loader`} className="btn btn-secondary btn-sm" style={{ textDecoration: "none" }}>
+          <i className="fa-solid fa-download" /> Download loader.lua
+        </a>
         <p className="page-subtitle">Manage scripts and key system for this project.</p>
       </div>
 

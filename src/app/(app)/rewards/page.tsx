@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import LootLabsIcon from "@/components/LootLabsIcon";
 import toast from "react-hot-toast";
 
 interface Project { id: string; name: string; }
@@ -11,6 +12,8 @@ export default function RewardsPage() {
   const [llApiKey, setLlApiKey] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [showAll, setShowAll] = useState(false);
+  const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
 
   useEffect(() => { fetch("/api/projects").then(r => r.json()).then(setProjects); }, []);
 
@@ -62,8 +65,7 @@ export default function RewardsPage() {
             <div className="card" style={{ background: "var(--bg-2)", border: "1px solid var(--border-2)", padding: 0 }}>
               <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <div style={{ fontWeight: 600, fontSize: 13, color: "var(--text-1)" }}>
-                  <i className="fa-solid fa-link" style={{ marginRight: 6, color: "var(--accent)" }} />
-                  LootLabs Anti-Bypass Setup
+                  <LootLabsIcon size={16} /> LootLabs Anti-Bypass Setup
                 </div>
                 <div className="input-group">
                   <label className="input-label">LootLabs Link</label>
@@ -124,6 +126,29 @@ export default function RewardsPage() {
             </div>
           </div>
         )}
+
+        <div className="card" style={{ marginTop: 20 }}>
+          <div className="card-header">
+            <span className="card-title"><i className="fa-solid fa-link" style={{ marginRight: 8, color: "var(--accent)" }} />Your Key System URLs</span>
+            <button className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={() => setShowAll(!showAll)}>{showAll ? "Hide" : "Show All"}</button>
+          </div>
+          {showAll && (
+            <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {projects.map(p => (
+                <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontWeight: 600, fontSize: 13, color: "var(--text-1)", minWidth: 120 }}>{p.name}</span>
+                  <code style={{ flex: 1, background: "var(--bg-2)", padding: "6px 10px", borderRadius: 6, fontSize: 12, color: "var(--accent)", fontFamily: "monospace", wordBreak: "break-all" }}>
+                    {siteUrl}/get-key/{p.id}
+                  </code>
+                  <button className="btn btn-secondary btn-sm" style={{ width: "auto" }} onClick={() => { navigator.clipboard.writeText(`${siteUrl}/get-key/${p.id}`); toast.success("Copied!"); }}>
+                    <i className="fa-solid fa-copy" />
+                  </button>
+                </div>
+              ))}
+              {projects.length === 0 && <div style={{ color: "var(--text-3)", fontSize: 13 }}>No projects yet. Create one first.</div>}
+            </div>
+          )}
+        </div>
 
         <div className="card">
           <div className="card-header">
