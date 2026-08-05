@@ -159,21 +159,23 @@ export default function RewardsPage() {
                       <i className="fa-solid fa-key" style={{ color: "var(--accent)", fontSize: 14, width: 22, textAlign: "center" }} />
                       <span style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)" }}>Receive Key</span>
                     </div>
+                    <div style={{ marginTop: 14 }}>
+                      <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 6 }}>Share with users</div>
+                      <code style={{ fontSize: 11, color: "var(--accent)", fontFamily: "monospace", wordBreak: "break-all", background: "var(--bg-2)", padding: "6px 8px", borderRadius: 6, display: "block", border: "1px solid var(--border-2)" }}>{siteUrl}/get-key/{pid}</code>
+                      <button className="btn btn-primary btn-sm" style={{ width: "100%", marginTop: 6 }} onClick={() => { navigator.clipboard.writeText(`${siteUrl}/get-key/${pid}`); toast.success("Copied!"); }}>
+                        <i className="fa-solid fa-copy" /> Copy
+                      </button>
+                    </div>
                   </>
                 ) : (
-                  <div style={{ fontSize: 12, color: "var(--text-3)", textAlign: "center", padding: "10px 0" }}>Add a checkpoint to see the flow.</div>
+                  <div style={{ fontSize: 12, color: "var(--text-3)", textAlign: "center", padding: "10px 0" }}>
+                    Add a checkpoint to see the flow and get your share link.
+                  </div>
                 )}
                 <div style={{ marginTop: 16, padding: "10px 12px", background: "var(--bg-2)", borderRadius: 8, border: "1px solid var(--border-2)" }}>
                   <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 6 }}>Postback URL</div>
                   <code style={{ fontSize: 10, color: "var(--text-2)", fontFamily: "monospace", wordBreak: "break-all", lineHeight: 1.4 }}>{siteUrl}/api/rewards/postback</code>
                   <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 4 }}>LootLabs auto-appends sid, click_id, IP, and unique_id.</div>
-                </div>
-                <div style={{ marginTop: 12 }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 6 }}>Share</div>
-                  <code style={{ fontSize: 11, color: "var(--accent)", fontFamily: "monospace", wordBreak: "break-all", background: "var(--bg-2)", padding: "6px 8px", borderRadius: 6, display: "block", border: "1px solid var(--border-2)" }}>{siteUrl}/get-key/{pid}</code>
-                  <button className="btn btn-primary btn-sm" style={{ width: "100%", marginTop: 6 }} onClick={() => { navigator.clipboard.writeText(`${siteUrl}/get-key/${pid}`); toast.success("Copied!"); }}>
-                    <i className="fa-solid fa-copy" /> Copy
-                  </button>
                 </div>
               </div>
             </div>
