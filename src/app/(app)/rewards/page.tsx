@@ -62,7 +62,7 @@ export default function RewardsPage() {
         <h1 className="page-title">Rewards</h1>
         <p className="page-subtitle">Set up LootLabs checkpoints for your projects.</p>
       </div>
-      <div className="page-body">
+      <div className="page-body" style={{ maxWidth: 720 }}>
         {projects.length === 0 && (
           <div className="empty-state">
             <i className="fa-solid fa-gift empty-icon" />
