@@ -12,15 +12,38 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { id: project_id } = await params;
   try {
     const body = await req.json();
+    let code = body.script_code || "";
+    
+    // Obfuscate with WeAreDevs
+    try {
+      const obfRes = await fetch("https://wearedevs.net/api/obfuscate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ script: code })
+      });
+      if (obfRes.ok) {
+        const obfData = await obfRes.json();
+        if (obfData.success && obfData.obfuscated) {
+          code = obfData.obfuscated;
+        }
+      }
+    } catch (e) { console.error("[SyncAuth] Obfuscation failed:", e); }
+
     const script: Script = {
       id: generateId(14),
       project_id,
       name: body.name || "Untitled",
       silent_mode: body.silent_mode ?? false,
-      script_code: body.script_code || "",
+      script_code: code,
       created_at: Date.now(),
       paste_id: "",
       webhook_protection: body.webhook_protection ?? false,
+      use_syncauth_gui: body.use_syncauth_gui ?? true,
+      gui_title: body.gui_title || "",
+      discord_link: body.discord_link || "",
+      get_key_link: body.get_key_link || "",
+      show_discord_button: body.show_discord_button ?? true,
+      logs_webhook: body.logs_webhook || "",
     };
     await createScript(project_id, script);
     return Response.json(script, { status: 201 });

@@ -12,6 +12,7 @@ interface Script {
   discord_link?: string;
   get_key_link?: string;
   show_discord_button?: boolean;
+  logs_webhook?: string;
 }
 
 interface Project { id: string; name: string; }
@@ -493,7 +494,8 @@ export default function ProjectDetailPage() {
   const [editSid, setEditSid] = useState("");
   const [form, setForm] = useState({ 
     name: "", silent_mode: false, script_code: "", webhook_protection: false, 
-    use_syncauth_gui: true, gui_title: "", discord_link: "", get_key_link: "", show_discord_button: true 
+    use_syncauth_gui: true, gui_title: "", discord_link: "", get_key_link: "", show_discord_button: true,
+    logs_webhook: ""
   });
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<"scripts" | "keys">("scripts");
@@ -508,8 +510,8 @@ export default function ProjectDetailPage() {
     setScripts(await res.json());
   }
 
-  function resetForm() { setForm({ name: "", silent_mode: false, script_code: "", webhook_protection: false, use_syncauth_gui: true, gui_title: "", discord_link: "", get_key_link: "", show_discord_button: true }); setEditSid(""); setShowForm(false); }
-  function editScript(s: Script) { setEditSid(s.id); setForm({ name: s.name, silent_mode: s.silent_mode, script_code: s.script_code, webhook_protection: s.webhook_protection, use_syncauth_gui: s.use_syncauth_gui ?? true, gui_title: s.gui_title || "", discord_link: s.discord_link || "", get_key_link: s.get_key_link || "", show_discord_button: s.show_discord_button ?? true }); setShowForm(true); }
+  function resetForm() { setForm({ name: "", silent_mode: false, script_code: "", webhook_protection: false, use_syncauth_gui: true, gui_title: "", discord_link: "", get_key_link: "", show_discord_button: true, logs_webhook: "" }); setEditSid(""); setShowForm(false); }
+  function editScript(s: Script) { setEditSid(s.id); setForm({ name: s.name, silent_mode: s.silent_mode, script_code: s.script_code, webhook_protection: s.webhook_protection, use_syncauth_gui: s.use_syncauth_gui ?? true, gui_title: s.gui_title || "", discord_link: s.discord_link || "", get_key_link: s.get_key_link || "", show_discord_button: s.show_discord_button ?? true, logs_webhook: s.logs_webhook || "" }); setShowForm(true); }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -611,6 +613,10 @@ export default function ProjectDetailPage() {
                     </div>
                     <Toggle label="Silent Mode (remove F9 logs/prints)" checked={form.silent_mode} onChange={v => setForm({ ...form, silent_mode: v })} />
                     <Toggle label="Webhook Protection" checked={form.webhook_protection} onChange={v => setForm({ ...form, webhook_protection: v })} />
+                    <div className="input-group">
+                      <label className="input-label">Execution Logs Webhook</label>
+                      <input className="input" value={form.logs_webhook} onChange={e => setForm({ ...form, logs_webhook: e.target.value })} placeholder="Optional: Discord Webhook URL for script execution logs" />
+                    </div>
                     
                     <div style={{ padding: "16px", background: "var(--bg-2)", border: "1px solid var(--border-2)", borderRadius: 12, display: "flex", flexDirection: "column", gap: 14 }}>
                       <Toggle label="Use SyncAuth GUI (Requires Key System)" checked={form.use_syncauth_gui} onChange={v => setForm({ ...form, use_syncauth_gui: v })} />

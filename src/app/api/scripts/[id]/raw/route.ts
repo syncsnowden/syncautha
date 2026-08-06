@@ -69,6 +69,30 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     executor
   }).catch(err => console.error("[SyncAuth] Failed to log execution:", err));
 
+  // Trigger script-specific Discord logs webhook if configured
+  if (script.logs_webhook && script.logs_webhook.startsWith("https://discord.com/api/webhooks/")) {
+    const hookUrl = script.logs_webhook;
+    fetch(hookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        embeds: [{
+          title: "Script Executed",
+          color: 0x00c8e0,
+          fields: [
+            { name: "Project", value: project.name || script.project_id, inline: true },
+            { name: "Script", value: script.name || script.id, inline: true },
+            { name: "HWID", value: hashed, inline: true },
+            { name: "Username", value: username, inline: true },
+            { name: "Executor", value: executor, inline: true },
+            { name: "Key", value: matchingKeyEntry?.key || "Keyless", inline: true }
+          ],
+          timestamp: new Date().toISOString()
+        }]
+      })
+    }).catch(e => console.error("[SyncAuth] Failed to send script execution webhook", e));
+  }
+
   let code = data.code || "";
   
   // SyncAuth Auto-Safety Injector: Automatically prevents user scripts from crashing on failed loadstrings
