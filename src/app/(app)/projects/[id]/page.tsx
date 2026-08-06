@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 interface Script {
   id: string; project_id: string; name: string;
   silent_mode: boolean; script_code: string; created_at: number;
-  webhook_protection: boolean;
+  webhook_protection: boolean; keyless_mode?: boolean;
 }
 
 interface Project { id: string; name: string; }
