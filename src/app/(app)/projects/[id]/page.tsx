@@ -560,10 +560,13 @@ export default function ProjectDetailPage() {
         toast.error(data.error || "Obfuscation limit reached for your plan.");
         return;
       }
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to save.");
+      }
       toast.success(editSid ? "Script updated!" : "Script created & obfuscated!");
       resetForm(); loadScripts();
-    } catch { toast.error("Failed to save."); }
+    } catch (e: any) { toast.error(e.message || "Failed to save."); }
     finally { setSaving(false); }
   }
 

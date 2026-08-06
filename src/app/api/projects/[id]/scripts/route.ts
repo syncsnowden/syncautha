@@ -75,7 +75,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     };
     await createScript(project_id, script);
     return Response.json(script, { status: 201 });
-  } catch {
-    return Response.json({ error: "Failed." }, { status: 500 });
+  } catch (e: any) {
+    console.error(e);
+    return Response.json({ error: e.message || "Failed." }, { status: 500 });
   }
 }
