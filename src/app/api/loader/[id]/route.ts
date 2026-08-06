@@ -36,7 +36,8 @@ local discord_copy_invite = "https://discord.gg/5zp95qrrmK"
 local show_discord_button = true
 
 local site_url = "${siteUrl}"
-local project_id = "${id}"
+local script_id = "${id}"
+local project_id = "${project.id}"
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -514,7 +515,7 @@ local success, req_res = pcall(function()
     end
     
     local s_ok, err = pcall(function()
-        loadstring(game:HttpGet(site_url .. "/api/scripts/" .. project_id .. "/raw?hwid=" .. hwidParam .. "&username=" .. userParam .. "&executor=" .. execParam))()
+        loadstring(game:HttpGet(site_url .. "/api/scripts/" .. script_id .. "/raw?hwid=" .. hwidParam .. "&username=" .. userParam .. "&executor=" .. execParam))()
     end)
     if not s_ok then 
         warn("[SyncAuth] Failed to load main script:", err) 
