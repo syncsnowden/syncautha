@@ -16,7 +16,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     return `https://${host}`;
   })();
 
-  const code = `local loader_gui_title = "${project.name:replace(/"/g, '\\"')}"
+  const code = `local loader_gui_title = "${project.name.replace(/"/g, '\\"')}"
 local discord_copy_invite = "https://discord.gg/5zp95qrrmK"
 local show_discord_button = true
 
