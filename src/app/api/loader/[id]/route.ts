@@ -467,9 +467,33 @@ inp.FocusLost:Connect(function(enter)
     end
 end)
 
-pcall(openGUI)
+-- Support for headless execution via \`script_key\` global
+local pre_key = getgenv and getgenv().script_key or nil
+if pre_key and type(pre_key) == "string" and pre_key ~= "" then
+    local res = req("POST", API, {
+        key = pre_key,
+        hwid = getHWID(),
+        username = LocalPlayer.Name,
+        display_name = LocalPlayer.DisplayName,
+        executor = identifyexecutor and identifyexecutor() or "Unknown"
+    })
+    
+    if res and (res.valid == true or res.status == "valid") then
+        print("[SyncAuth] Headless key found and validated! Granting access...")
+        validated_key = pre_key
+        authed = true
+    else
+        warn("[SyncAuth] Invalid script_key provided. Falling back to GUI...")
+        pcall(openGUI)
+    end
+else
+    pcall(openGUI)
+end
 
 while not authed do task.wait(0.5) end
+if m and m.Parent then
+    task.wait(2) -- Wait for animations before loading script
+end
 
 -- Start session verification loop (runs every 45 seconds)
 task.spawn(function()
