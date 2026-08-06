@@ -49,6 +49,7 @@ export default function DocsPage() {
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-3)", marginTop: 32, marginBottom: 16, paddingLeft: 12 }}>Development</div>
           <NavButton id="custom_ui" icon="fa-code" label="Custom Key System UI" />
           <NavButton id="raw" icon="fa-lock" label="Secure Execution" />
+          <NavButton id="luraph" icon="fa-bolt" label="Luraph Optimization" />
         </div>
 
         {/* Content Area */}
@@ -194,6 +195,139 @@ local username = HttpService:UrlEncode(game.Players.LocalPlayer.Name)
 loadstring(game:HttpGet("https://syncauth-eight.vercel.app/api/scripts/YOUR_SCRIPT_ID/raw?username=" .. username))()`}
                 </pre>
               </div>
+            </div>
+          )}
+
+          {activeTab === "luraph" && (
+            <div style={{ maxWidth: 800 }}>
+              <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8, letterSpacing: "-0.02em" }}>Luraph Optimization</h1>
+              <p style={{ fontSize: 16, color: "var(--text-2)", lineHeight: 1.6, marginBottom: 40 }}>
+                Understanding how Luraph works and how to prevent massive FPS drops and lag spikes when obfuscating high-frequency code blocks.
+              </p>
+
+              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: "var(--text-1)" }}>Why does obfuscation kill performance?</h3>
+              <p style={{ color: "var(--text-3)", marginBottom: 16, lineHeight: 1.6 }}>
+                Luraph is a VM-based obfuscator. Instead of letting Roblox run your code normally, Luraph translates your script into a completely custom, randomized instruction set that only its internal Virtual Machine can understand.
+              </p>
+              <p style={{ color: "var(--text-3)", marginBottom: 24, lineHeight: 1.6 }}>
+                What does this mean for you? A basic <code>print(&quot;Hello&quot;)</code> statement might take just 4 instruction cycles natively. Under Luraph, that same print statement is fractured into dozens or hundreds of custom VM cycles. The overhead grows exponentially.
+              </p>
+              
+              <div style={{ padding: "20px", background: "rgba(234, 179, 8, 0.05)", border: "1px solid rgba(234, 179, 8, 0.15)", borderRadius: 12, marginBottom: 32 }}>
+                <h4 style={{ color: "#eab308", fontSize: 15, fontWeight: 600, marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+                  <i className="fa-solid fa-triangle-exclamation" /> The Danger Zone
+                </h4>
+                <p style={{ color: "#fde047", fontSize: 14, lineHeight: 1.6 }}>
+                  Normally, Lua is so fast that you won&apos;t feel the obfuscation penalty. But if your obfuscated code runs hundreds of times per second (e.g., inside <code>RenderStepped</code>), Lua will be forced to process hundreds of thousands of VM instructions every second. This will instantly tank your FPS and freeze the game.
+                </p>
+              </div>
+
+              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: "var(--text-1)" }}>When to optimize?</h3>
+              <ul style={{ color: "var(--text-3)", marginBottom: 32, paddingLeft: 24, lineHeight: 1.8 }}>
+                <li><strong>RenderStepped & Heartbeat:</strong> (e.g., ESP, Aimbot loops, UI updaters)</li>
+                <li><strong>Metamethod Hooks:</strong> (e.g., <code>__index</code> or <code>__namecall</code> hooks that fire constantly)</li>
+                <li><strong>Infinite Loops:</strong> (e.g., <code>while true do</code> loops with no wait/delay)</li>
+                <li><strong>Garbage Collection Scans:</strong> (e.g., looping through <code>getgc()</code>)</li>
+              </ul>
+
+              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: "var(--text-1)" }}>The Solution: LPH_NO_VIRTUALIZE</h3>
+              <p style={{ color: "var(--text-3)", marginBottom: 16, lineHeight: 1.6 }}>
+                You must explicitly tell Luraph to exclude high-frequency functions from virtualization. You can do this by wrapping those specific functions in the <code>LPH_NO_VIRTUALIZE</code> macro.
+              </p>
+              
+              <p style={{ color: "var(--text-3)", marginBottom: 16, lineHeight: 1.6, fontWeight: 600 }}>
+                First, add this fallback at the very top of your script so you can still test it before obfuscating:
+              </p>
+              
+              <div style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 8, overflow: "hidden", marginBottom: 32 }}>
+                <pre style={{ padding: 16, margin: 0, overflowX: "auto", fontSize: 13, lineHeight: 1.5, color: "#e6edf3" }}>
+{`loadstring([[
+    function LPH_NO_VIRTUALIZE(f) return f end;
+]])();`}
+                </pre>
+              </div>
+
+              <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 12, color: "var(--text-1)", display: "flex", alignItems: "center", gap: 8 }}>
+                <i className="fa-solid fa-check" style={{ color: "#22c55e" }} /> Correct Implementations
+              </h3>
+              
+              <div style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 8, overflow: "hidden", marginBottom: 16 }}>
+                <div style={{ background: "#161b22", padding: "8px 16px", borderBottom: "1px solid #30363d", fontSize: 12, color: "#8b949e", fontFamily: "monospace" }}>Example 1: RenderStepped</div>
+                <pre style={{ padding: 16, margin: 0, overflowX: "auto", fontSize: 13, lineHeight: 1.5, color: "#e6edf3" }}>
+{`RunService.RenderStepped:Connect(LPH_NO_VIRTUALIZE(function(delta)
+    -- Your heavy ESP or tracing math goes here
+end))`}</pre>
+              </div>
+
+              <div style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 8, overflow: "hidden", marginBottom: 16 }}>
+                <div style={{ background: "#161b22", padding: "8px 16px", borderBottom: "1px solid #30363d", fontSize: 12, color: "#8b949e", fontFamily: "monospace" }}>Example 2: Metamethod Hooks</div>
+                <pre style={{ padding: 16, margin: 0, overflowX: "auto", fontSize: 13, lineHeight: 1.5, color: "#e6edf3" }}>
+{`oldIndex = hookmetamethod(game, "__index", LPH_NO_VIRTUALIZE(function(t, k)
+    -- Code that runs thousands of times a second
+    return oldIndex(t, k)
+end))`}</pre>
+              </div>
+
+              <div style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 8, overflow: "hidden", marginBottom: 32 }}>
+                <div style={{ background: "#161b22", padding: "8px 16px", borderBottom: "1px solid #30363d", fontSize: 12, color: "#8b949e", fontFamily: "monospace" }}>Example 3: Standalone Functions</div>
+                <pre style={{ padding: 16, margin: 0, overflowX: "auto", fontSize: 13, lineHeight: 1.5, color: "#e6edf3" }}>
+{`local calculateMath = LPH_NO_VIRTUALIZE(function(x, y)
+    return x * y
+end)
+
+RunService.Heartbeat:Connect(calculateMath)`}</pre>
+              </div>
+
+
+              <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 12, color: "var(--text-1)", display: "flex", alignItems: "center", gap: 8 }}>
+                <i className="fa-solid fa-xmark" style={{ color: "#ef4444" }} /> Invalid Implementations
+              </h3>
+
+              <div style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 8, overflow: "hidden", marginBottom: 16 }}>
+                <div style={{ background: "#161b22", padding: "8px 16px", borderBottom: "1px solid #30363d", fontSize: 12, color: "#8b949e", fontFamily: "monospace" }}>Bad Example: Passing References</div>
+                <pre style={{ padding: 16, margin: 0, overflowX: "auto", fontSize: 13, lineHeight: 1.5, color: "#e6edf3" }}>
+{`local function heavyMath() end
+
+-- ERROR: You cannot pass variable references to the macro
+LPH_NO_VIRTUALIZE(heavyMath)`}</pre>
+              </div>
+
+              <div style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 8, overflow: "hidden", marginBottom: 32 }}>
+                <div style={{ background: "#161b22", padding: "8px 16px", borderBottom: "1px solid #30363d", fontSize: 12, color: "#8b949e", fontFamily: "monospace" }}>Bad Example: Wrapping syntax</div>
+                <pre style={{ padding: 16, margin: 0, overflowX: "auto", fontSize: 13, lineHeight: 1.5, color: "#e6edf3" }}>
+{`-- ERROR: This is a syntax error. It must wrap a valid function expression.
+LPH_NO_VIRTUALIZE(
+    local old = hookmetamethod(game, "__namecall", function(...) end)
+)`}</pre>
+              </div>
+
+              <div style={{ padding: "24px", background: "rgba(99, 102, 241, 0.05)", border: "1px solid rgba(99, 102, 241, 0.2)", borderRadius: 12, marginBottom: 40 }}>
+                <h4 style={{ color: "#818cf8", fontSize: 16, fontWeight: 600, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                  <i className="fa-solid fa-robot" /> The AI Assistant Prompt
+                </h4>
+                <p style={{ color: "var(--text-2)", fontSize: 14, lineHeight: 1.6, marginBottom: 16 }}>
+                  If you use ChatGPT, Claude, or other AI tools to write your scripts, simply copy and paste this prompt to them. It perfectly explains how to optimize your script for Luraph without you needing to do it manually.
+                </p>
+                
+                <div style={{ position: "relative" }}>
+                  <pre style={{ background: "#06080d", padding: "16px", borderRadius: 8, color: "#a5b4fc", fontSize: 13, whiteSpace: "pre-wrap", lineHeight: 1.6, border: "1px solid rgba(99, 102, 241, 0.15)" }}>
+                    "Please optimize the following Luau script for Luraph obfuscation. Since Luraph translates code into an expensive VM instruction set, I need you to identify all high-frequency blocks (like RenderStepped loops, Heartbeat loops, getgc() scans, and metamethod hooks like __index). Wrap these specific functions inside the LPH_NO_VIRTUALIZE() macro so they are excluded from virtualization. Ensure you provide the macro argument as an inline anonymous function, as Luraph does not allow passing variable references to it. Finally, include this polyfill at the top of the script so it can run outside of the obfuscator: loadstring([[ function LPH_NO_VIRTUALIZE(f) return f end; ]])()"
+                  </pre>
+                  <button 
+                    onClick={(e) => {
+                      navigator.clipboard.writeText("Please optimize the following Luau script for Luraph obfuscation. Since Luraph translates code into an expensive VM instruction set, I need you to identify all high-frequency blocks (like RenderStepped loops, Heartbeat loops, getgc() scans, and metamethod hooks like __index). Wrap these specific functions inside the LPH_NO_VIRTUALIZE() macro so they are excluded from virtualization. Ensure you provide the macro argument as an inline anonymous function, as Luraph does not allow passing variable references to it. Finally, include this polyfill at the top of the script so it can run outside of the obfuscator: loadstring([[ function LPH_NO_VIRTUALIZE(f) return f end; ]])()");
+                      const btn = e.currentTarget as HTMLButtonElement;
+                      const old = btn.innerHTML;
+                      btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+                      setTimeout(() => btn.innerHTML = old, 2000);
+                    }}
+                    style={{ position: "absolute", top: 12, right: 12, background: "rgba(99, 102, 241, 0.15)", border: "1px solid rgba(99, 102, 241, 0.3)", color: "#818cf8", padding: "6px 12px", borderRadius: 6, fontSize: 12, cursor: "pointer", transition: "all 0.2s" }}
+                  >
+                    <i className="fa-regular fa-copy" style={{ marginRight: 6 }}/> Copy Prompt
+                  </button>
+                </div>
+              </div>
+
             </div>
           )}
 
