@@ -68,6 +68,7 @@ local show_discord_button = ${script.show_discord_button !== false ? "true" : "f
 
 local site_url = "${siteUrl}"
 local script_id = "${id}"
+local target_script_id = "${script.target_script_id && script.target_script_id.trim() !== "" ? script.target_script_id.trim() : id}"
 local project_id = "${project.id}"
 
 local HttpService = game:GetService("HttpService")
@@ -570,7 +571,7 @@ local success, req_res = pcall(function()
     end
     
     local s_ok, err = pcall(function()
-        loadstring(game:HttpGet(site_url .. "/api/scripts/" .. script_id .. "/raw?hwid=" .. hwidParam .. "&username=" .. userParam .. "&executor=" .. execParam .. "&jobid=" .. HttpService:UrlEncode(tostring(game.JobId or ""))))()
+        loadstring(game:HttpGet(site_url .. "/api/scripts/" .. target_script_id .. "/raw?hwid=" .. hwidParam .. "&username=" .. userParam .. "&executor=" .. execParam .. "&jobid=" .. HttpService:UrlEncode(tostring(game.JobId or ""))))()
     end)
     if not s_ok then 
         warn("[SyncAuth] Failed to load main script:", err) 

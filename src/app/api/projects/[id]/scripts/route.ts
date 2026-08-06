@@ -59,6 +59,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       discord_link: body.discord_link || "",
       get_key_link: body.get_key_link || "",
       show_discord_button: body.show_discord_button ?? true,
+      target_script_id: body.target_script_id || "",
       logs_webhook_enabled: body.logs_webhook_enabled ?? false,
       logs_webhook: body.logs_webhook || "",
       log_hwid: body.log_hwid ?? true,

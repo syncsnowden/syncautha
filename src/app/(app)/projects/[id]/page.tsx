@@ -12,6 +12,7 @@ interface Script {
   discord_link?: string;
   get_key_link?: string;
   show_discord_button?: boolean;
+  target_script_id?: string;
   logs_webhook_enabled?: boolean;
   logs_webhook?: string;
   log_hwid?: boolean; log_ip?: boolean;
@@ -498,7 +499,7 @@ export default function ProjectDetailPage() {
   const [editSid, setEditSid] = useState("");
   const [form, setForm] = useState({ 
     name: "", silent_mode: false, script_code: "", webhook_protection: false, 
-    use_syncauth_gui: true, gui_title: "", discord_link: "", get_key_link: "", show_discord_button: true,
+    use_syncauth_gui: true, gui_title: "", discord_link: "", get_key_link: "", show_discord_button: true, target_script_id: "",
     logs_webhook_enabled: false, logs_webhook: "",
     log_hwid: true, log_ip: true, log_username: true, log_displayname: false,
     log_time: true, log_key: true, log_executor: true, log_jobid: false
@@ -542,8 +543,8 @@ export default function ProjectDetailPage() {
     setScripts(await res.json());
   }
 
-  function resetForm() { setForm({ name: "", silent_mode: false, script_code: "", webhook_protection: false, use_syncauth_gui: true, gui_title: "", discord_link: "", get_key_link: "", show_discord_button: true, logs_webhook_enabled: false, logs_webhook: "", log_hwid: true, log_ip: true, log_username: true, log_displayname: false, log_time: true, log_key: true, log_executor: true, log_jobid: false }); setEditSid(""); setShowForm(false); }
-  function editScript(s: Script) { setEditSid(s.id); setForm({ name: s.name, silent_mode: s.silent_mode, script_code: s.script_code, webhook_protection: s.webhook_protection, use_syncauth_gui: s.use_syncauth_gui ?? true, gui_title: s.gui_title || "", discord_link: s.discord_link || "", get_key_link: s.get_key_link || "", show_discord_button: s.show_discord_button ?? true, logs_webhook_enabled: s.logs_webhook_enabled ?? false, logs_webhook: s.logs_webhook || "", log_hwid: s.log_hwid ?? true, log_ip: s.log_ip ?? true, log_username: s.log_username ?? true, log_displayname: s.log_displayname ?? false, log_time: s.log_time ?? true, log_key: s.log_key ?? true, log_executor: s.log_executor ?? true, log_jobid: s.log_jobid ?? false }); setShowForm(true); }
+  function resetForm() { setForm({ name: "", silent_mode: false, script_code: "", webhook_protection: false, use_syncauth_gui: true, gui_title: "", discord_link: "", get_key_link: "", show_discord_button: true, target_script_id: "", logs_webhook_enabled: false, logs_webhook: "", log_hwid: true, log_ip: true, log_username: true, log_displayname: false, log_time: true, log_key: true, log_executor: true, log_jobid: false }); setEditSid(""); setShowForm(false); }
+  function editScript(s: Script) { setEditSid(s.id); setForm({ name: s.name, silent_mode: s.silent_mode, script_code: s.script_code, webhook_protection: s.webhook_protection, use_syncauth_gui: s.use_syncauth_gui ?? true, gui_title: s.gui_title || "", discord_link: s.discord_link || "", get_key_link: s.get_key_link || "", show_discord_button: s.show_discord_button ?? true, target_script_id: s.target_script_id || "", logs_webhook_enabled: s.logs_webhook_enabled ?? false, logs_webhook: s.logs_webhook || "", log_hwid: s.log_hwid ?? true, log_ip: s.log_ip ?? true, log_username: s.log_username ?? true, log_displayname: s.log_displayname ?? false, log_time: s.log_time ?? true, log_key: s.log_key ?? true, log_executor: s.log_executor ?? true, log_jobid: s.log_jobid ?? false }); setShowForm(true); }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -735,6 +736,14 @@ export default function ProjectDetailPage() {
                       {form.use_syncauth_gui && (
                         <>
                           <div className="input-group">
+                            <label className="input-label">Target Script ID to Execute (Optional)</label>
+                            <input className="input" value={form.target_script_id || ""} onChange={e => setForm({ ...form, target_script_id: e.target.value })} placeholder="Enter the Script ID to load after key is verified" />
+                            <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 4 }}>
+                              If left blank, it will execute this script's uploaded code instead.
+                            </p>
+                          </div>
+                          
+                          <div className="input-group">
                             <label className="input-label">GUI Title</label>
                             <input className="input" value={form.gui_title} onChange={e => setForm({ ...form, gui_title: e.target.value })} placeholder="Default: Project Name" />
                           </div>
@@ -817,15 +826,6 @@ export default function ProjectDetailPage() {
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      <button className="btn btn-secondary btn-sm" onClick={() => {
-                        const loadStr = s.use_syncauth_gui !== false 
-                          ? 'getgenv().script_key = "Enter_Your_Key_Here" -- Optional: Allows for automatic UI-less execution\nloadstring(game:HttpGet("' + siteUrl + '/api/loader/' + s.id + '"))()'
-                          : 'loadstring(game:HttpGet("' + siteUrl + '/api/loader/' + s.id + '"))()';
-                        navigator.clipboard.writeText(loadStr);
-                        toast.success(s.use_syncauth_gui !== false ? "Copied loader with script_key format!" : "Copied keyless loader!");
-                      }}>
-                        <i className="fa-solid fa-download" /> Loader
-                      </button>
                       <button className="btn btn-secondary btn-sm" onClick={() => editScript(s)}>
                         <i className="fa-solid fa-pen" />
                       </button>

@@ -217,6 +217,7 @@ export interface Script {
   discord_link?: string;
   get_key_link?: string;
   show_discord_button?: boolean;
+  target_script_id?: string;
   
   logs_webhook_enabled?: boolean;
   logs_webhook?: string;
