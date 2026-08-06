@@ -690,10 +690,6 @@ export default function ProjectDetailPage() {
                         </div>
                       )}
                     </div>
-                    <div className="input-group">
-                      <label className="input-label">Script Code</label>
-                      <textarea className="input" value={form.script_code} onChange={e => setForm({ ...form, script_code: e.target.value })} rows={10} style={{ resize: "vertical", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }} placeholder="Paste your Lua code here..." />
-                    </div>
                     <button className="btn btn-primary" disabled={saving} style={{ width: "auto" }}>
                       {saving ? "Saving..." : editSid ? "Update Script" : "Create Script"}
                     </button>

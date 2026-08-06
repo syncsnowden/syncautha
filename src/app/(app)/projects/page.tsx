@@ -107,9 +107,8 @@ export default function ProjectsPage() {
             <div className="card-body">
               <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 <div className="input-group"><label className="input-label">Project Name</label><input className="input" {...f("name")} placeholder="My Script Hub" /></div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                  <div className="input-group"><label className="input-label">Logs Webhook</label><input className="input" {...f("logs_webhook")} placeholder="Discord webhook" /></div>
-                  <div className="input-group"><label className="input-label">Alert Webhook</label><input className="input" {...f("alert_webhook")} placeholder="Discord webhook" /></div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 14 }}>
+                  <div className="input-group"><label className="input-label">Alert Webhook (Key Generation, etc.)</label><input className="input" {...f("alert_webhook")} placeholder="Discord webhook" /></div>
                 </div>
 
                 <div className="card" style={{ background: "var(--bg-2)", border: "1px solid var(--border-2)" }}>
@@ -140,18 +139,6 @@ export default function ProjectsPage() {
                       <Toggle label="Auto Delete Expired" {...t("auto_delete_expired")} />
                     </div>
                     <Toggle label="Allow HWID Clone Sharing" {...t("allow_hwid_clone")} />
-                  </div>
-                </div>
-
-                <div className="card" style={{ background: "var(--bg-2)", border: "1px solid var(--border-2)" }}>
-                  <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <label className="input-label" style={{ marginBottom: 4 }}>Log to Webhook</label>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                      <Toggle label="HWID" {...t("log_hwid")} /><Toggle label="IP" {...t("log_ip")} />
-                      <Toggle label="Username" {...t("log_username")} /><Toggle label="Display Name" {...t("log_displayname")} />
-                      <Toggle label="Time" {...t("log_time")} /><Toggle label="Key" {...t("log_key")} />
-                      <Toggle label="Executor" {...t("log_executor")} /><Toggle label="Job ID" {...t("log_jobid")} />
-                    </div>
                   </div>
                 </div>
 
