@@ -33,7 +33,26 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     loadProjects();
-    fetch("/api/obf-usage").then(r => r.json()).then(d => { if (d.used !== undefined) setObfUsage(d); }).catch(() => {});
+    try {
+      let token = "";
+      const raw = localStorage.getItem("syncauth_session");
+      if (raw) {
+        token = JSON.parse(raw)?.access_token || "";
+      } else {
+        for (const k of Object.keys(localStorage)) {
+          if (k.includes("supabase") && k.includes("auth-token")) {
+            token = JSON.parse(localStorage.getItem(k) || "{}")?.access_token || "";
+            if (token) break;
+          }
+        }
+      }
+      if (token) {
+        fetch("/api/obf-usage", { headers: { Authorization: `Bearer ${token}` } })
+          .then(r => r.ok ? r.json() : null)
+          .then(d => { if (d?.used !== undefined) setObfUsage(d); })
+          .catch(() => {});
+      }
+    } catch {}
   }, []);
 
   async function loadProjects() {

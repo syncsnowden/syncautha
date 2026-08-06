@@ -510,7 +510,32 @@ export default function ProjectDetailPage() {
   useEffect(() => {
     fetch(`/api/projects/${pid}`).then(r => r.json()).then(setProject);
     loadScripts();
-    fetch("/api/obf-usage").then(r => r.json()).then(d => { if (d.used !== undefined) setObfUsage(d); }).catch(() => {});
+
+    // Get session token from localStorage (SyncAuth stores access_token there)
+    const getToken = () => {
+      try {
+        const raw = localStorage.getItem("syncauth_session");
+        if (raw) return JSON.parse(raw)?.access_token || "";
+        // Supabase SSR also stores under this key pattern
+        for (const k of Object.keys(localStorage)) {
+          if (k.includes("supabase") && k.includes("auth-token")) {
+            const v = JSON.parse(localStorage.getItem(k) || "{}");
+            return v?.access_token || "";
+          }
+        }
+      } catch {}
+      return "";
+    };
+    const token = getToken();
+    if (token) {
+      fetch("/api/obf-usage", { headers: { Authorization: `Bearer ${token}` } })
+        .then(async r => {
+          if (!r.ok) { console.warn("[SyncAuth] obf-usage:", r.status); return; }
+          const d = await r.json();
+          if (d.used !== undefined) setObfUsage(d);
+        })
+        .catch(e => console.error("[SyncAuth] obf-usage failed:", e));
+    }
   }, [pid]);
 
   async function loadScripts() {

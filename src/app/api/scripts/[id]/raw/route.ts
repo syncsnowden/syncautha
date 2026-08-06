@@ -73,28 +73,28 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   if (script.logs_webhook_enabled && script.logs_webhook && script.logs_webhook.startsWith("https://discord.com/api/webhooks/")) {
     const hookUrl = script.logs_webhook;
     const now = new Date();
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://syncauth-eight.vercel.app";
 
     const fields: { name: string; value: string; inline: boolean }[] = [];
 
     if (script.log_username ?? true) {
-      fields.push({ name: "👤 Username", value: `\`${username}\``, inline: true });
+      fields.push({ name: "Username", value: `\`${username}\``, inline: true });
     }
     if (script.log_executor ?? true) {
-      fields.push({ name: "⚙️ Executor", value: `\`${executor}\``, inline: true });
+      fields.push({ name: "Executor", value: `\`${executor}\``, inline: true });
     }
     if (script.log_hwid ?? true) {
-      fields.push({ name: "🖥️ HWID", value: `\`${hashed}\``, inline: false });
+      fields.push({ name: "HWID", value: `\`${hashed}\``, inline: false });
     }
     if (script.log_ip ?? true) {
-      // Wrap in Discord spoiler tags so it's hidden by default
-      fields.push({ name: "🌐 IP Address", value: `||${ip}||`, inline: true });
+      fields.push({ name: "IP Address", value: `||${ip}||`, inline: true });
     }
     if (script.log_key ?? true) {
-      fields.push({ name: "🔑 Key", value: matchingKeyEntry?.key ? `\`${matchingKeyEntry.key}\`` : "`Keyless`", inline: true });
+      fields.push({ name: "Key", value: matchingKeyEntry?.key ? `\`${matchingKeyEntry.key}\`` : "`Keyless`", inline: true });
     }
     if (script.log_jobid ?? false) {
       const jobId = url.searchParams.get("jobid") || "N/A";
-      fields.push({ name: "🎮 Job ID", value: `\`${jobId}\``, inline: false });
+      fields.push({ name: "Job ID", value: `\`${jobId}\``, inline: false });
     }
 
     fetch(hookUrl, {
@@ -104,14 +104,17 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         embeds: [{
           author: {
             name: "SyncAuth · Execution Log",
-            icon_url: "https://syncauth-eight.vercel.app/favicon.ico"
+            icon_url: `${siteUrl}/favicon.ico`,
+            url: siteUrl
           },
-          title: `📜 ${script.name || "Script"} was executed`,
+          title: `${script.name || "Script"} was executed`,
           description: `**Project:** \`${project.name || script.project_id}\``,
           color: 0x00c8e0,
+          thumbnail: { url: `${siteUrl}/favicon.ico` },
           fields,
           footer: {
-            text: `SyncAuth • Script ID: ${id}`
+            text: `SyncAuth · Script ID: ${id}`,
+            icon_url: `${siteUrl}/favicon.ico`
           },
           timestamp: (script.log_time ?? true) ? now.toISOString() : undefined
         }]
