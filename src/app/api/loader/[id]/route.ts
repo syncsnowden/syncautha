@@ -365,6 +365,7 @@ local function center()
 end
 
 local function openGUI()
+    print("[SyncAuth] Loading gui.....")
     center()
     m.Visible = true
     m.Size = UDim2.fromOffset(0, 0)
@@ -372,6 +373,7 @@ local function openGUI()
         Size = UDim2.fromOffset(W, H_SIZE)
     }):Play()
     showPage(hp)
+    print("[SyncAuth] GUI loaded! waiting for user to enter key....")
 end
 
 local function closeGUI()
@@ -405,6 +407,7 @@ local function validate(key)
     end
 
     if res.valid == true or res.status == "valid" then
+        print("[SyncAuth] Right key was entered! Granting the user acces...")
         showPage(sp)
         task.wait(1.5)
         closeGUI()
@@ -513,7 +516,11 @@ local success, req_res = pcall(function()
     local s_ok, err = pcall(function()
         loadstring(game:HttpGet(site_url .. "/api/scripts/" .. project_id .. "/raw?hwid=" .. hwidParam .. "&username=" .. userParam .. "&executor=" .. execParam))()
     end)
-    if not s_ok then warn("[SyncAuth] Failed to load main script:", err) end
+    if not s_ok then 
+        warn("[SyncAuth] Failed to load main script:", err) 
+    else
+        print("[SyncAuth] Acces granted! Script loaded succesfully.")
+    end
 end)
 `;
 
