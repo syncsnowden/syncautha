@@ -31,7 +31,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     return `https://${host}`;
   })();
 
-  if (script.keyless_mode) {
+  if (!script.use_syncauth_gui) {
     const keylessCode = `
 -- [SyncAuth] Keyless Mode Execution
 local HttpService = game:GetService("HttpService")
@@ -62,9 +62,9 @@ end
     });
   }
 
-  const code = `local loader_gui_title = "${project.name.replace(/"/g, '\\"')}"
-local discord_copy_invite = "https://discord.gg/5zp95qrrmK"
-local show_discord_button = true
+  const code = `local loader_gui_title = "${(script.gui_title || project.name).replace(/"/g, '\\"')}"
+local discord_copy_invite = "${(script.discord_link || "https://discord.gg/5zp95qrrmK").replace(/"/g, '\\"')}"
+local show_discord_button = ${script.show_discord_button !== false ? "true" : "false"}
 
 local site_url = "${siteUrl}"
 local script_id = "${id}"
@@ -358,7 +358,7 @@ addDesc(hp, 72, "Enter your key to unlock!\\nGet the key from our site")
 local inp = addInput(hp, 116, "XXXXXXXXXXXX")
 local btnUnlock = addButton(hp, 164, "Unlock Key", ASSETS.key, true)
 local btnGetKey = addButton(hp, 206, "Get Key", ASSETS.copy)
-local btnGetKeyLink = SITE .. "/get-key/" .. project_id
+local btnGetKeyLink = "${(script.get_key_link || `${siteUrl}/get-key/${project.id}`).replace(/"/g, '\\"')}"
 local btnDiscord
 if show_discord_button then
     btnDiscord = addButton(hp, 248, "Join Discord", ASSETS.discord)

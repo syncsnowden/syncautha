@@ -6,7 +6,12 @@ import toast from "react-hot-toast";
 interface Script {
   id: string; project_id: string; name: string;
   silent_mode: boolean; script_code: string; created_at: number;
-  webhook_protection: boolean; keyless_mode?: boolean;
+  webhook_protection: boolean; 
+  use_syncauth_gui?: boolean;
+  gui_title?: string;
+  discord_link?: string;
+  get_key_link?: string;
+  show_discord_button?: boolean;
 }
 
 interface Project { id: string; name: string; }
@@ -486,7 +491,10 @@ export default function ProjectDetailPage() {
   const [scripts, setScripts] = useState<Script[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editSid, setEditSid] = useState("");
-  const [form, setForm] = useState({ name: "", silent_mode: false, script_code: "", webhook_protection: false, keyless_mode: false });
+  const [form, setForm] = useState({ 
+    name: "", silent_mode: false, script_code: "", webhook_protection: false, 
+    use_syncauth_gui: true, gui_title: "", discord_link: "", get_key_link: "", show_discord_button: true 
+  });
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<"scripts" | "keys">("scripts");
 
@@ -500,8 +508,8 @@ export default function ProjectDetailPage() {
     setScripts(await res.json());
   }
 
-  function resetForm() { setForm({ name: "", silent_mode: false, script_code: "", webhook_protection: false, keyless_mode: false }); setEditSid(""); setShowForm(false); }
-  function editScript(s: Script) { setEditSid(s.id); setForm({ name: s.name, silent_mode: s.silent_mode, script_code: s.script_code, webhook_protection: s.webhook_protection, keyless_mode: s.keyless_mode || false }); setShowForm(true); }
+  function resetForm() { setForm({ name: "", silent_mode: false, script_code: "", webhook_protection: false, use_syncauth_gui: true, gui_title: "", discord_link: "", get_key_link: "", show_discord_button: true }); setEditSid(""); setShowForm(false); }
+  function editScript(s: Script) { setEditSid(s.id); setForm({ name: s.name, silent_mode: s.silent_mode, script_code: s.script_code, webhook_protection: s.webhook_protection, use_syncauth_gui: s.use_syncauth_gui ?? true, gui_title: s.gui_title || "", discord_link: s.discord_link || "", get_key_link: s.get_key_link || "", show_discord_button: s.show_discord_button ?? true }); setShowForm(true); }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -603,7 +611,36 @@ export default function ProjectDetailPage() {
                     </div>
                     <Toggle label="Silent Mode (remove F9 logs/prints)" checked={form.silent_mode} onChange={v => setForm({ ...form, silent_mode: v })} />
                     <Toggle label="Webhook Protection" checked={form.webhook_protection} onChange={v => setForm({ ...form, webhook_protection: v })} />
-                    <Toggle label="Keyless Mode (Bypass Key System / Free Script)" checked={form.keyless_mode} onChange={v => setForm({ ...form, keyless_mode: v })} />
+                    
+                    <div style={{ padding: "16px", background: "var(--bg-2)", border: "1px solid var(--border-2)", borderRadius: 12, display: "flex", flexDirection: "column", gap: 14 }}>
+                      <Toggle label="Use SyncAuth GUI (Requires Key System)" checked={form.use_syncauth_gui} onChange={v => setForm({ ...form, use_syncauth_gui: v })} />
+                      <p style={{ fontSize: 12, color: "var(--text-3)", marginTop: -8 }}>
+                        If disabled, your script is completely keyless and accessible to anyone via the loader.
+                      </p>
+                      
+                      {form.use_syncauth_gui && (
+                        <>
+                          <div className="input-group">
+                            <label className="input-label">GUI Title</label>
+                            <input className="input" value={form.gui_title} onChange={e => setForm({ ...form, gui_title: e.target.value })} placeholder="Default: Project Name" />
+                          </div>
+                          
+                          <div className="input-group">
+                            <label className="input-label">Get Key Link</label>
+                            <input className="input" value={form.get_key_link} onChange={e => setForm({ ...form, get_key_link: e.target.value })} placeholder="Default: SyncAuth LootLabs Link" />
+                          </div>
+
+                          <Toggle label="Show Discord Button" checked={form.show_discord_button} onChange={v => setForm({ ...form, show_discord_button: v })} />
+                          
+                          {form.show_discord_button && (
+                            <div className="input-group">
+                              <label className="input-label">Discord Invite Link</label>
+                              <input className="input" value={form.discord_link} onChange={e => setForm({ ...form, discord_link: e.target.value })} placeholder="https://discord.gg/..." />
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
                     {(() => {
                       const webhooks = (form.script_code.match(/https:\/\/discord\.com\/api\/webhooks\/[^\s)"'\\]+/g) || []);
                       return webhooks.length > 0 ? (
@@ -666,7 +703,7 @@ export default function ProjectDetailPage() {
                     <div>
                       <div style={{ fontWeight: 600, color: "var(--text-1)", fontSize: 14 }}>{s.name}</div>
                       <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>
-                        ID: {s.id} | {s.silent_mode ? "Silent" : "Normal"}{s.webhook_protection ? " | Webhook Protected" : ""}{s.keyless_mode ? " | Keyless Free" : ""} | {new Date(s.created_at).toLocaleDateString()}
+                        ID: {s.id} | {s.silent_mode ? "Silent" : "Normal"}{s.webhook_protection ? " | Webhook Protected" : ""}{s.use_syncauth_gui === false ? " | Keyless Free" : ""} | {new Date(s.created_at).toLocaleDateString()}
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
