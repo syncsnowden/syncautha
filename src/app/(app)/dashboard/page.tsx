@@ -4,6 +4,8 @@ import ExecutionChart from "@/components/ExecutionChart";
 
 interface DashboardStats {
   activeKeys: number;
+  maxKeys: number;
+  plan: string;
   totalUsers: number;
   executions: number;
   blocked: number;
