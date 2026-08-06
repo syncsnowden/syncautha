@@ -66,6 +66,24 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   }).catch(err => console.error("[SyncAuth] Failed to log execution:", err));
 
   let code = data.code || "";
+  
+  // SyncAuth Auto-Safety Injector: Automatically prevents user scripts from crashing on failed loadstrings
+  const safetyPolyfill = \`-- [SyncAuth Auto-Safety Injector] --
+local __original_loadstring = loadstring
+local loadstring = function(source, chunkname)
+    if not source or type(source) ~= "string" or source == "" then
+        return function() warn("[SyncAuth Auto-Fix] Prevented crash: Script attempted to load and execute an empty or missing remote file.") end
+    end
+    local func, err = __original_loadstring(source, chunkname)
+    if not func then
+        return function() warn("[SyncAuth Auto-Fix] Prevented crash: Syntax error in loaded code ->", err) end
+    end
+    return func
+end
+-------------------------------------
+\`;
+
+  code = safetyPolyfill + code;
   if (script.webhook_protection) {
     const siteUrl = (() => {
       if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
