@@ -109,7 +109,7 @@ export default function KeysPage() {
                     <th>Created</th>
                     <th>Expires</th>
                     <th>Status</th>
-                    <th style={{ width: 50 }}></th>
+                    <th style={{ width: 100 }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -130,16 +130,38 @@ export default function KeysPage() {
                         </span>
                       </td>
                       <td>
-                        <button
-                          className="btn btn-secondary btn-xs"
-                          onClick={() => {
-                            navigator.clipboard.writeText(k.key);
-                            toast.success("Key copied!");
-                          }}
-                          style={{ padding: "4px 8px" }}
-                        >
-                          <i className="fa-solid fa-copy" />
-                        </button>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button
+                            className="btn btn-secondary btn-xs"
+                            onClick={() => {
+                              navigator.clipboard.writeText(k.key);
+                              toast.success("Key copied!");
+                            }}
+                            style={{ padding: "4px 8px" }}
+                          >
+                            <i className="fa-solid fa-copy" />
+                          </button>
+                          <button
+                            className="btn btn-danger btn-xs"
+                            onClick={async () => {
+                              if (!confirm("Are you sure you want to delete this key? This will kick any active user using it and make it unusable.")) return;
+                              try {
+                                const res = await fetch(`/api/keys?key=${k.key}`, { method: "DELETE" });
+                                if (res.ok) {
+                                  toast.success("Key deleted!");
+                                  fetchKeys();
+                                } else {
+                                  toast.error("Failed to delete key");
+                                }
+                              } catch {
+                                toast.error("Error deleting key");
+                              }
+                            }}
+                            style={{ padding: "4px 8px", background: "rgba(239, 68, 68, 0.15)", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#f87171" }}
+                          >
+                            <i className="fa-solid fa-trash" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

@@ -9,6 +9,7 @@ local SITE = "${siteUrl}"
 
 local HttpService = game:GetService("HttpService")
 local player = game:GetService("Players").LocalPlayer
+local CoreGui = game:GetService("CoreGui")
 
 local cached_hwid = nil
 local function getHWID()
@@ -37,7 +38,8 @@ local hwid = getHWID()
 local authed = false
 local scriptId = nil
 
-local gui = Instance.new("ScreenGui", game.CoreGui)
+local targetGui = (gethui and gethui()) or (pcall(function() return CoreGui.Name end) and CoreGui) or player:WaitForChild("PlayerGui")
+local gui = Instance.new("ScreenGui", targetGui)
 gui.Name = "SyncAuth"
 
 local bg = Instance.new("Frame", gui)

@@ -41,3 +41,18 @@ export async function POST(req: Request) {
     return Response.json({ error: e.message || "Failed." }, { status: 500 });
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const url = new URL(req.url);
+    const key = url.searchParams.get("key");
+    if (!key) return Response.json({ error: "key parameter required" }, { status: 400 });
+    
+    const { deleteKey } = await import("@/lib/pastefy");
+    await deleteKey(key);
+    return Response.json({ success: true });
+  } catch (e: any) {
+    console.error("[DELETE /api/keys] Error:", e);
+    return Response.json({ error: e.message || "Failed to delete key" }, { status: 500 });
+  }
+}

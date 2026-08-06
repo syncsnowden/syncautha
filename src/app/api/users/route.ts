@@ -27,3 +27,38 @@ export async function GET() {
     return Response.json({ error: e.message || "Failed to load users" }, { status: 500 });
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const url = new URL(req.url);
+    const hwid = url.searchParams.get("hwid");
+    const projectId = url.searchParams.get("project_id");
+    if (!hwid || !projectId) {
+      return Response.json({ error: "hwid and project_id parameters required" }, { status: 400 });
+    }
+
+    const { getProjectPasteId, loadProjectData, saveProjectData, deleteKey } = await import("@/lib/pastefy");
+    const pasteId = await getProjectPasteId(projectId);
+    if (!pasteId) {
+      return Response.json({ error: "Project not found" }, { status: 404 });
+    }
+
+    const data = await loadProjectData(pasteId);
+    if (data.users && data.users[hwid]) {
+      const userKey = data.users[hwid].key;
+      // Delete the user
+      delete data.users[hwid];
+      await saveProjectData(pasteId, data);
+      
+      // Delete the associated key to make it unusable
+      if (userKey) {
+        await deleteKey(userKey);
+      }
+    }
+
+    return Response.json({ success: true });
+  } catch (e: any) {
+    console.error("[DELETE /api/users] Error:", e);
+    return Response.json({ error: e.message || "Failed to delete user" }, { status: 500 });
+  }
+}

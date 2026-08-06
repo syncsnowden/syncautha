@@ -180,6 +180,7 @@ export default function UsersPage() {
                     <th>HWID</th>
                     <th>Last seen</th>
                     <th>Status</th>
+                    <th style={{ width: 100 }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -197,6 +198,28 @@ export default function UsersPage() {
                       <td>{new Date(u.last_seen).toLocaleString()}</td>
                       <td>
                         <span className="badge badge-primary">Active</span>
+                      </td>
+                      <td>
+                        <button
+                          className="btn btn-danger btn-xs"
+                          onClick={async () => {
+                            if (!confirm("Are you sure you want to delete this user? This will kick them out of the game and delete their associated key.")) return;
+                            try {
+                              const res = await fetch(`/api/users?hwid=${u.hwid}&project_id=${u.project_id}`, { method: "DELETE" });
+                              if (res.ok) {
+                                toast.success("User deleted & license revoked!");
+                                fetchUsers();
+                              } else {
+                                toast.error("Failed to delete user");
+                              }
+                            } catch {
+                              toast.error("Error deleting user");
+                            }
+                          }}
+                          style={{ padding: "4px 8px", background: "rgba(239, 68, 68, 0.15)", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#f87171" }}
+                        >
+                          <i className="fa-solid fa-trash" />
+                        </button>
                       </td>
                     </tr>
                   ))}

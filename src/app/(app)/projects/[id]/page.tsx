@@ -363,6 +363,7 @@ local function closeGUI()
 end
 
 local authed = false
+local validated_key = ""
 
 local function validate(key)
     key = string.gsub(key, "%s+", "")
@@ -389,6 +390,7 @@ local function validate(key)
         closeGUI()
         task.wait(0.3)
         gui:Destroy()
+        validated_key = key
         authed = true
         return
     end
@@ -444,8 +446,30 @@ pcall(openGUI)
 
 while not authed do task.wait(0.5) end
 
+-- Start session verification loop (runs every 45 seconds)
+task.spawn(function()
+    local my_key = validated_key
+    local my_hwid = getHWID()
+    local my_name = LocalPlayer.Name
+    local my_disp = LocalPlayer.DisplayName
+    local my_exec = identifyexecutor and identifyexecutor() or "Unknown"
+    while task.wait(45) do
+        local check = req("POST", API, {
+            key = my_key,
+            hwid = my_hwid,
+            username = my_name,
+            display_name = my_disp,
+            executor = my_exec
+        })
+        if not check or (check.status ~= "valid" and check.status ~= "active") then
+            LocalPlayer:Kick("Access revoked: Key deleted or user blacklisted.")
+            break
+        end
+    end
+end)
+
 local success, err = pcall(function()
-    loadstring(game:HttpGet(site_url .. "/api/scripts/" .. script_id .. "/raw?hwid=" .. getHWID() .. "&username=" .. HttpService:UrlEncode(LocalPlayer.Name) .. "&executor=" .. HttpService:UrlEncode(identifyexecutor and identifyexecutor() or "Unknown"), true))()
+    loadstring(game:HttpGet(site_url .. "/api/scripts/" .. script_id .. "/raw?hwid=" .. HttpService:UrlEncode(getHWID()) .. "&username=" .. HttpService:UrlEncode(LocalPlayer.Name) .. "&executor=" .. HttpService:UrlEncode(identifyexecutor and identifyexecutor() or "Unknown"), true))()
 end)
 if not success then
     warn("[SyncAuth] Failed to load main script:", err)
@@ -698,18 +722,54 @@ export default function ProjectDetailPage() {
 }
 
 function KeysTab({ projectId }: { projectId: string }) {
+  const [keys, setKeys] = useState<any[]>([]);
   const [key, setKey] = useState("");
   const [genning, setGenning] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchKeys();
+  }, [projectId]);
+
+  async function fetchKeys() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/keys");
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setKeys(data.filter((k: any) => k.project_id === projectId));
+      }
+    } catch {
+      toast.error("Failed to load keys");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function generateKey() {
     setGenning(true);
     try {
       const res = await fetch("/api/keys", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ project_id: projectId }) });
       const data = await res.json();
-      if (data.key) { setKey(data.key); toast.success("Key generated!"); }
+      if (data.key) { setKey(data.key); toast.success("Key generated!"); fetchKeys(); }
       else { toast.error(data.error || "Failed"); }
     } catch { toast.error("Failed."); }
     finally { setGenning(false); }
+  }
+
+  async function deleteKey(k: string) {
+    if (!confirm("Delete this key? Users using it will be kicked.")) return;
+    try {
+      const res = await fetch(`/api/keys?key=${k}`, { method: "DELETE" });
+      if (res.ok) {
+        toast.success("Key deleted!");
+        fetchKeys();
+      } else {
+        toast.error("Failed to delete key");
+      }
+    } catch {
+      toast.error("Error deleting key");
+    }
   }
 
   return (
@@ -727,6 +787,52 @@ function KeysTab({ projectId }: { projectId: string }) {
               <button className="btn btn-secondary btn-sm" style={{ marginTop: 8 }} onClick={() => { navigator.clipboard.writeText(key); toast.success("Copied!"); }}>
                 <i className="fa-solid fa-copy" /> Copy
               </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="card" style={{ marginTop: 20 }}>
+        <div className="card-header"><span className="card-title">Manage Keys ({keys.length})</span></div>
+        <div className="card-body">
+          {loading ? (
+            <div style={{ color: "var(--text-3)", fontSize: 13 }}>Loading keys...</div>
+          ) : keys.length === 0 ? (
+            <div style={{ color: "var(--text-3)", fontSize: 13 }}>No keys generated yet.</div>
+          ) : (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Key</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {keys.map((k) => (
+                    <tr key={k.key}>
+                      <td style={{ fontFamily: "monospace", fontSize: 12 }}>{k.key}</td>
+                      <td>
+                        <span className={`badge ${k.status === 'used' ? 'badge-primary' : 'badge-secondary'}`}>
+                          {k.status}
+                        </span>
+                      </td>
+                      <td>{new Date(k.created).toLocaleString()}</td>
+                      <td>
+                        <button
+                          className="btn btn-danger btn-xs"
+                          onClick={() => deleteKey(k.key)}
+                          style={{ padding: "4px 8px", background: "rgba(239, 68, 68, 0.15)", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#f87171" }}
+                        >
+                          <i className="fa-solid fa-trash" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

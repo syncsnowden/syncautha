@@ -184,11 +184,8 @@ function GetKeyInner() {
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
   return (
-    <div style={{ 
+    <div className="sa-main-bg" style={{ 
       minHeight: "100vh", 
-      background: "radial-gradient(circle at center, transparent 30%, #000000 85%), linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px)",
-      backgroundSize: "100% 100%, 40px 40px, 40px 40px",
-      backgroundColor: "#000000",
       display: "flex", 
       alignItems: "center", 
       justifyContent: "center", 
@@ -198,17 +195,19 @@ function GetKeyInner() {
       overflow: "hidden" 
     }}>
       <style>{`
-        @keyframes floatOrb1{
-          0%{transform:translate(0,0) scale(1)}
-          100%{transform:translate(60px,30px) scale(1.08)}
-        }
-        @keyframes floatOrb2{
-          0%{transform:translate(0,0) scale(1)}
-          100%{transform:translate(-40px,-60px) scale(1.05)}
+        @keyframes bgShift {
+          0% { background-position: 0% 0%; }
+          50% { background-position: 100% 100%; }
+          100% { background-position: 0% 0%; }
         }
         @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
         @keyframes spin{to{transform:rotate(360deg)}}
+        .sa-main-bg {
+          background: linear-gradient(135deg, #050505 0%, #0a0a0c 50%, #030303 100%);
+          background-size: 200% 200%;
+          animation: bgShift 15s ease infinite;
+        }
         .sa-fade{animation:fadeUp .35s ease both}
         .sa-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;border:none;font-family:Inter,sans-serif;transition:all .15s;outline:none}
         .sa-btn:hover{opacity:0.95;transform:translateY(-1px);box-shadow:0 4px 12px rgba(255,255,255,0.08)}
@@ -237,44 +236,6 @@ function GetKeyInner() {
 
       {/* Particle background */}
       <canvas id="particle-canvas" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", zIndex: 0, pointerEvents: "none" }} />
-
-      {/* Drifting ambient orbs */}
-      <div style={{
-        position: "absolute",
-        width: "600px",
-        height: "600px",
-        background: "radial-gradient(circle, rgba(255, 255, 255, 0.035) 0%, transparent 70%)",
-        borderRadius: "50%",
-        top: "-150px",
-        left: "50%",
-        transform: "translateX(-50%)",
-        pointerEvents: "none",
-        zIndex: 0
-      }} />
-      <div style={{
-        position: "absolute",
-        width: "500px",
-        height: "500px",
-        background: "radial-gradient(circle, rgba(255, 255, 255, 0.015) 0%, transparent 70%)",
-        borderRadius: "50%",
-        top: "20%",
-        left: "-100px",
-        pointerEvents: "none",
-        zIndex: 0,
-        animation: "floatOrb1 20s infinite alternate ease-in-out"
-      }} />
-      <div style={{
-        position: "absolute",
-        width: "500px",
-        height: "500px",
-        background: "radial-gradient(circle, rgba(255, 255, 255, 0.015) 0%, transparent 70%)",
-        borderRadius: "50%",
-        bottom: "10%",
-        right: "-100px",
-        pointerEvents: "none",
-        zIndex: 0,
-        animation: "floatOrb2 25s infinite alternate ease-in-out"
-      }} />
 
       {/* Copy toast */}
       {copied && (

@@ -63,7 +63,7 @@ export default function ExecutionChart({ data = [], total = 0 }: ExecutionChartP
             Execution Counter
           </div>
           <div style={{ fontSize: 12.5, color: "var(--text-2)", marginTop: 2 }}>
-            Daily Lua script execution &amp; authentication requests
+            Monthly executions counter
           </div>
         </div>
         <div style={{ fontSize: 12, color: "var(--text-3)" }}>
