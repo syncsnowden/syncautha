@@ -49,6 +49,7 @@ export default function DocsPage() {
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-3)", marginTop: 32, marginBottom: 16, paddingLeft: 12 }}>Development</div>
           <NavButton id="custom_ui" icon="fa-code" label="Custom Key System UI" />
           <NavButton id="raw" icon="fa-lock" label="Secure Execution" />
+          <NavButton id="webhooks" icon="fa-satellite-dish" label="Webhook Protection" />
           <NavButton id="luraph" icon="fa-bolt" label="Obfuscator Macros" />
         </div>
 
@@ -128,7 +129,6 @@ local PROJECT_ID = "YOUR_PROJECT_ID"
 local SCRIPT_ID = "YOUR_SCRIPT_ID"
 local API_URL = "https://syncauth-eight.vercel.app"
 
--- This is where your custom UI logic goes
 local keyInput = MyCustomTextBox.Text 
 
 local response = request({
@@ -147,7 +147,6 @@ local data = HttpService:JSONDecode(response.Body)
 if data.valid then
     print("Authentication successful!")
     
-    -- Now that they are authenticated, fetch and run the main script
     local hwidParam = HttpService:UrlEncode(getHWID())
     local userParam = HttpService:UrlEncode(game.Players.LocalPlayer.Name)
     
@@ -166,7 +165,7 @@ end`}
             <div style={{ maxWidth: 800 }}>
               <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8, letterSpacing: "-0.02em" }}>Secure Execution</h1>
               <p style={{ fontSize: 16, color: "var(--text-2)", lineHeight: 1.6, marginBottom: 40 }}>
-                Understanding how SyncAuth protects your main scripts from being scraped or bypassed.
+                A quick breakdown on how SyncAuth keeps your scripts safe from skids and scrapers.
               </p>
               
               <div style={{ padding: "20px", background: "rgba(239, 68, 68, 0.05)", border: "1px solid rgba(239, 68, 68, 0.15)", borderRadius: 12, marginBottom: 32 }}>
@@ -175,14 +174,14 @@ end`}
                 </h4>
                 <p style={{ color: "#fca5a5", fontSize: 14, lineHeight: 1.6 }}>
                   Our <code>/raw</code> endpoint is heavily fortified. Even if an attacker finds the direct URL to your script, 
-                  they cannot download the source code unless their specific HWID currently has an active, authenticated session in our database.
+                  they can't access the script unless their exact HWID currently has an active, authenticated session in our database.
                 </p>
               </div>
 
               <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 12, color: "var(--text-1)" }}>Executing Keyless Scripts</h3>
               <p style={{ color: "var(--text-3)", marginBottom: 16, lineHeight: 1.6 }}>
-                If you enabled "Keyless Mode" on a script in the dashboard, the security checks are intentionally bypassed so the script can be used freely. 
-                You can execute it directly without any prior validation:
+                If you enabled "Keyless Mode" for a script in the dashboard, the security checks are dropped so it can be used freely by anyone. 
+                You can execute it directly without any validation:
               </p>
 
               <div style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 8, overflow: "hidden" }}>
@@ -191,10 +190,35 @@ end`}
 {`local HttpService = game:GetService("HttpService")
 local username = HttpService:UrlEncode(game.Players.LocalPlayer.Name)
 
--- Just call the raw endpoint directly! No key needed.
 loadstring(game:HttpGet("https://syncauth-eight.vercel.app/api/scripts/YOUR_SCRIPT_ID/raw?username=" .. username))()`}
                 </pre>
               </div>
+            </div>
+          )}
+
+          {activeTab === "webhooks" && (
+            <div style={{ maxWidth: 800 }}>
+              <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8, letterSpacing: "-0.02em" }}>Webhook Protection</h1>
+              <p style={{ fontSize: 16, color: "var(--text-2)", lineHeight: 1.6, marginBottom: 40 }}>
+                Keep track of who is executing your scripts in real-time right from your Discord server.
+              </p>
+              
+              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: "var(--text-1)" }}>Execution Logs</h3>
+              <p style={{ color: "var(--text-3)", marginBottom: 16, lineHeight: 1.6 }}>
+                Every time someone runs your script through the <code>/raw</code> endpoint, SyncAuth instantly fires off a webhook to your Discord server. This applies to both Key System scripts and Keyless Mode scripts. 
+              </p>
+              <p style={{ color: "var(--text-3)", marginBottom: 32, lineHeight: 1.6 }}>
+                The log includes their Roblox Username, Executor, JobId, IP Address, and HWID (depending on what you've toggled on in your Project Settings).
+              </p>
+
+              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: "var(--text-1)" }}>Why it's Secure</h3>
+              <p style={{ color: "var(--text-3)", marginBottom: 16, lineHeight: 1.6 }}>
+                Unlike other platforms that embed your actual webhook URL into the loader code (which gets easily scraped by attackers), SyncAuth keeps your webhook URLs strictly server-side.
+              </p>
+              <p style={{ color: "var(--text-3)", marginBottom: 16, lineHeight: 1.6 }}>
+                Your loader only talks to the SyncAuth API. Our backend is the one that actually sends the embed to Discord. 
+                This guarantees that your webhook will never get spammed or deleted by malicious users dumping your script.
+              </p>
             </div>
           )}
 
@@ -258,7 +282,7 @@ loadstring(game:HttpGet("https://syncauth-eight.vercel.app/api/scripts/YOUR_SCRI
                 <div style={{ background: "#161b22", padding: "8px 16px", borderBottom: "1px solid #30363d", fontSize: 12, color: "#8b949e", fontFamily: "monospace" }}>Example 1: RenderStepped</div>
                 <pre style={{ padding: 16, margin: 0, overflowX: "auto", fontSize: 13, lineHeight: 1.5, color: "#e6edf3" }}>
 {`RunService.RenderStepped:Connect(LPH_NO_VIRTUALIZE(function(delta)
-    -- Your heavy ESP or tracing math goes here
+    
 end))`}</pre>
               </div>
 
@@ -266,7 +290,6 @@ end))`}</pre>
                 <div style={{ background: "#161b22", padding: "8px 16px", borderBottom: "1px solid #30363d", fontSize: 12, color: "#8b949e", fontFamily: "monospace" }}>Example 2: Metamethod Hooks</div>
                 <pre style={{ padding: 16, margin: 0, overflowX: "auto", fontSize: 13, lineHeight: 1.5, color: "#e6edf3" }}>
 {`oldIndex = hookmetamethod(game, "__index", LPH_NO_VIRTUALIZE(function(t, k)
-    -- Code that runs thousands of times a second
     return oldIndex(t, k)
 end))`}</pre>
               </div>
@@ -291,15 +314,13 @@ RunService.Heartbeat:Connect(calculateMath)`}</pre>
                 <pre style={{ padding: 16, margin: 0, overflowX: "auto", fontSize: 13, lineHeight: 1.5, color: "#e6edf3" }}>
 {`local function heavyMath() end
 
--- ERROR: You cannot pass variable references to the macro
 LPH_NO_VIRTUALIZE(heavyMath)`}</pre>
               </div>
 
               <div style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 8, overflow: "hidden", marginBottom: 32 }}>
                 <div style={{ background: "#161b22", padding: "8px 16px", borderBottom: "1px solid #30363d", fontSize: 12, color: "#8b949e", fontFamily: "monospace" }}>Bad Example: Wrapping syntax</div>
                 <pre style={{ padding: 16, margin: 0, overflowX: "auto", fontSize: 13, lineHeight: 1.5, color: "#e6edf3" }}>
-{`-- ERROR: This is a syntax error. It must wrap a valid function expression.
-LPH_NO_VIRTUALIZE(
+{`LPH_NO_VIRTUALIZE(
     local old = hookmetamethod(game, "__namecall", function(...) end)
 )`}</pre>
               </div>
@@ -314,8 +335,6 @@ LPH_NO_VIRTUALIZE(
               <div style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 8, overflow: "hidden", marginBottom: 32 }}>
                 <pre style={{ padding: 16, margin: 0, overflowX: "auto", fontSize: 13, lineHeight: 1.5, color: "#e6edf3" }}>
 {`local verifyGame = LPH_ENCFUNC(function(placeId)
-    -- The number 12345678 is encrypted. 
-    -- Reverse engineers cannot find this number inside the obfuscated script.
     if placeId == 12345678 then
         return true
     end
