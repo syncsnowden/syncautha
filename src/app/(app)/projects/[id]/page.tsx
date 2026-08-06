@@ -80,7 +80,8 @@ gui.Name = "SpiritKey"
 gui.ResetOnSpawn = false
 gui.DisplayOrder = 999
 gui.Enabled = true
-gui.Parent = CoreGui
+local targetGui = (gethui and gethui()) or (pcall(function() return CoreGui.Name end) and CoreGui) or PlayerGui
+gui.Parent = targetGui
 
 local W, H_SIZE = 300, 400
 local m = Instance.new("Frame")
@@ -389,6 +390,7 @@ local function validate(key)
         task.wait(1.5)
         closeGUI()
         task.wait(0.3)
+        getgenv().loader_key = key
         gui:Destroy()
         validated_key = key
         authed = true
