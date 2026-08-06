@@ -29,8 +29,12 @@ export default function ProjectsPage() {
   const [editId, setEditId] = useState("");
   const [form, setForm] = useState({ ...defaultForm });
   const [saving, setSaving] = useState(false);
+  const [obfUsage, setObfUsage] = useState<{ used: number; limit: number; plan: string } | null>(null);
 
-  useEffect(() => { loadProjects(); }, []);
+  useEffect(() => {
+    loadProjects();
+    fetch("/api/obf-usage").then(r => r.json()).then(d => { if (d.used !== undefined) setObfUsage(d); }).catch(() => {});
+  }, []);
 
   async function loadProjects() {
     const res = await fetch("/api/projects");
@@ -94,6 +98,26 @@ export default function ProjectsPage() {
         <p className="page-subtitle">Manage your script projects, key systems and LootLabs rewards.</p>
       </div>
       <div className="page-body">
+        {obfUsage && (
+          <div style={{ marginBottom: 16, padding: "12px 16px", background: "var(--bg-2)", border: "1px solid var(--border-2)", borderRadius: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-2)" }}>
+                <i className="fa-solid fa-shield-halved" style={{ marginRight: 7, color: "var(--accent)" }} />
+                Obfuscations this month
+              </span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: obfUsage.used >= obfUsage.limit ? "#f87171" : "var(--text-1)" }}>
+                {obfUsage.used} <span style={{ color: "var(--text-3)", fontWeight: 400 }}>/ {obfUsage.limit}</span>
+                <span style={{ marginLeft: 8, fontSize: 11, padding: "2px 8px", background: "var(--accent-dim)", color: "var(--accent)", borderRadius: 99, fontWeight: 600 }}>{obfUsage.plan}</span>
+              </span>
+            </div>
+            <div style={{ height: 5, background: "var(--border-2)", borderRadius: 99, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${Math.min(100, (obfUsage.used / obfUsage.limit) * 100)}%`, background: obfUsage.used >= obfUsage.limit ? "#f87171" : "var(--accent)", borderRadius: 99, transition: "width 0.4s ease" }} />
+            </div>
+            {obfUsage.used >= obfUsage.limit && (
+              <p style={{ fontSize: 11, color: "#f87171", margin: 0 }}>⚠️ Monthly limit reached. Upgrade your plan to obfuscate more scripts.</p>
+            )}
+          </div>
+        )}
         <button className="btn btn-primary" style={{ marginBottom: 16, width: "auto" }} onClick={() => { resetForm(); setShowForm(true); }}>
           <i className="fa-solid fa-plus" /> Create Project
         </button>

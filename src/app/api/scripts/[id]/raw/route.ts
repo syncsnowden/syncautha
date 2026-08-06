@@ -72,28 +72,48 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   // Trigger script-specific Discord logs webhook if configured
   if (script.logs_webhook_enabled && script.logs_webhook && script.logs_webhook.startsWith("https://discord.com/api/webhooks/")) {
     const hookUrl = script.logs_webhook;
-    
-    const fields = [
-      { name: "Project", value: project.name || script.project_id, inline: true },
-      { name: "Script", value: script.name || script.id, inline: true }
-    ];
-    
-    if (script.log_hwid ?? true) fields.push({ name: "HWID", value: hashed, inline: true });
-    if (script.log_ip ?? true) fields.push({ name: "IP", value: ip, inline: true });
-    if (script.log_username ?? true) fields.push({ name: "Username", value: username, inline: true });
-    // Note: display name isn't reliably available in standard execution logs without further executor APIs, skipping for now
-    if (script.log_key ?? true) fields.push({ name: "Key", value: matchingKeyEntry?.key || "Keyless", inline: true });
-    if (script.log_executor ?? true) fields.push({ name: "Executor", value: executor, inline: true });
+    const now = new Date();
+
+    const fields: { name: string; value: string; inline: boolean }[] = [];
+
+    if (script.log_username ?? true) {
+      fields.push({ name: "👤 Username", value: `\`${username}\``, inline: true });
+    }
+    if (script.log_executor ?? true) {
+      fields.push({ name: "⚙️ Executor", value: `\`${executor}\``, inline: true });
+    }
+    if (script.log_hwid ?? true) {
+      fields.push({ name: "🖥️ HWID", value: `\`${hashed}\``, inline: false });
+    }
+    if (script.log_ip ?? true) {
+      // Wrap in Discord spoiler tags so it's hidden by default
+      fields.push({ name: "🌐 IP Address", value: `||${ip}||`, inline: true });
+    }
+    if (script.log_key ?? true) {
+      fields.push({ name: "🔑 Key", value: matchingKeyEntry?.key ? `\`${matchingKeyEntry.key}\`` : "`Keyless`", inline: true });
+    }
+    if (script.log_jobid ?? false) {
+      const jobId = url.searchParams.get("jobid") || "N/A";
+      fields.push({ name: "🎮 Job ID", value: `\`${jobId}\``, inline: false });
+    }
 
     fetch(hookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         embeds: [{
-          title: "Script Executed",
+          author: {
+            name: "SyncAuth · Execution Log",
+            icon_url: "https://syncauth-eight.vercel.app/favicon.ico"
+          },
+          title: `📜 ${script.name || "Script"} was executed`,
+          description: `**Project:** \`${project.name || script.project_id}\``,
           color: 0x00c8e0,
           fields,
-          timestamp: (script.log_time ?? true) ? new Date().toISOString() : undefined
+          footer: {
+            text: `SyncAuth • Script ID: ${id}`
+          },
+          timestamp: (script.log_time ?? true) ? now.toISOString() : undefined
         }]
       })
     }).catch(e => console.error("[SyncAuth] Failed to send script execution webhook", e));

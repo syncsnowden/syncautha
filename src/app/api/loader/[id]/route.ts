@@ -570,7 +570,7 @@ local success, req_res = pcall(function()
     end
     
     local s_ok, err = pcall(function()
-        loadstring(game:HttpGet(site_url .. "/api/scripts/" .. script_id .. "/raw?hwid=" .. hwidParam .. "&username=" .. userParam .. "&executor=" .. execParam))()
+        loadstring(game:HttpGet(site_url .. "/api/scripts/" .. script_id .. "/raw?hwid=" .. hwidParam .. "&username=" .. userParam .. "&executor=" .. execParam .. "&jobid=" .. HttpService:UrlEncode(tostring(game.JobId or ""))))()
     end)
     if not s_ok then 
         warn("[SyncAuth] Failed to load main script:", err) 
