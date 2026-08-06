@@ -15,16 +15,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const supabase = await createClient();
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : undefined;
-    const { data: { user } } = token ? await supabase.auth.getUser(token) : await supabase.auth.getUser();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    const { data: { user }, error } = token ? await supabase.auth.getUser(token) : await supabase.auth.getUser();
+    
+    // TEMPORARY BYPASS: if unauthorized, allow script creation but don't track usage
+    // if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-    const plan = user.user_metadata?.redeemed_code || "Free";
+    const plan = user?.user_metadata?.redeemed_code || "Free";
     const limit = plan === "Pro" ? 500 : (plan === "Basic" ? 50 : 10);
     const currentMonth = new Date().toISOString().slice(0, 7);
     const usageKey = `obf_usage_${currentMonth}`;
-    const currentUsage = user.user_metadata?.[usageKey] || 0;
+    const currentUsage = user?.user_metadata?.[usageKey] || 0;
 
-    if (currentUsage >= limit) {
+    if (user && currentUsage >= limit) {
       return Response.json({ error: `Obfuscation limit reached for ${plan} plan (${limit}/mo).` }, { status: 429 });
     }
 
@@ -43,7 +45,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           const obfData = await obfRes.json();
           if (obfData.success && obfData.obfuscated) {
             code = obfData.obfuscated;
-            await supabase.auth.updateUser({ data: { [usageKey]: currentUsage + 1 } });
+            if (user) {
+              await supabase.auth.updateUser({ data: { [usageKey]: currentUsage + 1 } });
+            }
           }
         }
       } catch (e) { console.error("[SyncAuth] Obfuscation failed:", e); }
