@@ -32,7 +32,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
   const url = new URL(req.url);
   const hwid = url.searchParams.get("hwid") || "";
-  if (!hwid) {
+  if (!script.keyless_mode && !hwid) {
     return new Response('error("SyncAuth Access Denied: Missing HWID parameter. You must run this script via the Loader, not directly.")', { status: 403, headers: { "content-type": "text/plain" } });
   }
 
@@ -43,23 +43,27 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
              "127.0.0.1";
 
   const projectData = await loadProjectData(pasteId);
-  const hashed = hashHwid(hwid);
+  const hashed = hwid ? hashHwid(hwid) : "keyless-user";
 
-  // Search if a valid non-expired key session exists for this hashed HWID
-  const matchingKeyEntry = Object.values(projectData.keys).find((entry: any) =>
-    entry.hwid === hashed &&
-    (entry.status === "used" || entry.status === "active") &&
-    entry.expires > Date.now()
-  );
+  let matchingKeyEntry = null;
 
-  if (!matchingKeyEntry) {
-    return new Response('error("SyncAuth Access Denied: No active key session found for this HWID.")', { status: 403, headers: { "content-type": "text/plain" } });
+  if (!script.keyless_mode) {
+    // Search if a valid non-expired key session exists for this hashed HWID
+    matchingKeyEntry = Object.values(projectData.keys).find((entry: any) =>
+      entry.hwid === hashed &&
+      (entry.status === "used" || entry.status === "active") &&
+      entry.expires > Date.now()
+    );
+
+    if (!matchingKeyEntry) {
+      return new Response('error("SyncAuth Access Denied: No active key session found for this HWID.")', { status: 403, headers: { "content-type": "text/plain" } });
+    }
   }
 
   // Log execution asynchronously (non-blocking) to count stats
   logExecution(script.project_id, id, {
     hwid: hashed,
-    key: matchingKeyEntry.key,
+    key: matchingKeyEntry?.key || "keyless",
     ip,
     username,
     executor

@@ -31,6 +31,37 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     return `https://${host}`;
   })();
 
+  if (script.keyless_mode) {
+    const keylessCode = `
+-- [SyncAuth] Keyless Mode Execution
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local site_url = "${siteUrl}"
+local script_id = "${id}"
+
+local userParam = HttpService:UrlEncode(LocalPlayer.Name)
+local execParam = HttpService:UrlEncode(identifyexecutor and identifyexecutor() or "Unknown")
+
+local s_ok, err = pcall(function()
+    loadstring(game:HttpGet(site_url .. "/api/scripts/" .. script_id .. "/raw?username=" .. userParam .. "&executor=" .. execParam))()
+end)
+
+if not s_ok then 
+    warn("[SyncAuth] Failed to load keyless script:", err) 
+else
+    print("[SyncAuth] Keyless Script loaded successfully.")
+end
+`;
+    return new Response(keylessCode, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-store, max-age=0"
+      }
+    });
+  }
+
   const code = `local loader_gui_title = "${project.name.replace(/"/g, '\\"')}"
 local discord_copy_invite = "https://discord.gg/5zp95qrrmK"
 local show_discord_button = true

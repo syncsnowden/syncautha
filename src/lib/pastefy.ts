@@ -211,7 +211,7 @@ export interface Project {
 export interface Script {
   id: string; project_id: string; name: string;
   silent_mode: boolean; script_code: string; created_at: number;
-  paste_id: string; webhook_protection: boolean;
+  paste_id: string; webhook_protection: boolean; keyless_mode?: boolean;
 }
 
 export interface KeyEntry {
