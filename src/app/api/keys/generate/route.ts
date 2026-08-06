@@ -1,4 +1,4 @@
-import { getRewardSession, updateRewardSession, createKey, generateKey } from "@/lib/pastefy";
+import { getRewardSession, updateRewardSession, createKey, generateKey, getProject } from "@/lib/pastefy";
 
 export const dynamic = "force-dynamic";
 
@@ -12,10 +12,16 @@ export async function POST(req: Request) {
     if (session.project_id !== project_id) return Response.json({ error: "Wrong project" }, { status: 403 });
     if (session.status !== "completed") return Response.json({ error: "Not completed" }, { status: 400 });
     if (session.used) return Response.json({ error: "Already used" }, { status: 400 });
+    
+    const project = await getProject(project_id);
+    if (!project) return Response.json({ error: "Project not found" }, { status: 404 });
+
     await updateRewardSession(project_id, session_id, (s) => { s.used = true; });
     const key = generateKey();
     const now = Date.now();
-    await createKey(project_id, { key, project_id, hwid: null, created: now, expires: now + 86400000, status: "unused", linked_reward: session_id });
-    return Response.json({ key, expires: now + 86400000 });
+    const durationMs = project.key_duration ? project.key_duration * 3600000 : 86400000;
+    
+    await createKey(project_id, { key, project_id, hwid: null, created: now, expires: now + durationMs, status: "unused", linked_reward: session_id });
+    return Response.json({ key, expires: now + durationMs });
   } catch { return Response.json({ error: "Failed." }, { status: 500 }); }
 }

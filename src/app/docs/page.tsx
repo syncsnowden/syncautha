@@ -49,7 +49,6 @@ export default function DocsPage() {
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-3)", marginTop: 32, marginBottom: 16, paddingLeft: 12 }}>Development</div>
           <NavButton id="custom_ui" icon="fa-code" label="Custom Key System UI" />
           <NavButton id="raw" icon="fa-lock" label="Secure Execution" />
-          <NavButton id="webhooks" icon="fa-satellite-dish" label="Webhook Protection" />
           <NavButton id="luraph" icon="fa-bolt" label="Obfuscator Macros" />
         </div>
 
@@ -205,31 +204,7 @@ loadstring(game:HttpGet("https://syncauth-eight.vercel.app/api/scripts/YOUR_SCRI
             </div>
           )}
 
-          {activeTab === "webhooks" && (
-            <div style={{ maxWidth: 800 }}>
-              <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8, letterSpacing: "-0.02em" }}>Webhook Protection</h1>
-              <p style={{ fontSize: 16, color: "var(--text-2)", lineHeight: 1.6, marginBottom: 40 }}>
-                Keep track of who is executing your scripts in real-time right from your Discord server.
-              </p>
-              
-              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: "var(--text-1)" }}>Execution Logs</h3>
-              <p style={{ color: "var(--text-3)", marginBottom: 16, lineHeight: 1.6 }}>
-                Every time someone runs your script through the <code>/raw</code> endpoint, SyncAuth instantly fires off a webhook to your Discord server. This applies to both Key System scripts and Keyless Mode scripts. 
-              </p>
-              <p style={{ color: "var(--text-3)", marginBottom: 32, lineHeight: 1.6 }}>
-                The log includes their Roblox Username, Executor, JobId, IP Address, and HWID (depending on what you've toggled on in your Project Settings).
-              </p>
 
-              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: "var(--text-1)" }}>Why it's Secure</h3>
-              <p style={{ color: "var(--text-3)", marginBottom: 16, lineHeight: 1.6 }}>
-                Unlike other platforms that embed your actual webhook URL into the loader code (which gets easily scraped by attackers), SyncAuth keeps your webhook URLs strictly server-side.
-              </p>
-              <p style={{ color: "var(--text-3)", marginBottom: 16, lineHeight: 1.6 }}>
-                Your loader only talks to the SyncAuth API. Our backend is the one that actually sends the embed to Discord. 
-                This guarantees that your webhook will never get spammed.
-              </p>
-            </div>
-          )}
 
           {activeTab === "luraph" && (
             <div style={{ maxWidth: 800 }}>
