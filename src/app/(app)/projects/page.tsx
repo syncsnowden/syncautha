@@ -60,7 +60,12 @@ export default function ProjectsPage() {
   }, []);
 
   async function loadProjects() {
-    const res = await fetch("/api/projects");
+    const { getSupabase } = await import("@/lib/supabase/client");
+    const sb = getSupabase();
+    const { data: { session } } = await sb.auth.getSession();
+    const headers: Record<string, string> = {};
+    if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
+    const res = await fetch("/api/projects", { headers });
     setProjects(await res.json());
   }
 
@@ -97,7 +102,12 @@ export default function ProjectsPage() {
       };
       const url = editId ? `/api/projects/${editId}` : "/api/projects";
       const method = editId ? "PUT" : "POST";
-      const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const { getSupabase } = await import("@/lib/supabase/client");
+      const sb = getSupabase();
+      const { data: { session } } = await sb.auth.getSession();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
+      const res = await fetch(url, { method, headers, body: JSON.stringify(body) });
       if (!res.ok) throw new Error();
       toast.success(editId ? "Project updated!" : "Project created!");
       resetForm(); loadProjects();

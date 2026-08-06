@@ -1,14 +1,33 @@
 import { getProjects, createProject, generateId, type Project } from "@/lib/pastefy";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const supabase = await createClient();
+  const authHeader = req.headers.get("Authorization");
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : undefined;
+  const { data: { user } } = token ? await supabase.auth.getUser(token) : await supabase.auth.getUser();
+
   const projects = await getProjects();
-  return Response.json(projects);
+  
+  if (!user) {
+    // If not authenticated, only return legacy projects with no owner
+    return Response.json(projects.filter(p => !p.owner_id));
+  }
+
+  // Filter projects to only those owned by the user, OR legacy projects with no owner
+  const userProjects = projects.filter(p => p.owner_id === user.id || !p.owner_id);
+  return Response.json(userProjects);
 }
 
 export async function POST(req: Request) {
   try {
+    const supabase = await createClient();
+    const authHeader = req.headers.get("Authorization");
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : undefined;
+    const { data: { user } } = token ? await supabase.auth.getUser(token) : await supabase.auth.getUser();
+
     const body = await req.json();
     const id = generateId(14);
     const project: Project = {
@@ -40,6 +59,7 @@ export async function POST(req: Request) {
       ll_link_2: body.ll_link_2 || "",
       ll_link_3: body.ll_link_3 || "",
       checkpoint_steps: Number(body.checkpoint_steps) || 1,
+      owner_id: user?.id || undefined, // Assign ownership to the creator
     };
     await createProject(project);
     return Response.json(project, { status: 201 });

@@ -206,6 +206,7 @@ export interface Project {
   ll_link_2: string; ll_link_3: string;
   checkpoint_steps: number;
   paste_id?: string;
+  owner_id?: string;
 }
 
 export interface Script {
