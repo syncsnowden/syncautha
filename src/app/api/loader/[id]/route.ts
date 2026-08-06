@@ -490,7 +490,7 @@ local success, req_res = pcall(function()
     local execParam = HttpService:UrlEncode(identifyexecutor and identifyexecutor() or "Unknown")
     
     local r_ok, r_data = pcall(function()
-        return HttpService:JSONDecode(req("GET", site_url .. "/api/projects/" .. project_id .. "/scripts/list").Body or "[]")
+        return req("GET", site_url .. "/api/projects/" .. project_id .. "/scripts/list") or {}
     end)
     
     if r_ok and type(r_data) == "table" then
