@@ -293,7 +293,7 @@ export async function loadProjectData(pasteId: string): Promise<ProjectData> {
   return { ...EMPTY_PROJECT, ...data };
 }
 
-async function saveProjectData(pasteId: string, data: ProjectData): Promise<void> {
+export async function saveProjectData(pasteId: string, data: ProjectData): Promise<void> {
   await writePaste(pasteId, data);
 }
 
