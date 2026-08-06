@@ -562,7 +562,7 @@ export default function ProjectDetailPage() {
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 8, marginBottom: 12 }}>
           <button className="btn btn-primary btn-sm" style={{ width: "auto" }} onClick={() => {
-            const loadStr = \`loadstring(game:HttpGet("\${siteUrl}/api/loader/\${pid}"))()\`;
+            const loadStr = 'loadstring(game:HttpGet("' + siteUrl + '/api/loader/' + pid + '"))()';
             navigator.clipboard.writeText(loadStr);
             toast.success("Copied loader to clipboard!");
           }}>
@@ -670,7 +670,7 @@ export default function ProjectDetailPage() {
                     </div>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       <button className="btn btn-secondary btn-sm" onClick={() => {
-                        const loadStr = \`loadstring(game:HttpGet("\${siteUrl}/api/loader/\${pid}"))()\`;
+                        const loadStr = 'loadstring(game:HttpGet("' + siteUrl + '/api/loader/' + pid + '"))()';
                         navigator.clipboard.writeText(loadStr);
                         toast.success("Copied loader for project!");
                       }}>
