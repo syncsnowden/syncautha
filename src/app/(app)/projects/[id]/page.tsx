@@ -471,7 +471,7 @@ task.spawn(function()
 end)
 
 local success, err = pcall(function()
-    loadstring(game:HttpGet(site_url .. "/api/scripts/" .. script_id .. "/raw?hwid=" .. HttpService:UrlEncode(getHWID()) .. "&username=" .. HttpService:UrlEncode(LocalPlayer.Name) .. "&executor=" .. HttpService:UrlEncode(identifyexecutor and identifyexecutor() or "Unknown"), true))()
+    loadstring(game:HttpGet(site_url .. "/api/scripts/" .. script_id .. "/raw?hwid=" .. HttpService:UrlEncode(getHWID()) .. "&username=" .. HttpService:UrlEncode(LocalPlayer.Name) .. "&executor=" .. HttpService:UrlEncode(identifyexecutor and identifyexecutor() or "Unknown")))()
 end)
 if not success then
     warn("[SyncAuth] Failed to load main script:", err)

@@ -552,7 +552,7 @@ pcall(openGUI)
 while not authed do task.wait(0.5) end
 
 local success, err = pcall(function()
-    loadstring(game:HttpGet(a .. "/api/scripts/" .. b .. "/raw", true))()
+    loadstring(game:HttpGet(a .. "/api/scripts/" .. b .. "/raw?hwid=" .. HttpService:UrlEncode(getHWID()) .. "&username=" .. HttpService:UrlEncode(LocalPlayer.Name) .. "&executor=" .. HttpService:UrlEncode(identifyexecutor and identifyexecutor() or "Unknown")))()
 end)
 if not success then
     warn("[SyncAuth] Failed to load main script:", err)
