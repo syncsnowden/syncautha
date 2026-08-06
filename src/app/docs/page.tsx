@@ -120,12 +120,21 @@ export default function DocsPage() {
                 If it returns true, you&apos;re good to execute the main script.
               </p>
 
+              <div style={{ padding: "20px", background: "rgba(0, 200, 224, 0.05)", border: "1px solid rgba(0, 200, 224, 0.15)", borderRadius: 12, marginBottom: 32 }}>
+                <h4 style={{ color: "var(--accent)", fontSize: 15, fontWeight: 600, marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+                  <i className="fa-solid fa-magnifying-glass" /> Finding your Script ID
+                </h4>
+                <p style={{ color: "var(--text-2)", fontSize: 14, lineHeight: 1.6, marginBottom: 16 }}>
+                  You can find your <code>SCRIPT_ID</code> directly in the SyncAuth dashboard under the Scripts table of your project.
+                </p>
+                <img src="/docs/wheretofindscriptid.png" alt="Where to find Script ID" style={{ width: "100%", borderRadius: 8, border: "1px solid var(--border-1)" }} />
+              </div>
+
               <div style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 8, overflow: "hidden" }}>
                 <div style={{ background: "#161b22", padding: "8px 16px", borderBottom: "1px solid #30363d", fontSize: 12, color: "#8b949e", fontFamily: "monospace" }}>CustomLoader.lua</div>
                 <pre style={{ padding: 20, margin: 0, overflowX: "auto", fontSize: 13, lineHeight: 1.5, color: "#e6edf3" }}>
 {`local HttpService = game:GetService("HttpService")
 
-local PROJECT_ID = "YOUR_PROJECT_ID"
 local SCRIPT_ID = "YOUR_SCRIPT_ID"
 local API_URL = "https://syncauth-eight.vercel.app"
 
@@ -217,7 +226,7 @@ loadstring(game:HttpGet("https://syncauth-eight.vercel.app/api/scripts/YOUR_SCRI
               </p>
               <p style={{ color: "var(--text-3)", marginBottom: 16, lineHeight: 1.6 }}>
                 Your loader only talks to the SyncAuth API. Our backend is the one that actually sends the embed to Discord. 
-                This guarantees that your webhook will never get spammed or deleted by malicious users dumping your script.
+                This guarantees that your webhook will never get spammed.
               </p>
             </div>
           )}
