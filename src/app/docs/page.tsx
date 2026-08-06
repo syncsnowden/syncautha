@@ -21,7 +21,7 @@ export default function DocsPage() {
       onMouseEnter={e => { if (activeTab !== id) { e.currentTarget.style.background = "var(--bg-2)"; e.currentTarget.style.color = "var(--text-1)"; } }}
       onMouseLeave={e => { if (activeTab !== id) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-2)"; } }}
     >
-      <i className={\`fa-solid \${icon}\`} style={{ width: 16, textAlign: "center", opacity: activeTab === id ? 1 : 0.7 }} />
+      <i className={"fa-solid " + icon} style={{ width: 16, textAlign: "center", opacity: activeTab === id ? 1 : 0.7 }} />
       {label}
     </button>
   );
