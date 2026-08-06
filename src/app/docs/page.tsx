@@ -49,7 +49,7 @@ export default function DocsPage() {
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-3)", marginTop: 32, marginBottom: 16, paddingLeft: 12 }}>Development</div>
           <NavButton id="custom_ui" icon="fa-code" label="Custom Key System UI" />
           <NavButton id="raw" icon="fa-lock" label="Secure Execution" />
-          <NavButton id="luraph" icon="fa-bolt" label="Luraph Optimization" />
+          <NavButton id="luraph" icon="fa-bolt" label="Obfuscator Macros" />
         </div>
 
         {/* Content Area */}
@@ -200,17 +200,17 @@ loadstring(game:HttpGet("https://syncauth-eight.vercel.app/api/scripts/YOUR_SCRI
 
           {activeTab === "luraph" && (
             <div style={{ maxWidth: 800 }}>
-              <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8, letterSpacing: "-0.02em" }}>Luraph Optimization</h1>
+              <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8, letterSpacing: "-0.02em" }}>Obfuscator Macros</h1>
               <p style={{ fontSize: 16, color: "var(--text-2)", lineHeight: 1.6, marginBottom: 40 }}>
                 Understanding how Luraph works and how to prevent massive FPS drops and lag spikes when obfuscating high-frequency code blocks.
               </p>
 
-              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: "var(--text-1)" }}>Why does obfuscation kill performance?</h3>
+              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: "var(--text-1)" }}>Why does VM obfuscation kill performance?</h3>
               <p style={{ color: "var(--text-3)", marginBottom: 16, lineHeight: 1.6 }}>
-                Luraph is a VM-based obfuscator. Instead of letting Roblox run your code normally, Luraph translates your script into a completely custom, randomized instruction set that only its internal Virtual Machine can understand.
+                Many high-end obfuscators (like Luraph or custom implementations) are VM-based. Instead of letting Roblox run your code natively, they translate your script into a completely custom, randomized instruction set that only their internal Virtual Machine can understand.
               </p>
               <p style={{ color: "var(--text-3)", marginBottom: 24, lineHeight: 1.6 }}>
-                What does this mean for you? A basic <code>print(&quot;Hello&quot;)</code> statement might take just 4 instruction cycles natively. Under Luraph, that same print statement is fractured into dozens or hundreds of custom VM cycles. The overhead grows exponentially.
+                What does this mean for you? A basic <code>print(&quot;Hello&quot;)</code> statement might take just 4 instruction cycles natively. Under a VM, that same print statement is fractured into dozens or hundreds of custom cycles. The overhead grows exponentially.
               </p>
               
               <div style={{ padding: "20px", background: "rgba(234, 179, 8, 0.05)", border: "1px solid rgba(234, 179, 8, 0.15)", borderRadius: 12, marginBottom: 32 }}>
@@ -230,9 +230,9 @@ loadstring(game:HttpGet("https://syncauth-eight.vercel.app/api/scripts/YOUR_SCRI
                 <li><strong>Garbage Collection Scans:</strong> (e.g., looping through <code>getgc()</code>)</li>
               </ul>
 
-              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: "var(--text-1)" }}>The Solution: LPH_NO_VIRTUALIZE</h3>
+              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: "var(--text-1)" }}>1. The Solution: LPH_NO_VIRTUALIZE</h3>
               <p style={{ color: "var(--text-3)", marginBottom: 16, lineHeight: 1.6 }}>
-                You must explicitly tell Luraph to exclude high-frequency functions from virtualization. You can do this by wrapping those specific functions in the <code>LPH_NO_VIRTUALIZE</code> macro.
+                You must explicitly tell the obfuscator to exclude high-frequency functions from virtualization. You can do this by wrapping those specific functions in the <code>LPH_NO_VIRTUALIZE</code> macro.
               </p>
               
               <p style={{ color: "var(--text-3)", marginBottom: 16, lineHeight: 1.6, fontWeight: 600 }}>
@@ -243,6 +243,9 @@ loadstring(game:HttpGet("https://syncauth-eight.vercel.app/api/scripts/YOUR_SCRI
                 <pre style={{ padding: 16, margin: 0, overflowX: "auto", fontSize: 13, lineHeight: 1.5, color: "#e6edf3" }}>
 {`loadstring([[
     function LPH_NO_VIRTUALIZE(f) return f end;
+    function LPH_ENCFUNC(f) return f end;
+    function LPH_NO_UPVALUES(f) return f end;
+    LPH_LINE = 0;
 ]])();`}
                 </pre>
               </div>
@@ -300,6 +303,34 @@ LPH_NO_VIRTUALIZE(
     local old = hookmetamethod(game, "__namecall", function(...) end)
 )`}</pre>
               </div>
+
+              <div style={{ width: "100%", height: 1, background: "var(--border-1)", margin: "48px 0" }} />
+
+              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: "var(--text-1)" }}>2. Data Protection: LPH_ENCFUNC</h3>
+              <p style={{ color: "var(--text-3)", marginBottom: 16, lineHeight: 1.6 }}>
+                <code>LPH_ENCFUNC</code> ensures that the constants (strings, numbers, etc.) inside a function block are securely encrypted and are never revealed in the main script's constant pool. This is perfect for protecting sensitive Game IDs, Webhook URLs, or authentication logic.
+              </p>
+              
+              <div style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 8, overflow: "hidden", marginBottom: 32 }}>
+                <pre style={{ padding: 16, margin: 0, overflowX: "auto", fontSize: 13, lineHeight: 1.5, color: "#e6edf3" }}>
+{`local verifyGame = LPH_ENCFUNC(function(placeId)
+    -- The number 12345678 is encrypted. 
+    -- Reverse engineers cannot find this number inside the obfuscated script.
+    if placeId == 12345678 then
+        return true
+    end
+end)`}</pre>
+              </div>
+
+              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: "var(--text-1)" }}>3. Optimization: LPH_NO_UPVALUES</h3>
+              <p style={{ color: "var(--text-3)", marginBottom: 16, lineHeight: 1.6 }}>
+                <code>LPH_NO_UPVALUES</code> tells the obfuscator that the function does not rely on any external local variables (upvalues). This allows the compiler to aggressively optimize or inline the function, significantly boosting execution speed for heavy mathematical calculations.
+              </p>
+
+              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: "var(--text-1)" }}>4. Debugging: LPH_LINE</h3>
+              <p style={{ color: "var(--text-3)", marginBottom: 32, lineHeight: 1.6 }}>
+                <code>LPH_LINE</code> is a variable that is automatically replaced with the current line number of the original source code during the compilation process. This is extremely useful for error tracking and debugging inside heavily obfuscated scripts.
+              </p>
 
               <div style={{ padding: "24px", background: "rgba(99, 102, 241, 0.05)", border: "1px solid rgba(99, 102, 241, 0.2)", borderRadius: 12, marginBottom: 40 }}>
                 <h4 style={{ color: "#818cf8", fontSize: 16, fontWeight: 600, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
