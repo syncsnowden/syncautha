@@ -68,7 +68,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   let code = data.code || "";
   
   // SyncAuth Auto-Safety Injector: Automatically prevents user scripts from crashing on failed loadstrings
-  const safetyPolyfill = \`-- [SyncAuth Auto-Safety Injector] --
+  const safetyPolyfill = `-- [SyncAuth Auto-Safety Injector] --
 local __original_loadstring = loadstring
 local loadstring = function(source, chunkname)
     if not source or type(source) ~= "string" or source == "" then
@@ -81,7 +81,7 @@ local loadstring = function(source, chunkname)
     return func
 end
 -------------------------------------
-\`;
+`;
 
   code = safetyPolyfill + code;
   if (script.webhook_protection) {
