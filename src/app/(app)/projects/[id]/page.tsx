@@ -676,12 +676,6 @@ export default function ProjectDetailPage() {
                       }}>
                         <i className="fa-solid fa-download" /> Loader
                       </button>
-                      <button className="btn btn-secondary btn-sm" onClick={() => {
-                        navigator.clipboard.writeText(`loadstring(game:HttpGet("${siteUrl}/api/scripts/${s.id}/raw"))()`);
-                        toast.success("Loader copied!");
-                      }}>
-                        <i className="fa-solid fa-link" /> Raw URL
-                      </button>
                       <button className="btn btn-secondary btn-sm" onClick={() => editScript(s)}>
                         <i className="fa-solid fa-pen" />
                       </button>
