@@ -114,8 +114,8 @@ export default function DocsPage() {
 
               <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 12, color: "var(--text-1)" }}>The Implementation</h3>
               <p style={{ color: "var(--text-3)", marginBottom: 16, lineHeight: 1.6 }}>
-                Just grab the user's input from your custom TextBox, and send a standard HTTP POST request to our validation endpoint. 
-                If it returns true, you're good to execute the main script.
+                Just grab the user&apos;s input from your custom TextBox, and send a standard HTTP POST request to our validation endpoint. 
+                If it returns true, you&apos;re good to execute the main script.
               </p>
 
               <div style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 8, overflow: "hidden" }}>
