@@ -125,21 +125,17 @@ export default function ProjectsPage() {
           <div style={{ 
             marginBottom: 24, 
             padding: "20px 24px", 
-            background: "linear-gradient(145deg, rgba(30,32,40,0.8) 0%, rgba(15,17,25,0.9) 100%)", 
-            border: "1px solid rgba(255,255,255,0.08)", 
+            background: "var(--bg-2)", 
+            border: "1px solid var(--border-2)", 
             borderRadius: 16, 
-            boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
             display: "flex", 
             flexDirection: "column", 
-            gap: 12,
-            position: "relative",
-            overflow: "hidden"
+            gap: 12
           }}>
-            <div style={{ position: "absolute", top: -50, right: -50, width: 150, height: 150, background: "var(--accent)", filter: "blur(80px)", opacity: 0.15, borderRadius: "50%" }} />
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(0, 200, 224, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(0, 200, 224, 0.2)" }}>
-                  <i className="fa-solid fa-shield-halved" style={{ color: "var(--accent)", fontSize: 16 }} />
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255, 255, 255, 0.03)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--border-2)" }}>
+                  <i className="fa-solid fa-shield-halved" style={{ color: "var(--text-2)", fontSize: 16 }} />
                 </div>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-1)", letterSpacing: "0.02em" }}>Obfuscation Quota</div>
@@ -151,20 +147,19 @@ export default function ProjectsPage() {
                   {obfUsage.used} <span style={{ color: "var(--text-3)", fontSize: 14, fontWeight: 600 }}>/ {obfUsage.limit}</span>
                 </div>
                 <div style={{ marginTop: 4 }}>
-                  <span style={{ fontSize: 11, padding: "3px 10px", background: "linear-gradient(90deg, var(--accent) 0%, #00a8c0 100%)", color: "#fff", borderRadius: 99, fontWeight: 700, boxShadow: "0 2px 8px rgba(0,200,224,0.3)" }}>
+                  <span style={{ fontSize: 11, padding: "3px 10px", background: "var(--bg-3)", color: "var(--text-2)", borderRadius: 99, fontWeight: 700, border: "1px solid var(--border-2)" }}>
                     {obfUsage.plan} Plan
                   </span>
                 </div>
               </div>
             </div>
-            <div style={{ height: 6, background: "rgba(255,255,255,0.05)", borderRadius: 99, overflow: "hidden", marginTop: 4, border: "1px solid rgba(255,255,255,0.02)" }}>
+            <div style={{ height: 6, background: "var(--border-2)", borderRadius: 99, overflow: "hidden", marginTop: 4 }}>
               <div style={{ 
                 height: "100%", 
                 width: `${Math.min(100, (obfUsage.used / obfUsage.limit) * 100)}%`, 
-                background: obfUsage.used >= obfUsage.limit ? "#ef4444" : "linear-gradient(90deg, var(--accent) 0%, #00e0ff 100%)", 
+                background: obfUsage.used >= obfUsage.limit ? "#ef4444" : "var(--text-2)", 
                 borderRadius: 99, 
-                transition: "width 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
-                boxShadow: "0 0 10px var(--accent)"
+                transition: "width 0.6s cubic-bezier(0.4, 0, 0.2, 1)"
               }} />
             </div>
             {obfUsage.used >= obfUsage.limit && (

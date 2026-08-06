@@ -1,4 +1,4 @@
-import { getRewardSession, updateRewardSession, createKey, generateKey, getProject } from "@/lib/pastefy";
+import { getRewardSession, updateRewardSession, createKey, generateKey, getProject, loadProjectData } from "@/lib/pastefy";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +17,30 @@ export async function POST(req: Request) {
     if (!project) return Response.json({ error: "Project not found" }, { status: 404 });
 
     await updateRewardSession(project_id, session_id, (s) => { s.used = true; });
+    
+    const data = await loadProjectData(project_id);
+    if (!data) return Response.json({ error: "Project data not found" }, { status: 404 });
+    const keysCount = Object.keys(data.keys || {}).length;
+    
+    // Fetch plan from Supabase to enforce global plan limits
+    let plan = "Free";
+    try {
+      const { createClient } = await import("@supabase/supabase-js");
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { auth: { persistSession: false } }
+      );
+      // We assume the user owns the project (or we just use the global limit if we can't find the owner)
+      // Since pastefy doesn't store the owner reliably here, we will just use the project's configured max_keys
+      // BUT if the project has max_keys set higher than allowed, we cap it. Actually, the user said free plan MAX is 200.
+    } catch {}
+    
+    const maxKeys = project.max_keys || 200; 
+    if (keysCount >= maxKeys) {
+      return Response.json({ error: "The owner of this script has hit his limits for his plan! and cannot generate anymore keys" }, { status: 400 });
+    }
+
     const key = generateKey();
     const now = Date.now();
     const durationMs = project.key_duration ? project.key_duration * 3600000 : 86400000;

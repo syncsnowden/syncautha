@@ -2,7 +2,7 @@ import { getProjects, loadProjectData } from "@/lib/pastefy";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const projects = await getProjects();
     let activeKeys = 0;
@@ -51,8 +51,31 @@ export async function GET() {
       });
     }
 
+    // Fetch plan
+    let plan = "Free";
+    try {
+      const authHeader = req.headers.get("authorization") || "";
+      const token = authHeader.replace("Bearer ", "").trim();
+      if (token) {
+        const { createClient } = await import("@supabase/supabase-js");
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          { auth: { persistSession: false } }
+        );
+        const { data: { user } } = await supabase.auth.getUser(token);
+        if (user?.user_metadata?.redeemed_code) {
+          plan = user.user_metadata.redeemed_code;
+        }
+      }
+    } catch {}
+
+    const maxKeys = plan === "Pro" ? 2000 : (plan === "Basic" ? 500 : 200);
+
     return Response.json({
       activeKeys,
+      maxKeys,
+      plan,
       totalUsers,
       executions: totalExecutions,
       blocked: totalBlocked,
