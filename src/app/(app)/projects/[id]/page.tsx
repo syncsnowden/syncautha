@@ -505,10 +505,12 @@ export default function ProjectDetailPage() {
   });
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<"scripts" | "keys">("scripts");
+  const [obfUsage, setObfUsage] = useState<{ used: number; limit: number; plan: string } | null>(null);
 
   useEffect(() => {
     fetch(`/api/projects/${pid}`).then(r => r.json()).then(setProject);
     loadScripts();
+    fetch("/api/obf-usage").then(r => r.json()).then(d => { if (d.used !== undefined) setObfUsage(d); }).catch(() => {});
   }, [pid]);
 
   async function loadScripts() {
@@ -521,14 +523,20 @@ export default function ProjectDetailPage() {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name.trim() || !form.script_code.trim()) return toast.error("Name and code required.");
+    if (!form.name.trim()) return toast.error("Script name is required.");
+    if (!editSid && !form.script_code.trim()) return toast.error("Please upload or paste a script file.");
     setSaving(true);
     try {
       const url = editSid ? `/api/scripts/${editSid}` : `/api/projects/${pid}/scripts`;
       const method = editSid ? "PUT" : "POST";
       const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+      if (res.status === 429) {
+        const data = await res.json();
+        toast.error(data.error || "Obfuscation limit reached for your plan.");
+        return;
+      }
       if (!res.ok) throw new Error();
-      toast.success(editSid ? "Script updated!" : "Script created!");
+      toast.success(editSid ? "Script updated!" : "Script created & obfuscated!");
       resetForm(); loadScripts();
     } catch { toast.error("Failed to save."); }
     finally { setSaving(false); }
@@ -601,6 +609,17 @@ export default function ProjectDetailPage() {
 
         {tab === "scripts" && (
           <>
+            {obfUsage && (
+              <div style={{ marginBottom: 14, padding: "10px 14px", background: "var(--bg-2)", border: "1px solid var(--border-2)", borderRadius: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                  <span style={{ color: "var(--text-2)", fontWeight: 600 }}><i className="fa-solid fa-shield-halved" style={{ marginRight: 6, color: "var(--accent)" }} />Obfuscations this month</span>
+                  <span style={{ color: obfUsage.used >= obfUsage.limit ? "#f87171" : "var(--text-2)" }}>{obfUsage.used} / {obfUsage.limit} &nbsp;<span style={{ color: "var(--text-3)", fontWeight: 400 }}>({obfUsage.plan} Plan)</span></span>
+                </div>
+                <div style={{ height: 4, background: "var(--border-2)", borderRadius: 99, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${Math.min(100, (obfUsage.used / obfUsage.limit) * 100)}%`, background: obfUsage.used >= obfUsage.limit ? "#f87171" : "var(--accent)", borderRadius: 99, transition: "width 0.4s ease" }} />
+                </div>
+              </div>
+            )}
             <button className="btn btn-primary" style={{ marginBottom: 16, width: "auto" }} onClick={() => { resetForm(); setShowForm(true); }}>
               <i className="fa-solid fa-plus" /> Add Script
             </button>

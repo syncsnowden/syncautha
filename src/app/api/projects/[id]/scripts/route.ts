@@ -59,7 +59,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       discord_link: body.discord_link || "",
       get_key_link: body.get_key_link || "",
       show_discord_button: body.show_discord_button ?? true,
+      logs_webhook_enabled: body.logs_webhook_enabled ?? false,
       logs_webhook: body.logs_webhook || "",
+      log_hwid: body.log_hwid ?? true,
+      log_ip: body.log_ip ?? true,
+      log_username: body.log_username ?? true,
+      log_displayname: body.log_displayname ?? false,
+      log_time: body.log_time ?? true,
+      log_key: body.log_key ?? true,
+      log_executor: body.log_executor ?? true,
+      log_jobid: body.log_jobid ?? false,
     };
     await createScript(project_id, script);
     return Response.json(script, { status: 201 });
