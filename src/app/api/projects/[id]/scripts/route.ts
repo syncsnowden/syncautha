@@ -13,7 +13,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { id: project_id } = await params;
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const authHeader = req.headers.get("Authorization");
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : undefined;
+    const { data: { user } } = token ? await supabase.auth.getUser(token) : await supabase.auth.getUser();
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
     const plan = user.user_metadata?.redeemed_code || "Free";

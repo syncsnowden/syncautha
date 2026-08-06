@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { getSupabase } from "@/lib/supabase/client";
 
 interface Script {
   id: string; project_id: string; name: string;
@@ -554,7 +555,11 @@ export default function ProjectDetailPage() {
     try {
       const url = editSid ? `/api/scripts/${editSid}` : `/api/projects/${pid}/scripts`;
       const method = editSid ? "PUT" : "POST";
-      const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+      const supabase = getSupabase();
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
+      const res = await fetch(url, { method, headers, body: JSON.stringify(form) });
       if (res.status === 429) {
         const data = await res.json();
         toast.error(data.error || "Obfuscation limit reached for your plan.");
