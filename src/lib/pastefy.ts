@@ -211,7 +211,12 @@ export interface Project {
 export interface Script {
   id: string; project_id: string; name: string;
   silent_mode: boolean; script_code: string; created_at: number;
-  paste_id: string; webhook_protection: boolean; keyless_mode?: boolean;
+  paste_id: string; webhook_protection: boolean; 
+  use_syncauth_gui?: boolean;
+  gui_title?: string;
+  discord_link?: string;
+  get_key_link?: string;
+  show_discord_button?: boolean;
 }
 
 export interface KeyEntry {
