@@ -670,9 +670,9 @@ export default function ProjectDetailPage() {
                     </div>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       <button className="btn btn-secondary btn-sm" onClick={() => {
-                        const loadStr = 'loadstring(game:HttpGet("' + siteUrl + '/api/loader/' + pid + '"))()';
+                        const loadStr = 'loadstring(game:HttpGet("' + siteUrl + '/api/loader/' + s.id + '"))()';
                         navigator.clipboard.writeText(loadStr);
-                        toast.success("Copied loader for project!");
+                        toast.success("Copied loader for script!");
                       }}>
                         <i className="fa-solid fa-download" /> Loader
                       </button>
