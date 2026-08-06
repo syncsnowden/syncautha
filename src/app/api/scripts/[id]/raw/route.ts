@@ -60,67 +60,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     }
   }
 
-  // Log execution asynchronously (non-blocking) to count stats
-  logExecution(script.project_id, id, {
-    hwid: hashed,
-    key: matchingKeyEntry?.key || "keyless",
-    ip,
-    username,
-    executor
-  }).catch(err => console.error("[SyncAuth] Failed to log execution:", err));
-
-  // Trigger script-specific Discord logs webhook if configured
-  if (script.logs_webhook_enabled && script.logs_webhook && script.logs_webhook.startsWith("https://discord.com/api/webhooks/")) {
-    const hookUrl = script.logs_webhook;
-    const now = new Date();
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://syncauth-eight.vercel.app";
-
-    const fields: { name: string; value: string; inline: boolean }[] = [];
-
-    if (script.log_username ?? true) {
-      fields.push({ name: "Username", value: `\`${username}\``, inline: true });
-    }
-    if (script.log_executor ?? true) {
-      fields.push({ name: "Executor", value: `\`${executor}\``, inline: true });
-    }
-    if (script.log_hwid ?? true) {
-      fields.push({ name: "HWID", value: `\`${hashed}\``, inline: false });
-    }
-    if (script.log_ip ?? true) {
-      fields.push({ name: "IP Address", value: `||${ip}||`, inline: true });
-    }
-    if (script.log_key ?? true) {
-      fields.push({ name: "Key", value: matchingKeyEntry?.key ? `\`${matchingKeyEntry.key}\`` : "`Keyless`", inline: true });
-    }
-    if (script.log_jobid ?? false) {
-      const jobId = url.searchParams.get("jobid") || "N/A";
-      fields.push({ name: "Job ID", value: `\`${jobId}\``, inline: false });
-    }
-
-    fetch(hookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        embeds: [{
-          author: {
-            name: "SyncAuth · Execution Log",
-            icon_url: `${siteUrl}/syncauthlogo.png`,
-            url: siteUrl
-          },
-          title: `${script.name || "Script"} was executed`,
-          description: `**Project:** \`${project.name || script.project_id}\``,
-          color: 0x00c8e0,
-          thumbnail: { url: `${siteUrl}/syncauthlogo.png` },
-          fields,
-          footer: {
-            text: `SyncAuth · Script ID: ${id}`,
-            icon_url: `${siteUrl}/syncauthlogo.png`
-          },
-          timestamp: (script.log_time ?? true) ? now.toISOString() : undefined
-        }]
-      })
-    }).catch(e => console.error("[SyncAuth] Failed to send script execution webhook", e));
-  }
+  // Execution logging has been moved to /api/scripts/[id]/execute
 
   let code = data.code || "";
   

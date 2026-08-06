@@ -30,20 +30,22 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     let code = body.script_code || "";
     
     // Obfuscate with WeAreDevs
-    try {
-      const obfRes = await fetch("https://wearedevs.net/api/obfuscate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ script: code })
-      });
-      if (obfRes.ok) {
-        const obfData = await obfRes.json();
-        if (obfData.success && obfData.obfuscated) {
-          code = obfData.obfuscated;
-          await supabase.auth.updateUser({ data: { [usageKey]: currentUsage + 1 } });
+    if (code.trim() !== "") {
+      try {
+        const obfRes = await fetch("https://wearedevs.net/api/obfuscate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ script: code })
+        });
+        if (obfRes.ok) {
+          const obfData = await obfRes.json();
+          if (obfData.success && obfData.obfuscated) {
+            code = obfData.obfuscated;
+            await supabase.auth.updateUser({ data: { [usageKey]: currentUsage + 1 } });
+          }
         }
-      }
-    } catch (e) { console.error("[SyncAuth] Obfuscation failed:", e); }
+      } catch (e) { console.error("[SyncAuth] Obfuscation failed:", e); }
+    }
 
     const script: Script = {
       id: generateId(14),

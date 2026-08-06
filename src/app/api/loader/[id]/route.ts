@@ -44,6 +44,23 @@ local script_id = "${id}"
 local userParam = HttpService:UrlEncode(LocalPlayer.Name)
 local execParam = HttpService:UrlEncode(identifyexecutor and identifyexecutor() or "Unknown")
 
+local REQ_FN = (syn and syn.request) or (http and http.request) or request or function(t) return HttpService:RequestAsync(t) end
+task.spawn(function()
+    pcall(function()
+        REQ_FN({
+            Url = site_url .. "/api/scripts/" .. script_id .. "/execute",
+            Method = "POST",
+            Headers = { ["Content-Type"] = "application/json" },
+            Body = HttpService:JSONEncode({
+                hwid = "keyless-user",
+                username = LocalPlayer.Name,
+                executor = identifyexecutor and identifyexecutor() or "Unknown",
+                jobid = tostring(game.JobId or "")
+            })
+        })
+    end)
+end)
+
 local s_ok, err = pcall(function()
     loadstring(game:HttpGet(site_url .. "/api/scripts/" .. script_id .. "/raw?username=" .. userParam .. "&executor=" .. execParam))()
 end)
@@ -127,6 +144,15 @@ local function req(method, url, body)
     local dec, data = pcall(function() return HttpService:JSONDecode(b) end)
     return dec and data or nil
 end
+
+task.spawn(function()
+    req("POST", site_url .. "/api/scripts/" .. target_script_id .. "/execute", {
+        hwid = getHWID(),
+        username = LocalPlayer.Name,
+        executor = identifyexecutor and identifyexecutor() or "Unknown",
+        jobid = tostring(game.JobId or "")
+    })
+end)
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "SpiritKey"

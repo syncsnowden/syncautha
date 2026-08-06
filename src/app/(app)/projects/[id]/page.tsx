@@ -549,7 +549,7 @@ export default function ProjectDetailPage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name.trim()) return toast.error("Script name is required.");
-    if (!editSid && !form.script_code.trim()) return toast.error("Please upload or paste a script file.");
+    if (!editSid && !form.use_syncauth_gui && !form.script_code.trim()) return toast.error("Please upload or paste a script file.");
     setSaving(true);
     try {
       const url = editSid ? `/api/scripts/${editSid}` : `/api/projects/${pid}/scripts`;
