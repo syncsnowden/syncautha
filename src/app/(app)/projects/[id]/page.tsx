@@ -505,7 +505,7 @@ export default function ProjectDetailPage() {
   });
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<"scripts" | "keys">("scripts");
-  const [obfUsage, setObfUsage] = useState<{ used: number; limit: number; plan: string } | null>(null);
+  const [obfUsage, setObfUsage] = useState<{ used: number; limit: number; plan: string }>({ used: 0, limit: 10, plan: "Free" });
 
   useEffect(() => {
     fetch(`/api/projects/${pid}`).then(r => r.json()).then(setProject);

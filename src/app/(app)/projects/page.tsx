@@ -29,7 +29,7 @@ export default function ProjectsPage() {
   const [editId, setEditId] = useState("");
   const [form, setForm] = useState({ ...defaultForm });
   const [saving, setSaving] = useState(false);
-  const [obfUsage, setObfUsage] = useState<{ used: number; limit: number; plan: string } | null>(null);
+  const [obfUsage, setObfUsage] = useState<{ used: number; limit: number; plan: string }>({ used: 0, limit: 10, plan: "Free" });
 
   useEffect(() => {
     loadProjects();
