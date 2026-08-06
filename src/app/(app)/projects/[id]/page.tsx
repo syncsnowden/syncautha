@@ -511,31 +511,30 @@ export default function ProjectDetailPage() {
     fetch(`/api/projects/${pid}`).then(r => r.json()).then(setProject);
     loadScripts();
 
-    // Get session token from localStorage (SyncAuth stores access_token there)
-    const getToken = () => {
+    const fetchUsage = async () => {
       try {
-        const raw = localStorage.getItem("syncauth_session");
-        if (raw) return JSON.parse(raw)?.access_token || "";
-        // Supabase SSR also stores under this key pattern
-        for (const k of Object.keys(localStorage)) {
-          if (k.includes("supabase") && k.includes("auth-token")) {
-            const v = JSON.parse(localStorage.getItem(k) || "{}");
-            return v?.access_token || "";
+        const { getSupabase } = await import("@/lib/supabase/client");
+        const sb = getSupabase();
+        const { data: { session } } = await sb.auth.getSession();
+        let token = session?.access_token || "";
+        
+        if (!token) {
+          const raw = localStorage.getItem("syncauth_session");
+          if (raw) token = JSON.parse(raw)?.access_token || "";
+        }
+        
+        if (token) {
+          const r = await fetch("/api/obf-usage", { headers: { Authorization: `Bearer ${token}` } });
+          if (r.ok) {
+            const d = await r.json();
+            if (d?.used !== undefined) setObfUsage(d);
           }
         }
-      } catch {}
-      return "";
+      } catch (e) {
+        console.error("Obf usage fetch failed", e);
+      }
     };
-    const token = getToken();
-    if (token) {
-      fetch("/api/obf-usage", { headers: { Authorization: `Bearer ${token}` } })
-        .then(async r => {
-          if (!r.ok) { console.warn("[SyncAuth] obf-usage:", r.status); return; }
-          const d = await r.json();
-          if (d.used !== undefined) setObfUsage(d);
-        })
-        .catch(e => console.error("[SyncAuth] obf-usage failed:", e));
-    }
+    fetchUsage();
   }, [pid]);
 
   async function loadScripts() {

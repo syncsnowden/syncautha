@@ -33,26 +33,30 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     loadProjects();
-    try {
-      let token = "";
-      const raw = localStorage.getItem("syncauth_session");
-      if (raw) {
-        token = JSON.parse(raw)?.access_token || "";
-      } else {
-        for (const k of Object.keys(localStorage)) {
-          if (k.includes("supabase") && k.includes("auth-token")) {
-            token = JSON.parse(localStorage.getItem(k) || "{}")?.access_token || "";
-            if (token) break;
+    const fetchUsage = async () => {
+      try {
+        const { getSupabase } = await import("@/lib/supabase/client");
+        const sb = getSupabase();
+        const { data: { session } } = await sb.auth.getSession();
+        let token = session?.access_token || "";
+        
+        if (!token) {
+          const raw = localStorage.getItem("syncauth_session");
+          if (raw) token = JSON.parse(raw)?.access_token || "";
+        }
+        
+        if (token) {
+          const r = await fetch("/api/obf-usage", { headers: { Authorization: `Bearer ${token}` } });
+          if (r.ok) {
+            const d = await r.json();
+            if (d?.used !== undefined) setObfUsage(d);
           }
         }
+      } catch (e) {
+        console.error("Obf usage fetch failed", e);
       }
-      if (token) {
-        fetch("/api/obf-usage", { headers: { Authorization: `Bearer ${token}` } })
-          .then(r => r.ok ? r.json() : null)
-          .then(d => { if (d?.used !== undefined) setObfUsage(d); })
-          .catch(() => {});
-      }
-    } catch {}
+    };
+    fetchUsage();
   }, []);
 
   async function loadProjects() {
