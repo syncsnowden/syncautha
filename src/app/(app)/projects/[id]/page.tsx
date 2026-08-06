@@ -562,19 +562,11 @@ export default function ProjectDetailPage() {
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 8, marginBottom: 12 }}>
           <button className="btn btn-primary btn-sm" style={{ width: "auto" }} onClick={() => {
-            const firstScript = scripts[0];
-            const sid = firstScript ? firstScript.id : "YOUR_SCRIPT_ID";
-            const sname = firstScript ? firstScript.name : (project?.name || "Project");
-            const code = keyLoaderTemplate(sid, sname, siteUrl);
-            const blob = new Blob([code], { type: "text/plain" });
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            a.download = `loader-${sname.replace(/[^a-z0-9]/gi, "_")}.lua`;
-            a.click();
-            URL.revokeObjectURL(a.href);
-            toast.success(firstScript ? `Downloaded loader for "${sname}"!` : "Downloaded loader template (no scripts found yet)!");
+            const loadStr = \`loadstring(game:HttpGet("\${siteUrl}/api/loader/\${pid}"))()\`;
+            navigator.clipboard.writeText(loadStr);
+            toast.success("Copied loader to clipboard!");
           }}>
-            <i className="fa-solid fa-download" /> Download loader.lua
+            <i className="fa-solid fa-copy" /> Copy Loader Code
           </button>
         </div>
 
@@ -678,14 +670,9 @@ export default function ProjectDetailPage() {
                     </div>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       <button className="btn btn-secondary btn-sm" onClick={() => {
-                        const code = keyLoaderTemplate(s.id, s.name, siteUrl);
-                        const blob = new Blob([code], { type: "text/plain" });
-                        const a = document.createElement("a");
-                        a.href = URL.createObjectURL(blob);
-                        a.download = `loader-${s.name.replace(/[^a-z0-9]/gi, "_")}.lua`;
-                        a.click();
-                        URL.revokeObjectURL(a.href);
-                        toast.success("Loader downloaded!");
+                        const loadStr = \`loadstring(game:HttpGet("\${siteUrl}/api/loader/\${pid}"))()\`;
+                        navigator.clipboard.writeText(loadStr);
+                        toast.success("Copied loader for project!");
                       }}>
                         <i className="fa-solid fa-download" /> Loader
                       </button>
