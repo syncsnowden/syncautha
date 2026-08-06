@@ -104,17 +104,17 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         embeds: [{
           author: {
             name: "SyncAuth · Execution Log",
-            icon_url: `${siteUrl}/favicon.ico`,
+            icon_url: `${siteUrl}/syncauthlogo.png`,
             url: siteUrl
           },
           title: `${script.name || "Script"} was executed`,
           description: `**Project:** \`${project.name || script.project_id}\``,
           color: 0x00c8e0,
-          thumbnail: { url: `${siteUrl}/favicon.ico` },
+          thumbnail: { url: `${siteUrl}/syncauthlogo.png` },
           fields,
           footer: {
             text: `SyncAuth · Script ID: ${id}`,
-            icon_url: `${siteUrl}/favicon.ico`
+            icon_url: `${siteUrl}/syncauthlogo.png`
           },
           timestamp: (script.log_time ?? true) ? now.toISOString() : undefined
         }]

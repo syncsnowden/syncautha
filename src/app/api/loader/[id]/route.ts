@@ -583,6 +583,7 @@ end)
   return new Response(code, {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-store, max-age=0"
     },
   });
 }
