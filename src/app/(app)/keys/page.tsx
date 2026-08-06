@@ -24,7 +24,12 @@ export default function KeysPage() {
 
   async function fetchKeys() {
     try {
-      const res = await fetch("/api/keys");
+      const { getSupabase } = await import("@/lib/supabase/client");
+      const sb = getSupabase();
+      const { data: { session } } = await sb.auth.getSession();
+      const headers: Record<string, string> = {};
+      if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
+      const res = await fetch("/api/keys", { headers });
       const data = await res.json();
       if (Array.isArray(data)) {
         setKeys(data);
@@ -146,7 +151,12 @@ export default function KeysPage() {
                             onClick={async () => {
                               if (!confirm("Are you sure you want to delete this key? This will kick any active user using it and make it unusable.")) return;
                               try {
-                                const res = await fetch(`/api/keys?key=${k.key}`, { method: "DELETE" });
+                                const { getSupabase } = await import("@/lib/supabase/client");
+                                const sb = getSupabase();
+                                const { data: { session } } = await sb.auth.getSession();
+                                const headers: Record<string, string> = {};
+                                if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
+                                const res = await fetch(`/api/keys?key=${k.key}`, { method: "DELETE", headers });
                                 if (res.ok) {
                                   toast.success("Key deleted!");
                                   fetchKeys();

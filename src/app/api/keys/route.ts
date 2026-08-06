@@ -1,10 +1,18 @@
 import { createKey, generateKey, getProjects, loadProjectData } from "@/lib/pastefy";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const projects = await getProjects();
+    const supabase = await createClient();
+    const authHeader = req.headers.get("Authorization");
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : undefined;
+    const { data: { user } } = token ? await supabase.auth.getUser(token) : await supabase.auth.getUser();
+
+    const allProjects = await getProjects();
+    const projects = user ? allProjects.filter(p => p.owner_id === user.id || !p.owner_id) : allProjects.filter(p => !p.owner_id);
+
     const allKeys: any[] = [];
     for (const p of projects) {
       if (!p.paste_id) continue;

@@ -874,7 +874,12 @@ function KeysTab({ projectId, plan }: { projectId: string, plan: string }) {
   async function fetchKeys() {
     setLoading(true);
     try {
-      const res = await fetch("/api/keys");
+      const { getSupabase } = await import("@/lib/supabase/client");
+      const sb = getSupabase();
+      const { data: { session } } = await sb.auth.getSession();
+      const headers: Record<string, string> = {};
+      if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
+      const res = await fetch("/api/keys", { headers });
       const data = await res.json();
       if (Array.isArray(data)) {
         setKeys(data.filter((k: any) => k.project_id === projectId));
@@ -889,7 +894,12 @@ function KeysTab({ projectId, plan }: { projectId: string, plan: string }) {
   async function generateKey() {
     setGenning(true);
     try {
-      const res = await fetch("/api/keys", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ project_id: projectId }) });
+      const { getSupabase } = await import("@/lib/supabase/client");
+      const sb = getSupabase();
+      const { data: { session } } = await sb.auth.getSession();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
+      const res = await fetch("/api/keys", { method: "POST", headers, body: JSON.stringify({ project_id: projectId }) });
       const data = await res.json();
       if (data.key) { setKey(data.key); toast.success("Key generated!"); fetchKeys(); }
       else { toast.error(data.error || "Failed"); }
@@ -900,7 +910,12 @@ function KeysTab({ projectId, plan }: { projectId: string, plan: string }) {
   async function deleteKey(k: string) {
     if (!confirm("Delete this key? Users using it will be kicked.")) return;
     try {
-      const res = await fetch(`/api/keys?key=${k}`, { method: "DELETE" });
+      const { getSupabase } = await import("@/lib/supabase/client");
+      const sb = getSupabase();
+      const { data: { session } } = await sb.auth.getSession();
+      const headers: Record<string, string> = {};
+      if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
+      const res = await fetch(`/api/keys?key=${k}`, { method: "DELETE", headers });
       if (res.ok) {
         toast.success("Key deleted!");
         fetchKeys();
