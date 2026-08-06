@@ -70,8 +70,21 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   }).catch(err => console.error("[SyncAuth] Failed to log execution:", err));
 
   // Trigger script-specific Discord logs webhook if configured
-  if (script.logs_webhook && script.logs_webhook.startsWith("https://discord.com/api/webhooks/")) {
+  if (script.logs_webhook_enabled && script.logs_webhook && script.logs_webhook.startsWith("https://discord.com/api/webhooks/")) {
     const hookUrl = script.logs_webhook;
+    
+    const fields = [
+      { name: "Project", value: project.name || script.project_id, inline: true },
+      { name: "Script", value: script.name || script.id, inline: true }
+    ];
+    
+    if (script.log_hwid ?? true) fields.push({ name: "HWID", value: hashed, inline: true });
+    if (script.log_ip ?? true) fields.push({ name: "IP", value: ip, inline: true });
+    if (script.log_username ?? true) fields.push({ name: "Username", value: username, inline: true });
+    // Note: display name isn't reliably available in standard execution logs without further executor APIs, skipping for now
+    if (script.log_key ?? true) fields.push({ name: "Key", value: matchingKeyEntry?.key || "Keyless", inline: true });
+    if (script.log_executor ?? true) fields.push({ name: "Executor", value: executor, inline: true });
+
     fetch(hookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -79,15 +92,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         embeds: [{
           title: "Script Executed",
           color: 0x00c8e0,
-          fields: [
-            { name: "Project", value: project.name || script.project_id, inline: true },
-            { name: "Script", value: script.name || script.id, inline: true },
-            { name: "HWID", value: hashed, inline: true },
-            { name: "Username", value: username, inline: true },
-            { name: "Executor", value: executor, inline: true },
-            { name: "Key", value: matchingKeyEntry?.key || "Keyless", inline: true }
-          ],
-          timestamp: new Date().toISOString()
+          fields,
+          timestamp: (script.log_time ?? true) ? new Date().toISOString() : undefined
         }]
       })
     }).catch(e => console.error("[SyncAuth] Failed to send script execution webhook", e));

@@ -217,7 +217,12 @@ export interface Script {
   discord_link?: string;
   get_key_link?: string;
   show_discord_button?: boolean;
+  
+  logs_webhook_enabled?: boolean;
   logs_webhook?: string;
+  log_hwid?: boolean; log_ip?: boolean;
+  log_username?: boolean; log_displayname?: boolean; log_time?: boolean;
+  log_key?: boolean; log_executor?: boolean; log_jobid?: boolean;
 }
 
 export interface KeyEntry {
