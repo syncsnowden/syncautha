@@ -1,4 +1,4 @@
-import { getProject } from "@/lib/pastefy";
+import { getScript, getProject } from "@/lib/pastefy";
 
 export const dynamic = "force-dynamic";
 
@@ -14,10 +14,16 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     return new Response(DENIED, { status: 403, headers: { "content-type": "text/html" } });
   }
   
+  // Validate script exists
+  const script = await getScript(id);
+  if (!script) {
+    return new Response('error("SyncAuth: Script not found or invalid.")', { status: 404, headers: { "content-type": "text/plain" } });
+  }
+
   // Validate project exists
-  const project = await getProject(id);
+  const project = await getProject(script.project_id);
   if (!project) {
-    return new Response('error("SyncAuth: Project not found or invalid.")', { status: 404, headers: { "content-type": "text/plain" } });
+    return new Response('error("SyncAuth: Project not found.")', { status: 404, headers: { "content-type": "text/plain" } });
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (() => {
@@ -483,26 +489,16 @@ task.spawn(function()
     end
 end)
 
--- Execute ALL scripts sequentially using the authenticated HWID
+-- Execute the authenticated script
 local success, req_res = pcall(function()
     local hwidParam = HttpService:UrlEncode(getHWID())
     local userParam = HttpService:UrlEncode(LocalPlayer.Name)
     local execParam = HttpService:UrlEncode(identifyexecutor and identifyexecutor() or "Unknown")
     
-    local r_ok, r_data = pcall(function()
-        return req("GET", site_url .. "/api/projects/" .. project_id .. "/scripts/list") or {}
+    local s_ok, err = pcall(function()
+        loadstring(game:HttpGet(site_url .. "/api/scripts/" .. project_id .. "/raw?hwid=" .. hwidParam .. "&username=" .. userParam .. "&executor=" .. execParam))()
     end)
-    
-    if r_ok and type(r_data) == "table" then
-        for _, scriptData in ipairs(r_data) do
-            local s_ok, err = pcall(function()
-                loadstring(game:HttpGet(site_url .. "/api/scripts/" .. scriptData.id .. "/raw?hwid=" .. hwidParam .. "&username=" .. userParam .. "&executor=" .. execParam))()
-            end)
-            if not s_ok then warn("[SyncAuth] Failed to load script " .. (scriptData.name or "") .. ":", err) end
-        end
-    else
-        warn("[SyncAuth] Failed to fetch scripts list for project.")
-    end
+    if not s_ok then warn("[SyncAuth] Failed to load main script:", err) end
 end)
 `;
 
