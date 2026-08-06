@@ -495,6 +495,21 @@ local success, req_res = pcall(function()
     local userParam = HttpService:UrlEncode(LocalPlayer.Name)
     local execParam = HttpService:UrlEncode(identifyexecutor and identifyexecutor() or "Unknown")
     
+    -- SyncAuth Auto-Safety: Prevent bad loadstrings from crashing user scripts
+    if getgenv then
+        local original_loadstring = getgenv().loadstring or loadstring
+        getgenv().loadstring = function(source, chunkname)
+            if not source or type(source) ~= "string" or source == "" then
+                return function() warn("[SyncAuth Auto-Fix] Prevented crash: Script attempted to load and execute an empty or missing remote file.") end
+            end
+            local func, err = original_loadstring(source, chunkname)
+            if not func then
+                return function() warn("[SyncAuth Auto-Fix] Prevented crash: Syntax error in loaded code ->", err) end
+            end
+            return func
+        end
+    end
+    
     local s_ok, err = pcall(function()
         loadstring(game:HttpGet(site_url .. "/api/scripts/" .. project_id .. "/raw?hwid=" .. hwidParam .. "&username=" .. userParam .. "&executor=" .. execParam))()
     end)
