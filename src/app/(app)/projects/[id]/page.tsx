@@ -617,17 +617,7 @@ export default function ProjectDetailPage() {
           </button>
         </div>
 
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 8, marginBottom: 12 }}>
-          <button className="btn btn-primary btn-sm" style={{ width: "auto" }} onClick={() => {
-            const loadStr = 'loadstring(game:HttpGet("' + siteUrl + '/api/loader/' + pid + '"))()';
-            navigator.clipboard.writeText(loadStr);
-            toast.success("Copied loader to clipboard!");
-          }}>
-            <i className="fa-solid fa-copy" /> Copy Loader Code
-          </button>
-        </div>
-
-        <p className="page-subtitle">Manage scripts and key system for this project.</p>
+        <p className="page-subtitle" style={{ marginTop: 12 }}>Manage scripts and key system for this project.</p>
       </div>
 
       <div className="page-body">
@@ -834,6 +824,15 @@ export default function ProjectDetailPage() {
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      <button className="btn btn-secondary btn-sm" onClick={() => {
+                        const loadStr = s.use_syncauth_gui !== false 
+                          ? 'getgenv().script_key = "Enter_Your_Key_Here" -- Optional: Allows for automatic UI-less execution\nloadstring(game:HttpGet("' + siteUrl + '/api/loader/' + s.id + '"))()'
+                          : 'loadstring(game:HttpGet("' + siteUrl + '/api/loader/' + s.id + '"))()';
+                        navigator.clipboard.writeText(loadStr);
+                        toast.success(s.use_syncauth_gui !== false ? "Copied loader with script_key format!" : "Copied keyless loader!");
+                      }}>
+                        <i className="fa-solid fa-download" /> Loader
+                      </button>
                       <button className="btn btn-secondary btn-sm" onClick={() => editScript(s)}>
                         <i className="fa-solid fa-pen" />
                       </button>
