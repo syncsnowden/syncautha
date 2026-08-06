@@ -33,7 +33,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const url = new URL(req.url);
   const hwid = url.searchParams.get("hwid") || "";
   if (!hwid) {
-    return new Response("-- Access Denied: Missing HWID parameter", { status: 403, headers: { "content-type": "text/plain" } });
+    return new Response('error("SyncAuth Access Denied: Missing HWID parameter. You must run this script via the Loader, not directly.")', { status: 403, headers: { "content-type": "text/plain" } });
   }
 
   const username = url.searchParams.get("username") || "RobloxPlayer";
@@ -53,7 +53,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   );
 
   if (!matchingKeyEntry) {
-    return new Response("-- Access Denied: No active key session found for this HWID", { status: 403, headers: { "content-type": "text/plain" } });
+    return new Response('error("SyncAuth Access Denied: No active key session found for this HWID.")', { status: 403, headers: { "content-type": "text/plain" } });
   }
 
   // Log execution asynchronously (non-blocking) to count stats
