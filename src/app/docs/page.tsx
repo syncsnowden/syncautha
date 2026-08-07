@@ -45,6 +45,7 @@ export default function DocsPage() {
         <div style={{ width: 280, flexShrink: 0, borderRight: "1px solid var(--border-1)", padding: "32px 24px", background: "rgba(10, 10, 12, 0.4)" }}>
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-3)", marginBottom: 16, paddingLeft: 12 }}>Monetization</div>
           <NavButton id="lootlabs" icon="fa-sack-dollar" label="LootLabs Setup" />
+          <NavButton id="linkvertise" icon="fa-link" label="Linkvertise Setup" />
           
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-3)", marginTop: 32, marginBottom: 16, paddingLeft: 12 }}>Development</div>
           <NavButton id="custom_ui" icon="fa-code" label="Custom Key System UI" />
@@ -99,6 +100,81 @@ export default function DocsPage() {
                   </p>
                   <img src="/docs/putanythinghereforredirecturl.png" alt="Redirect URL" style={{ width: "100%", borderRadius: 8, border: "1px solid var(--border-1)", marginBottom: 20 }} />
                   <img src="/docs/postbackimage.png" alt="Postback Setup" style={{ width: "100%", borderRadius: 8, border: "1px solid var(--border-1)" }} />
+                </section>
+
+              </div>
+            </div>
+          )}
+
+          {activeTab === "linkvertise" && (
+            <div style={{ maxWidth: 800 }}>
+              <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8, letterSpacing: "-0.02em" }}>Setting up Linkvertise</h1>
+              <p style={{ fontSize: 16, color: "var(--text-2)", lineHeight: 1.6, marginBottom: 40 }}>
+                Linkvertise is one of the largest link monetization platforms. Follow this guide to securely configure Linkvertise links with anti-bypass security.
+              </p>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
+                
+                <section>
+                  <h3 style={{ fontSize: 20, fontWeight: 600, marginBottom: 12, color: "var(--text-1)", display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, borderRadius: 12, background: "var(--accent)", color: "#fff", fontSize: 12 }}>1</span>
+                    Retrieving your API Key
+                  </h3>
+                  <p style={{ color: "var(--text-3)", marginBottom: 16, lineHeight: 1.5 }}>
+                    1. Log in to your <strong>Linkvertise Publisher Dashboard</strong>.<br />
+                    2. Go to the <strong>API / Developer</strong> section in the sidebar menu.<br />
+                    3. Locate your <strong>Publisher API Key</strong> (sometimes labeled as "Anti-Bypass Token" or "API Key").<br />
+                    4. Copy this key and paste it into the <strong>Linkvertise API Key</strong> field in the SyncAuth Project Settings.
+                  </p>
+                </section>
+
+                <section>
+                  <h3 style={{ fontSize: 20, fontWeight: 600, marginBottom: 12, color: "var(--text-1)", display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, borderRadius: 12, background: "var(--accent)", color: "#fff", fontSize: 12 }}>2</span>
+                    Creating the Link on Linkvertise
+                  </h3>
+                  <p style={{ color: "var(--text-3)", marginBottom: 16, lineHeight: 1.5 }}>
+                    When creating a link on Linkvertise, you need to configure the target destination and security features:
+                  </p>
+                  
+                  <div style={{ padding: "16px 20px", background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-1)", borderRadius: 12, display: "flex", flexDirection: "column", gap: 16 }}>
+                    <div>
+                      <h4 style={{ color: "var(--text-1)", fontSize: 15, fontWeight: 600, marginBottom: 6 }}>1. Target URL (Destination)</h4>
+                      <p style={{ color: "var(--text-3)", fontSize: 13, margin: "0 0 8px 0", lineHeight: 1.5 }}>
+                        This is the final destination Linkvertise redirects to once the user completes the ads.
+                      </p>
+                      <ul style={{ color: "var(--text-2)", fontSize: 13, margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 6 }}>
+                        <li><strong>Option A (Simple Redirect):</strong> <code>{"https://<yourdomain>/get-key/<PROJECT_ID>"}</code><br />
+                        <span style={{ color: "var(--text-3)", fontSize: 12 }}>This directs users straight back to your key page, but can be bypassed using link bypass tools.</span></li>
+                        
+                        <li><strong>Option B (Bypasser-Proof Redirect - Recommended):</strong> <code>{"https://<yourdomain>/api/rewards/postback"}</code><br />
+                        <span style={{ color: "var(--text-3)", fontSize: 12 }}>This routes the user through our secure backend checker, which blocks bypassers by verifying their IP addresses.</span></li>
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h4 style={{ color: "var(--text-1)", fontSize: 15, fontWeight: 600, marginBottom: 6 }}>2. Enable Anti-Bypassing</h4>
+                      <p style={{ color: "var(--text-3)", fontSize: 13, margin: 0, lineHeight: 1.5 }}>
+                        In the link settings, toggle the <strong>Anti-Bypassing</strong> checkbox to <strong>ON</strong>. This makes Linkvertise append the secure <code>?hash=...</code> verification parameter to the Target URL when the user successfully finishes the tasks.
+                      </p>
+                    </div>
+                  </div>
+                </section>
+
+                <section>
+                  <h3 style={{ fontSize: 20, fontWeight: 600, marginBottom: 12, color: "var(--text-1)", display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, borderRadius: 12, background: "var(--accent)", color: "#fff", fontSize: 12 }}>3</span>
+                    Linkvertise Fullscript API (Alternative)
+                  </h3>
+                  <p style={{ color: "var(--text-3)", marginBottom: 16, lineHeight: 1.5 }}>
+                    If you are using the Linkvertise Fullscript API or dynamic script monetization, you can set the Target/Postback URL in the developer tab under:
+                  </p>
+                  <div style={{ background: "#0d1117", border: "1px solid #30363d", padding: "16px 20px", borderRadius: 8, color: "#e6edf3", fontFamily: "monospace", fontSize: 13 }}>
+                    https://YOUR_DOMAIN/api/rewards/postback
+                  </div>
+                  <p style={{ color: "var(--text-3)", marginTop: 12, fontSize: 13, lineHeight: 1.5 }}>
+                    Ensure the Fullscript API script is loaded on your webpage. The target link will automatically receive the session identifier forwarded as <code>sid</code> or <code>token</code>.
+                  </p>
                 </section>
 
               </div>
