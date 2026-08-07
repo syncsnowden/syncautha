@@ -541,7 +541,7 @@ export default function ProjectDetailPage() {
   }, [pid]);
 
   async function loadScripts() {
-    const res = await fetch(`/api/projects/${pid}/scripts`);
+    const res = await fetch(`/api/projects/${pid}/scripts?t=${Date.now()}`);
     setScripts(await res.json());
   }
 
@@ -578,8 +578,15 @@ export default function ProjectDetailPage() {
 
   async function deleteScript(id: string) {
     if (!confirm("Delete this script?")) return;
-    await fetch(`/api/scripts/${id}`, { method: "DELETE" });
-    toast.success("Deleted."); loadScripts();
+    setScripts(prev => prev.filter(s => s.id !== id));
+    try {
+      const res = await fetch(`/api/scripts/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      toast.success("Deleted.");
+    } catch {
+      toast.error("Failed to delete.");
+      loadScripts();
+    }
   }
 
   function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {

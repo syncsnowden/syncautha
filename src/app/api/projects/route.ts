@@ -59,6 +59,11 @@ export async function POST(req: Request) {
       lootlabs_api_key: body.lootlabs_api_key || "",
       ll_link_2: body.ll_link_2 || "",
       ll_link_3: body.ll_link_3 || "",
+      reward_provider: body.reward_provider || "lootlabs",
+      linkvertise_link: body.linkvertise_link || "",
+      linkvertise_api_key: body.linkvertise_api_key || "",
+      lv_link_2: body.lv_link_2 || "",
+      lv_link_3: body.lv_link_3 || "",
       checkpoint_steps: Number(body.checkpoint_steps) || 1,
       owner_id: user?.id || undefined, // Assign ownership to the creator
     };

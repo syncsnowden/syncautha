@@ -23,8 +23,10 @@ export async function GET(req: Request) {
     }
     if (!project) return Response.json({ error: "Project not found." }, { status: 404 });
 
-    // Source of truth: count the actual non-empty links, not checkpoint_steps (which can drift)
-    const links = [project.lootlabs_link, project.ll_link_2, project.ll_link_3].filter(Boolean);
+    const provider = project.reward_provider || "lootlabs";
+    const links = (provider === "linkvertise")
+      ? [project.linkvertise_link, project.lv_link_2, project.lv_link_3].filter(Boolean)
+      : [project.lootlabs_link, project.ll_link_2, project.ll_link_3].filter(Boolean);
     const totalSteps = Math.max(links.length, 1);
 
     let completedSteps = 0;
@@ -33,13 +35,17 @@ export async function GET(req: Request) {
     if (token) {
       const existingSession = await getRewardSession(token);
       if (existingSession) {
-        completedSteps = (existingSession.step || 0) + 1;
-        const { updateRewardSession } = await import("@/lib/pastefy");
-        await updateRewardSession(project.id, token, (s) => {
-          s.step = completedSteps;
-          s.total_steps = totalSteps; // keep in sync with live link count
-          if (completedSteps >= totalSteps) s.status = "completed";
-        });
+        if (provider === "linkvertise") {
+          completedSteps = existingSession.step || 0;
+        } else {
+          completedSteps = (existingSession.step || 0) + 1;
+          const { updateRewardSession } = await import("@/lib/pastefy");
+          await updateRewardSession(project.id, token, (s) => {
+            s.step = completedSteps;
+            s.total_steps = totalSteps; // keep in sync with live link count
+            if (completedSteps >= totalSteps) s.status = "completed";
+          });
+        }
         activeSession = token;
       }
     }
@@ -56,34 +62,42 @@ export async function GET(req: Request) {
 
     const currentLink = links[completedSteps] || "";
 
-    // Encrypt return URL via LootLabs url_encryptor
+    // Encrypt return URL via LootLabs url_encryptor or construct Linkvertise URL
     let checkpointUrl = "";
-    const llApiKey = project.lootlabs_api_key || "";
-    if (llApiKey && currentLink) {
-      const returnUrl = `${siteUrl}/get-key/${project.id}?token=${sessionId}`;
-      try {
-        const body = JSON.stringify({ destination_url: returnUrl, api_token: llApiKey });
-        let llRes = await fetch("https://creators.lootlabs.gg/api/public/url_encryptor", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${llApiKey}`, Accept: "application/json" },
-          body,
-        });
-        if (!llRes.ok) {
-          llRes = await fetch(`https://creators.lootlabs.gg/api/public/url_encryptor?destination_url=${encodeURIComponent(returnUrl)}&api_token=${llApiKey}`, {
-            headers: { Accept: "application/json" },
-          });
+    if (currentLink) {
+      if (provider === "linkvertise") {
+        const base = currentLink.replace(/[?&]$/, "");
+        const sep = base.includes("?") ? "&" : "?";
+        checkpointUrl = `${base}${sep}sid=${encodeURIComponent(sessionId)}`;
+      } else {
+        const llApiKey = project.lootlabs_api_key || "";
+        if (llApiKey) {
+          const returnUrl = `${siteUrl}/get-key/${project.id}?token=${sessionId}`;
+          try {
+            const body = JSON.stringify({ destination_url: returnUrl, api_token: llApiKey });
+            let llRes = await fetch("https://creators.lootlabs.gg/api/public/url_encryptor", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${llApiKey}`, Accept: "application/json" },
+              body,
+            });
+            if (!llRes.ok) {
+              llRes = await fetch(`https://creators.lootlabs.gg/api/public/url_encryptor?destination_url=${encodeURIComponent(returnUrl)}&api_token=${llApiKey}`, {
+                headers: { Accept: "application/json" },
+              });
+            }
+            if (llRes.ok) {
+              const dd = await llRes.json();
+              if (dd.message && dd.type !== "error") {
+                const encrypted = dd.message;
+                const dataParam = encrypted.includes("%") ? encrypted : encodeURIComponent(encrypted);
+                const base = currentLink.replace(/[?&]$/, "");
+                const sep = base.includes("?") ? "&" : "?";
+                checkpointUrl = `${base}${sep}puid=${encodeURIComponent(sessionId)}&data=${dataParam}`;
+              }
+            }
+          } catch {}
         }
-        if (llRes.ok) {
-          const dd = await llRes.json();
-          if (dd.message && dd.type !== "error") {
-            const encrypted = dd.message;
-            const dataParam = encrypted.includes("%") ? encrypted : encodeURIComponent(encrypted);
-            const base = currentLink.replace(/[?&]$/, "");
-            const sep = base.includes("?") ? "&" : "?";
-            checkpointUrl = `${base}${sep}puid=${encodeURIComponent(sessionId)}&data=${dataParam}`;
-          }
-        }
-      } catch {}
+      }
     }
 
     return Response.json({

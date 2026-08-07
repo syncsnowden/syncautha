@@ -204,6 +204,11 @@ export interface Project {
   allow_extending: boolean; reward_cooldown: number; allow_forgetting: boolean;
   max_hours: number; lootlabs_link: string; lootlabs_api_key: string;
   ll_link_2: string; ll_link_3: string;
+  reward_provider?: "lootlabs" | "linkvertise";
+  linkvertise_link?: string;
+  linkvertise_api_key?: string;
+  lv_link_2?: string;
+  lv_link_3?: string;
   checkpoint_steps: number;
   paste_id?: string;
   owner_id?: string;
