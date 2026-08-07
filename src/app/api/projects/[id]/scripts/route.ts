@@ -1,5 +1,6 @@
 import { getScripts, createScript, generateId, type Script } from "@/lib/pastefy";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 export const runtime = "edge";
 
 export const dynamic = "force-dynamic";
@@ -64,7 +65,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           if (success && obfuscatedCode) {
             code = obfuscatedCode;
             if (user) {
-              await supabase.auth.updateUser({ data: { [usageKey]: currentUsage + 1 } });
+              const supabaseAdmin = createAdminClient();
+              await supabaseAdmin.auth.admin.updateUserById(user.id, {
+                user_metadata: { [usageKey]: currentUsage + 1 }
+              });
             }
           }
         }
