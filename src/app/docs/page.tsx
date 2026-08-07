@@ -164,16 +164,19 @@ export default function DocsPage() {
                 <section>
                   <h3 style={{ fontSize: 20, fontWeight: 600, marginBottom: 12, color: "var(--text-1)", display: "flex", alignItems: "center", gap: 10 }}>
                     <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, borderRadius: 12, background: "var(--accent)", color: "#fff", fontSize: 12 }}>3</span>
-                    Linkvertise Fullscript API (Alternative)
+                    Do I need the Linkvertise Script HTML Tag?
                   </h3>
                   <p style={{ color: "var(--text-3)", marginBottom: 16, lineHeight: 1.5 }}>
-                    If you are using the Linkvertise Fullscript API or dynamic script monetization, you can set the Target/Postback URL in the developer tab under:
+                    <strong>No!</strong> You do <strong>NOT</strong> need to add any HTML <code>&lt;script&gt;</code> tags (like the <code>linkvertise.js</code> Fullscript integration code) to your SyncAuth application.
                   </p>
-                  <div style={{ background: "#0d1117", border: "1px solid #30363d", padding: "16px 20px", borderRadius: 8, color: "#e6edf3", fontFamily: "monospace", fontSize: 13 }}>
-                    https://YOUR_DOMAIN/api/rewards/postback
+                  <div style={{ padding: "16px 20px", background: "rgba(239, 68, 68, 0.05)", border: "1px solid rgba(239, 68, 68, 0.15)", borderRadius: 12, marginBottom: 16 }}>
+                    <p style={{ color: "var(--text-2)", fontSize: 14, lineHeight: 1.5, margin: 0 }}>
+                      ⚠️ <strong>Do not put the Linkvertise Fullscript script tag in your dashboard.</strong> <br />
+                      SyncAuth dynamically manages the entire redirection flow. Including the Linkvertise Fullscript script tag will conflict with the bypass-prevention system and prevent users from getting their keys.
+                    </p>
                   </div>
-                  <p style={{ color: "var(--text-3)", marginTop: 12, fontSize: 13, lineHeight: 1.5 }}>
-                    Ensure the Fullscript API script is loaded on your webpage. The target link will automatically receive the session identifier forwarded as <code>sid</code> or <code>token</code>.
+                  <p style={{ color: "var(--text-3)", fontSize: 13, lineHeight: 1.5 }}>
+                    All you need to do is configure the <strong>Target URL</strong> of your links in your Linkvertise dashboard to Option B (recommended) or Option A, copy the generated Linkvertise link, and paste it into the rewards settings of your SyncAuth Project.
                   </p>
                 </section>
 
