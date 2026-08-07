@@ -220,19 +220,7 @@ export default function RewardsPage() {
                   <div className="card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span className="card-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       {activeProvider === "linkvertise" ? (
-                        <div style={{
-                          width: 20,
-                          height: 20,
-                          borderRadius: 4,
-                          background: "#ea580c",
-                          color: "#fff",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: 9,
-                          fontWeight: 800,
-                          fontFamily: "sans-serif"
-                        }}>LV</div>
+                        <Image src="/linkvertise.png" alt="Linkvertise" width={20} height={20} style={{ borderRadius: 4, objectFit: "contain" }} />
                       ) : (
                         <Image src="/lootlabsicon.jpeg" alt="LootLabs" width={20} height={20} style={{ borderRadius: 4 }} />
                       )}
