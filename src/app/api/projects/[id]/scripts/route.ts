@@ -43,9 +43,26 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           body: JSON.stringify({ script: code })
         });
         if (obfRes.ok) {
-          const obfData = await obfRes.json();
-          if (obfData.success && obfData.obfuscated) {
-            code = obfData.obfuscated;
+          const resText = await obfRes.text();
+          let obfuscatedCode = "";
+          let success = false;
+          try {
+            const obfData = JSON.parse(resText);
+            if (obfData.success && obfData.obfuscated) {
+              obfuscatedCode = obfData.obfuscated;
+              success = true;
+            } else if (obfData.obfuscated) {
+              obfuscatedCode = obfData.obfuscated;
+              success = true;
+            }
+          } catch {
+            if (resText && !resText.includes("<!DOCTYPE html>") && !resText.includes("<html")) {
+              obfuscatedCode = resText;
+              success = true;
+            }
+          }
+          if (success && obfuscatedCode) {
+            code = obfuscatedCode;
             if (user) {
               await supabase.auth.updateUser({ data: { [usageKey]: currentUsage + 1 } });
             }

@@ -22,9 +22,26 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
           body: JSON.stringify({ script: body.script_code })
         });
         if (obfRes.ok) {
-          const obfData = await obfRes.json();
-          if (obfData.success && obfData.obfuscated) {
-            body.script_code = obfData.obfuscated;
+          const resText = await obfRes.text();
+          let obfuscatedCode = "";
+          let success = false;
+          try {
+            const obfData = JSON.parse(resText);
+            if (obfData.success && obfData.obfuscated) {
+              obfuscatedCode = obfData.obfuscated;
+              success = true;
+            } else if (obfData.obfuscated) {
+              obfuscatedCode = obfData.obfuscated;
+              success = true;
+            }
+          } catch {
+            if (resText && !resText.includes("<!DOCTYPE html>") && !resText.includes("<html")) {
+              obfuscatedCode = resText;
+              success = true;
+            }
+          }
+          if (success && obfuscatedCode) {
+            body.script_code = obfuscatedCode;
           }
         }
       } catch (e) { console.error("[SyncAuth] Obfuscation failed:", e); }
