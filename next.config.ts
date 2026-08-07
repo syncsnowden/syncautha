@@ -1,3 +1,4 @@
+// Trigger build: Verified Edge Runtime compliance
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
