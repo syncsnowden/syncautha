@@ -317,6 +317,14 @@ export async function loadProjectData(pasteId: string, forceFresh = false): Prom
 }
 
 export async function saveProjectData(pasteId: string, data: ProjectData): Promise<void> {
+  // Clear duplicate script_code from metadata if separate paste exists to stay below Pastefy payload limits
+  if (data.scripts) {
+    for (const sid of Object.keys(data.scripts)) {
+      if (data.scripts[sid].paste_id && data.scripts[sid].script_code) {
+        data.scripts[sid].script_code = "";
+      }
+    }
+  }
   await writePaste(pasteId, data);
 }
 

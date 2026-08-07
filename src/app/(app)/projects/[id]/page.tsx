@@ -546,7 +546,45 @@ export default function ProjectDetailPage() {
   }
 
   function resetForm() { setForm({ name: "", silent_mode: false, script_code: "", webhook_protection: false, use_syncauth_gui: true, gui_title: "", discord_link: "", get_key_link: "", show_discord_button: true, target_script_id: "", logs_webhook_enabled: false, logs_webhook: "", log_hwid: true, log_ip: true, log_username: true, log_displayname: false, log_time: true, log_key: true, log_executor: true, log_jobid: false }); setEditSid(""); setShowForm(false); }
-  function editScript(s: Script) { setEditSid(s.id); setForm({ name: s.name, silent_mode: s.silent_mode, script_code: s.script_code, webhook_protection: s.webhook_protection, use_syncauth_gui: s.use_syncauth_gui ?? true, gui_title: s.gui_title || "", discord_link: s.discord_link || "", get_key_link: s.get_key_link || "", show_discord_button: s.show_discord_button ?? true, target_script_id: s.target_script_id || "", logs_webhook_enabled: s.logs_webhook_enabled ?? false, logs_webhook: s.logs_webhook || "", log_hwid: s.log_hwid ?? true, log_ip: s.log_ip ?? true, log_username: s.log_username ?? true, log_displayname: s.log_displayname ?? false, log_time: s.log_time ?? true, log_key: s.log_key ?? true, log_executor: s.log_executor ?? true, log_jobid: s.log_jobid ?? false }); setShowForm(true); }
+  async function editScript(s: Script) {
+    setEditSid(s.id);
+    setForm({
+      name: s.name,
+      silent_mode: s.silent_mode,
+      script_code: s.script_code || "",
+      webhook_protection: s.webhook_protection,
+      use_syncauth_gui: s.use_syncauth_gui ?? true,
+      gui_title: s.gui_title || "",
+      discord_link: s.discord_link || "",
+      get_key_link: s.get_key_link || "",
+      show_discord_button: s.show_discord_button ?? true,
+      target_script_id: s.target_script_id || "",
+      logs_webhook_enabled: s.logs_webhook_enabled ?? false,
+      logs_webhook: s.logs_webhook || "",
+      log_hwid: s.log_hwid ?? true,
+      log_ip: s.log_ip ?? true,
+      log_username: s.log_username ?? true,
+      log_displayname: s.log_displayname ?? false,
+      log_time: s.log_time ?? true,
+      log_key: s.log_key ?? true,
+      log_executor: s.log_executor ?? true,
+      log_jobid: s.log_jobid ?? false
+    });
+    setShowForm(true);
+
+    try {
+      const res = await fetch(`/api/scripts/${s.id}`);
+      if (res.ok) {
+        const fullScript = await res.json();
+        setForm(prev => ({
+          ...prev,
+          script_code: fullScript.script_code || ""
+        }));
+      }
+    } catch (err) {
+      console.error("[SyncAuth] Failed to load fresh script code:", err);
+    }
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();

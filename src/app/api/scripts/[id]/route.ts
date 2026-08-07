@@ -19,6 +19,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const originalScript = await getScript(id);
     if (!originalScript) return Response.json({ error: "Script not found." }, { status: 404 });
 
+    // Restore script code from original script if undefined, null, or empty
+    if (body.script_code === undefined || body.script_code === null || body.script_code.trim() === "") {
+      body.script_code = originalScript.script_code || "";
+    }
+
     const isAlreadyObfuscated = body.script_code && (body.script_code.trim().startsWith("return(") || body.script_code.trim().startsWith("return ("));
     const needsObfuscation = body.script_code && body.script_code.trim() !== "" && !isAlreadyObfuscated;
 
