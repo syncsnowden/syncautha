@@ -15,6 +15,7 @@ export async function GET(req: Request) {
     const projects = user ? allProjects.filter(p => p.owner_id === user.id || !p.owner_id) : allProjects.filter(p => !p.owner_id);
 
     let activeKeys = 0;
+    let totalKeys = 0;
     let totalUsers = 0;
     let totalExecutions = 0;
     let totalBlocked = 0;
@@ -26,6 +27,7 @@ export async function GET(req: Request) {
       const data = await loadProjectData(p.paste_id);
       if (data) {
         if (data.keys) {
+          totalKeys += Object.keys(data.keys).length;
           Object.values(data.keys).forEach((k: any) => {
             if (k.status === "used" || k.hwid) {
               activeKeys++;
@@ -83,6 +85,7 @@ export async function GET(req: Request) {
 
     return Response.json({
       activeKeys,
+      totalKeys,
       maxKeys,
       plan,
       totalUsers,

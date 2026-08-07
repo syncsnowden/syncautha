@@ -22,8 +22,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
                
     const hashed = hashHwid(hwid);
 
-    // Log execution asynchronously
-    logExecution(script.project_id, id, {
+    // Log execution
+    await logExecution(script.project_id, id, {
       hwid: hashed,
       key: "pending",
       ip,

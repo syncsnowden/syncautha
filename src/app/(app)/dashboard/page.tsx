@@ -4,6 +4,7 @@ import ExecutionChart from "@/components/ExecutionChart";
 
 interface DashboardStats {
   activeKeys: number;
+  totalKeys?: number;
   maxKeys: number;
   plan: string;
   totalUsers: number;
@@ -47,10 +48,11 @@ export default function DashboardPage() {
 
   const maxKeys = stats?.maxKeys ?? 200;
   const activeKeys = stats?.activeKeys ?? 0;
+  const totalKeys = stats?.totalKeys ?? 0;
   const plan = stats?.plan ?? "Free";
 
   const cards = [
-    { label: "Active Keys", value: activeKeys, icon: "fa-key", delta: activeKeys ? "Keys currently bound" : "No active keys", isKeys: true },
+    { label: "Keys", value: totalKeys, icon: "fa-key", delta: `${activeKeys} active key(s)`, isKeys: true },
     { label: "Total Users", value: stats?.totalUsers ?? 0, icon: "fa-users", delta: stats?.totalUsers ? "Claimed users tracked" : "No users yet" },
     { label: "Executions", value: stats?.executions ?? 0, icon: "fa-chart-line", delta: "Total lifetime runs" },
     { label: "Blocked", value: stats?.blocked ?? 0, icon: "fa-ban", delta: "Access attempts denied" },

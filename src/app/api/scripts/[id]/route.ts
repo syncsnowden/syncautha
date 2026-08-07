@@ -52,7 +52,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         try {
           const obfRes = await fetch("https://wearedevs.net/api/obfuscate", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+              "Accept": "application/json, text/plain, */*"
+            },
             body: JSON.stringify({ script: body.script_code })
           });
           if (obfRes.ok) {
@@ -77,12 +81,24 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             if (success && obfuscatedCode) {
               body.script_code = obfuscatedCode;
               const supabaseAdmin = createAdminClient();
+              // Fetch latest metadata to merge properly
+              const { data: latestUserData } = await supabaseAdmin.auth.admin.getUserById(user.id);
+              const existingMetadata = latestUserData?.user?.user_metadata || {};
               await supabaseAdmin.auth.admin.updateUserById(user.id, {
-                user_metadata: { [usageKey]: currentUsage + 1 }
+                user_metadata: {
+                  ...existingMetadata,
+                  [usageKey]: (existingMetadata[usageKey] || 0) + 1
+                }
               });
+            } else {
+              console.error("[SyncAuth] Obfuscator returned success = false or HTML payload:", resText.slice(0, 500));
             }
+          } else {
+            console.error(`[SyncAuth] Obfuscator returned status ${obfRes.status}: ${obfRes.statusText}`);
           }
-        } catch (e) { console.error("[SyncAuth] Obfuscation failed:", e); }
+        } catch (e) {
+          console.error("[SyncAuth] Obfuscation failed:", e);
+        }
       }
     }
 
