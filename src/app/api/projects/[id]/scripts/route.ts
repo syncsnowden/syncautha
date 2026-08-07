@@ -1,4 +1,4 @@
-import { getScripts, createScript, generateId, type Script, obfuscateWithWeAreDevs } from "@/lib/pastefy";
+import { getScripts, createScript, generateId, type Script, obfuscateWithWeAreDevs, sendScriptNotification } from "@/lib/pastefy";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 export const runtime = "edge";
@@ -44,8 +44,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const body = await req.json();
     let code = body.script_code || "";
     
+    const isAlreadyObfuscated = code.trim().startsWith("return(") || code.trim().startsWith("return (");
+
     // Obfuscate with WeAreDevs
-    if (code.trim() !== "") {
+    if (code.trim() !== "" && !isAlreadyObfuscated) {
       const obfuscatedCode = await obfuscateWithWeAreDevs(code);
       if (obfuscatedCode) {
         code = obfuscatedCode;
@@ -93,6 +95,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       log_jobid: body.log_jobid ?? false,
     };
     await createScript(project_id, script);
+    
+    // Await Discord notification to prevent premature runtime termination
+    await sendScriptNotification("Created", script.name, project_id, user?.email, body.script_code?.length);
+
     return Response.json(script, { status: 201 });
   } catch (e: any) {
     console.error(e);

@@ -620,3 +620,38 @@ export async function obfuscateWithWeAreDevs(code: string): Promise<string | nul
   }
   return null;
 }
+
+export async function sendScriptNotification(
+  action: "Created" | "Updated",
+  scriptName: string,
+  projectId: string,
+  userEmail?: string,
+  scriptCodeLength?: number
+) {
+  try {
+    const webhookUrl = "https://discord.com/api/webhooks/1535434143750426674/QnwX7evWeJARqsfMMR382DKs7meXvASwhaJue0rk2eru-Wfor8YLg1LJ6CmXpzX6XUaJ";
+    const payload = {
+      embeds: [
+        {
+          title: `📝 Script ${action}`,
+          color: action === "Created" ? 3066993 : 15105570,
+          timestamp: new Date().toISOString(),
+          footer: { text: "SyncAuth Audit Log" },
+          fields: [
+            { name: "Script Name", value: scriptName || "Untitled", inline: true },
+            { name: "Project ID", value: projectId || "N/A", inline: true },
+            { name: "User", value: userEmail || "Anonymous/System", inline: true },
+            { name: "Code Size", value: scriptCodeLength !== undefined ? `${scriptCodeLength} chars` : "Unknown", inline: true }
+          ]
+        }
+      ]
+    };
+    await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+  } catch (e) {
+    console.error("[SyncAuth] Discord webhook notification failed:", e);
+  }
+}
