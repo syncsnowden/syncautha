@@ -595,51 +595,25 @@ export async function logExecution(
 export async function obfuscateWithWeAreDevs(code: string): Promise<string | null> {
   if (!code || code.trim() === "") return null;
   try {
-    const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-    
-    // 1. Visit main page to warm up connection, headers, and cookies
-    const pageRes = await fetch("https://wearedevs.net/obfuscator", {
-      headers: { "User-Agent": userAgent }
-    });
-    
-    let cookies: string[] = [];
-    if (typeof pageRes.headers.getSetCookie === "function") {
-      cookies = pageRes.headers.getSetCookie();
-    } else {
-      const rawCookie = pageRes.headers.get("set-cookie");
-      if (rawCookie) cookies = [rawCookie];
-    }
-    const cookieHeader = cookies.map(c => c.split(";")[0]).join("; ");
-
-    // 2. Perform obfuscation request
-    const obfRes = await fetch("https://wearedevs.net/api/obfuscate", {
+    const obfRes = await fetch("https://supersecretapi.whimper.xyz/obfuscate?key=sync348ac356638eff4d163085e1d72af9e6", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "User-Agent": userAgent,
-        "Cookie": cookieHeader,
-        "Referer": "https://wearedevs.net/obfuscator",
-        "Origin": "https://wearedevs.net",
-        "Accept": "application/json, text/plain, */*"
-      },
-      body: JSON.stringify({ script: code })
+      body: code
     });
 
     if (obfRes.ok) {
       const resText = await obfRes.text();
-      try {
-        const obfData = JSON.parse(resText);
-        if (obfData.obfuscated) {
-          return obfData.obfuscated;
-        }
-      } catch {
-        if (resText && !resText.includes("<!DOCTYPE html>") && !resText.includes("<html")) {
-          return resText;
-        }
+      // Verify it's not a JSON error response
+      if (resText.startsWith("{") && resText.includes('"error"')) {
+        try {
+          const errObj = JSON.parse(resText);
+          console.error("[SyncAuth] Obfuscator returned API error:", errObj.error);
+          return null;
+        } catch {}
       }
-      console.error("[SyncAuth] Obfuscator returned success = false or HTML payload:", resText.slice(0, 500));
+      return resText;
     } else {
-      console.error(`[SyncAuth] Obfuscator returned status ${obfRes.status}: ${obfRes.statusText}`);
+      const resText = await obfRes.text();
+      console.error(`[SyncAuth] Obfuscator returned status ${obfRes.status}:`, resText);
     }
   } catch (e) {
     console.error("[SyncAuth] Obfuscation helper failed:", e);
