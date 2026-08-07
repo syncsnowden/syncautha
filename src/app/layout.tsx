@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import ThemeToaster from "@/components/ThemeToaster";
-export const runtime = "edge";
 
 export const metadata: Metadata = {
   title: "SyncAuth — Secure License Authentication",

@@ -5,7 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getSupabase } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
-export const runtime = "edge";
 
 const NAV = [
   { href: "/dashboard", icon: "fa-gauge", label: "Dashboard" },

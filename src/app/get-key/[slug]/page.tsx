@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-export const runtime = "edge";
 
 function GetKeyInner() {
   const params = useParams();

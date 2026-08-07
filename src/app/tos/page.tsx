@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-export const runtime = "edge";
 
 export default function TOSPage() {
   const updated = "August 4, 2026";

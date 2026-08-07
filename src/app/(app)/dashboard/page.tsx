@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import ExecutionChart from "@/components/ExecutionChart";
-export const runtime = "edge";
 
 interface DashboardStats {
   activeKeys: number;

@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { getSupabase } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
-export const runtime = "edge";
 
 const THEMES = [
   { name: "Cyan", value: "#00c8e0", icon: "fa-droplet" },
