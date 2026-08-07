@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import toast from "react-hot-toast";
+import { getSupabase } from "@/lib/supabase/client";
 
 interface Project {
   id: string;
@@ -26,11 +27,20 @@ export default function RewardsPage() {
   const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
 
   async function load() {
-    const res = await fetch("/api/projects");
-    const data = await res.json();
-    setProjects(data);
-    if (data.length > 0 && !selectedProjectId) {
-      setSelectedProjectId(data[0].id);
+    try {
+      const sb = getSupabase();
+      const { data: { session } } = await sb.auth.getSession();
+      const headers: Record<string, string> = {};
+      if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
+
+      const res = await fetch("/api/projects", { headers });
+      const data = await res.json();
+      setProjects(data);
+      if (data.length > 0 && !selectedProjectId) {
+        setSelectedProjectId(data[0].id);
+      }
+    } catch {
+      toast.error("Failed to load projects.");
     }
   }
 
@@ -60,14 +70,19 @@ export default function RewardsPage() {
   async function changeProvider(pid: string, provider: "lootlabs" | "linkvertise") {
     setLoading(true);
     try {
+      const sb = getSupabase();
+      const { data: { session } } = await sb.auth.getSession();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
+
       const res = await fetch(`/api/projects/${pid}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ reward_provider: provider })
       });
       if (!res.ok) throw new Error();
       const updated = await res.json();
-      setProjects(prev => prev.map(pr => pr.id === pid ? { ...pr, reward_provider: updated.reward_provider } : pr));
+      setProjects(prev => prev.map(pr => pr.id === pid ? { ...pr, ...updated } : pr));
       toast.success(`Provider changed to ${provider === "lootlabs" ? "LootLabs" : "Linkvertise"}`);
     } catch {
       toast.error("Failed to change provider.");
@@ -101,26 +116,20 @@ export default function RewardsPage() {
         else body.ll_link_3 = link;
       }
 
+      const sb = getSupabase();
+      const { data: { session } } = await sb.auth.getSession();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
+
       const res = await fetch(`/api/projects/${pid}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(body)
       });
       if (!res.ok) throw new Error();
       const updated = await res.json();
       
-      setProjects(prev => prev.map(pr => pr.id === pid ? {
-        ...pr,
-        lootlabs_link: updated.lootlabs_link || "",
-        lootlabs_api_key: updated.lootlabs_api_key || "",
-        ll_link_2: updated.ll_link_2 || "",
-        ll_link_3: updated.ll_link_3 || "",
-        linkvertise_link: updated.linkvertise_link || "",
-        linkvertise_api_key: updated.linkvertise_api_key || "",
-        lv_link_2: updated.lv_link_2 || "",
-        lv_link_3: updated.lv_link_3 || "",
-        checkpoint_steps: updated.checkpoint_steps
-      } : pr));
+      setProjects(prev => prev.map(pr => pr.id === pid ? { ...pr, ...updated } : pr));
       setLink("");
       toast.success("Checkpoint added successfully!");
     } catch {
@@ -151,24 +160,20 @@ export default function RewardsPage() {
         if (idx === 2) body.ll_link_3 = "";
       }
 
+      const sb = getSupabase();
+      const { data: { session } } = await sb.auth.getSession();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
+
       const res = await fetch(`/api/projects/${pid}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(body)
       });
       if (!res.ok) throw new Error();
       const updated = await res.json();
 
-      setProjects(prev => prev.map(pr => pr.id === pid ? {
-        ...pr,
-        lootlabs_link: updated.lootlabs_link || "",
-        ll_link_2: updated.ll_link_2 || "",
-        ll_link_3: updated.ll_link_3 || "",
-        linkvertise_link: updated.linkvertise_link || "",
-        lv_link_2: updated.lv_link_2 || "",
-        lv_link_3: updated.lv_link_3 || "",
-        checkpoint_steps: updated.checkpoint_steps
-      } : pr));
+      setProjects(prev => prev.map(pr => pr.id === pid ? { ...pr, ...updated } : pr));
       toast.success("Removed.");
     } catch {
       toast.error("Failed to remove.");

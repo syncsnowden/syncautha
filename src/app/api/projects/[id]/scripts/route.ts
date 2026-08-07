@@ -14,10 +14,19 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id: project_id } = await params;
   try {
-    const supabase = await createClient();
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : undefined;
-    const { data: { user }, error } = token ? await supabase.auth.getUser(token) : await supabase.auth.getUser();
+    
+    let user = null;
+    if (token) {
+      const supabaseAdmin = createAdminClient();
+      const { data } = await supabaseAdmin.auth.getUser(token);
+      user = data?.user;
+    } else {
+      const supabase = await createClient();
+      const { data } = await supabase.auth.getUser();
+      user = data?.user;
+    }
     
     // TEMPORARY BYPASS: if unauthorized, allow script creation but don't track usage
     // if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
