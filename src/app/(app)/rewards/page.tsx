@@ -253,17 +253,26 @@ export default function RewardsPage() {
 
                   <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                     {/* Provider Toggle Dropdown */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      <label className="input-label" style={{ fontSize: 12, fontWeight: 600 }}>Checkpoint Provider</label>
-                      <select
-                        className="input"
-                        value={activeProvider}
-                        onChange={e => changeProvider(activeProject.id, e.target.value as "lootlabs" | "linkvertise")}
-                        style={{ background: "var(--bg-2)", border: "1px solid var(--border-2)", borderRadius: 8, padding: 10, color: "var(--text-1)" }}
-                      >
-                        <option value="lootlabs">LootLabs</option>
-                        <option value="linkvertise">Linkvertise</option>
-                      </select>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
+                        <label className="input-label" style={{ fontSize: 12, fontWeight: 600 }}>Checkpoint Provider</label>
+                        <select
+                          className="input"
+                          value={activeProvider}
+                          onChange={e => changeProvider(activeProject.id, e.target.value as "lootlabs" | "linkvertise")}
+                          style={{ background: "var(--bg-2)", border: "1px solid var(--border-2)", borderRadius: 8, padding: 10, color: "var(--text-1)" }}
+                        >
+                          <option value="lootlabs">LootLabs</option>
+                          <option value="linkvertise">Linkvertise</option>
+                        </select>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg-2)", border: "1px solid var(--border-2)", borderRadius: 8, padding: "8px 12px", height: 38, marginTop: 20 }}>
+                        {activeProvider === "linkvertise" ? (
+                          <img src="/linkvertise.png" alt="Linkvertise" style={{ height: 18, objectFit: "contain" }} />
+                        ) : (
+                          <span style={{ fontSize: 13, fontWeight: 700, color: "#facc15", letterSpacing: "0.02em" }}>LOOTLABS</span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Step List */}
@@ -273,7 +282,16 @@ export default function RewardsPage() {
                           <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: "var(--bg-2)", borderRadius: "var(--radius)", border: "1px solid var(--border-2)" }}>
                             <span style={{ background: "var(--accent)", color: "#000", width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>{i + 1}</span>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 12, fontWeight: 600 }}>{activeProvider === "linkvertise" ? "Linkvertise" : "LootLabs"}</div>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
+                                {activeProvider === "linkvertise" ? (
+                                  <>
+                                    <img src="/linkvertise.png" alt="Linkvertise" style={{ height: 12, objectFit: "contain" }} />
+                                    <span>Linkvertise</span>
+                                  </>
+                                ) : (
+                                  <span>LootLabs</span>
+                                )}
+                              </div>
                               <div style={{ fontSize: 10, color: "var(--text-3)", fontFamily: "monospace", wordBreak: "break-all", marginTop: 1 }}>{l.length > 50 ? l.slice(0, 50) + "..." : l}</div>
                             </div>
                             <button className="btn btn-secondary btn-sm" style={{ width: "auto", color: "#ef4444" }} onClick={() => remove(activeProject.id, i)}>
@@ -321,8 +339,8 @@ export default function RewardsPage() {
                 {activeProvider === "linkvertise" ? (
                   <div className="card">
                     <div className="card-header">
-                      <span className="card-title">
-                        <i className="fa-solid fa-circle-info" style={{ marginRight: 8, color: "var(--accent)" }} />
+                      <span className="card-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <img src="/linkvertise.png" alt="Linkvertise" style={{ height: 16, objectFit: "contain" }} />
                         Linkvertise Integration Details
                       </span>
                     </div>
