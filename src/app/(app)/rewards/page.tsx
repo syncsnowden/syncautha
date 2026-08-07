@@ -326,12 +326,30 @@ export default function RewardsPage() {
                         Linkvertise Integration Details
                       </span>
                     </div>
-                    <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       <p style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.5, margin: 0 }}>
-                        For Linkvertise links, you must enable the <strong>Anti-Bypassing</strong> feature in the Linkvertise Dashboard, and configure the target redirect URL below.
+                        For Linkvertise links, you must enable the <strong>Anti-Bypassing</strong> feature in the Linkvertise Dashboard, and configure the target redirect URL using one of the options below.
                       </p>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 4 }}>
-                        <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 600 }}>Target/Redirect URL to configure in Linkvertise:</span>
+                      
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        <span style={{ fontSize: 11, color: "var(--text-2)", fontWeight: 600 }}>Option A: Direct Redirect (Recommended for sequential checkpoints)</span>
+                        <p style={{ fontSize: 11, color: "var(--text-3)", margin: "0 0 4px 0" }}>Set target URL in Linkvertise to your key generation page. Bypasses will be checked on load via local storage.</p>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <code style={{ flex: 1, fontSize: 11, color: "var(--text-2)", fontFamily: "monospace", background: "var(--bg-2)", padding: "8px 12px", borderRadius: 6, overflowX: "auto" }}>
+                            {siteUrl}/get-key/{activeProject.id}
+                          </code>
+                          <button className="btn btn-secondary btn-sm" style={{ width: "auto", alignSelf: "stretch" }} onClick={() => {
+                            navigator.clipboard.writeText(`${siteUrl}/get-key/${activeProject.id}`);
+                            toast.success("Copied!");
+                          }}>
+                            <i className="fa-solid fa-copy" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        <span style={{ fontSize: 11, color: "var(--text-2)", fontWeight: 600 }}>Option B: Postback Endpoint Redirect</span>
+                        <p style={{ fontSize: 11, color: "var(--text-3)", margin: "0 0 4px 0" }}>Set target URL in Linkvertise to the rewards postback endpoint.</p>
                         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                           <code style={{ flex: 1, fontSize: 11, color: "var(--text-2)", fontFamily: "monospace", background: "var(--bg-2)", padding: "8px 12px", borderRadius: 6, overflowX: "auto" }}>
                             {siteUrl}/api/rewards/postback

@@ -137,13 +137,26 @@ function GetKeyInner() {
   async function init() {
     setState("loading");
     try {
-      const res = await fetch(`/api/get-key/init?slug=${encodeURIComponent(slug)}${token ? `&token=${encodeURIComponent(token)}` : ""}`);
+      const urlHash = searchParams.get("hash") || "";
+      const localToken = localStorage.getItem("sa_token_" + slug) || "";
+      const activeToken = token || localToken;
+
+      const res = await fetch(`/api/get-key/init?slug=${encodeURIComponent(slug)}${activeToken ? `&token=${encodeURIComponent(activeToken)}` : ""}${urlHash ? `&hash=${encodeURIComponent(urlHash)}` : ""}`);
       const data = await res.json();
       if (data.error) { setError(data.error); setState("error"); return; }
       setProject(data.project);
       setSessionId(data.session_id);
       setDone(data.completed_steps || 0);
       setTotal(data.total_steps || 1);
+
+      // Store token locally
+      localStorage.setItem("sa_token_" + slug, data.session_id);
+
+      // Clean up hash/token parameters from the address bar to prevent reload abuse and keep URL clean
+      if (typeof window !== "undefined" && (urlHash || token)) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
       if (data.all_done) { setState("idle"); return; }
       if (!data.checkpoint_url) { setError("No checkpoint configured."); setState("error"); return; }
       if ((data.completed_steps || 0) > 0) { setNextUrl(data.checkpoint_url); setState("progress"); }

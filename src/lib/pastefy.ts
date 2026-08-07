@@ -242,6 +242,7 @@ export interface RewardSession {
   id: string; project_id: string; status: "pending" | "completed";
   created: number; used: boolean;
   step: number; total_steps: number;
+  ip?: string;
 }
 
 export interface ProjectData {

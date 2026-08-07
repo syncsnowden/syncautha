@@ -29,24 +29,73 @@ export async function GET(req: Request) {
       : [project.lootlabs_link, project.ll_link_2, project.ll_link_3].filter(Boolean);
     const totalSteps = Math.max(links.length, 1);
 
+    const hash = url.searchParams.get("hash") || "";
+    const ip = req.headers.get("cf-connecting-ip") || 
+               req.headers.get("x-forwarded-for")?.split(",")[0].trim() || 
+               req.headers.get("x-real-ip") || 
+               "127.0.0.1";
+
     let completedSteps = 0;
     let activeSession: string | null = null;
 
     if (token) {
       const existingSession = await getRewardSession(token);
-      if (existingSession) {
-        if (provider === "linkvertise") {
-          completedSteps = existingSession.step || 0;
+      if (existingSession && existingSession.project_id === project.id) {
+        // Enforce IP matching to prevent sharing completed session tokens
+        const sessionIp = existingSession.ip;
+        if (sessionIp && sessionIp !== ip) {
+          activeSession = null;
         } else {
-          completedSteps = (existingSession.step || 0) + 1;
-          const { updateRewardSession } = await import("@/lib/pastefy");
-          await updateRewardSession(project.id, token, (s) => {
-            s.step = completedSteps;
-            s.total_steps = totalSteps; // keep in sync with live link count
-            if (completedSteps >= totalSteps) s.status = "completed";
-          });
+          // If the session IP is not set, set it now
+          if (!sessionIp) {
+            const { updateRewardSession } = await import("@/lib/pastefy");
+            await updateRewardSession(project.id, token, (s) => {
+              s.ip = ip;
+            });
+          }
+
+          if (provider === "linkvertise") {
+            completedSteps = existingSession.step || 0;
+            // If the user has returned with a Linkvertise hash parameter, verify it!
+            if (hash) {
+              const lvApiKey = project.linkvertise_api_key || "";
+              if (lvApiKey) {
+                try {
+                  const lvRes = await fetch(`https://publisher.linkvertise.com/api/v1/anti_bypassing?token=${lvApiKey}&hash=${hash}`, {
+                    method: "POST"
+                  });
+                  const resText = await lvRes.text();
+                  if (resText.toUpperCase().includes("TRUE")) {
+                    completedSteps = completedSteps + 1;
+                    const { updateRewardSession } = await import("@/lib/pastefy");
+                    await updateRewardSession(project.id, token, (s) => {
+                      s.step = completedSteps;
+                      s.total_steps = totalSteps;
+                      if (completedSteps >= totalSteps) s.status = "completed";
+                    });
+                  }
+                } catch (e: any) {
+                  console.error("Linkvertise API error during init verify:", e);
+                }
+              }
+            }
+          } else {
+            // For LootLabs/others, auto-increment when they return with the token,
+            // but only if they haven't already completed all steps.
+            if (existingSession.step < totalSteps && existingSession.status !== "completed") {
+              completedSteps = (existingSession.step || 0) + 1;
+              const { updateRewardSession } = await import("@/lib/pastefy");
+              await updateRewardSession(project.id, token, (s) => {
+                s.step = completedSteps;
+                s.total_steps = totalSteps;
+                if (completedSteps >= totalSteps) s.status = "completed";
+              });
+            } else {
+              completedSteps = existingSession.step || 0;
+            }
+          }
+          activeSession = token;
         }
-        activeSession = token;
       }
     }
 
@@ -57,6 +106,7 @@ export async function GET(req: Request) {
         id: sessionId, project_id: project.id,
         status: "pending", created: Date.now(), used: false,
         step: 0, total_steps: totalSteps,
+        ip: ip,
       });
     }
 

@@ -11,6 +11,15 @@ export async function POST(req: Request) {
     const session = await getRewardSession(session_id);
     if (!session) return Response.json({ error: "Not found" }, { status: 404 });
     if (session.project_id !== project_id) return Response.json({ error: "Wrong project" }, { status: 403 });
+    
+    const ip = req.headers.get("cf-connecting-ip") || 
+               req.headers.get("x-forwarded-for")?.split(",")[0].trim() || 
+               req.headers.get("x-real-ip") || 
+               "127.0.0.1";
+    if (session.ip && session.ip !== ip) {
+      return Response.json({ error: "IP address mismatch. You must complete the checkpoint on this device." }, { status: 403 });
+    }
+
     if (session.status !== "completed") return Response.json({ error: "Not completed" }, { status: 400 });
     if (session.used) return Response.json({ error: "Already used" }, { status: 400 });
     
