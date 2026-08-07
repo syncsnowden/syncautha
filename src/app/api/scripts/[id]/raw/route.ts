@@ -43,7 +43,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
              req.headers.get("x-real-ip") || 
              "127.0.0.1";
 
-  const projectData = await loadProjectData(pasteId);
+  const projectData = await loadProjectData(pasteId, true);
   const hashed = hwid ? hashHwid(hwid) : "keyless-user";
 
   let matchingKeyEntry = null;

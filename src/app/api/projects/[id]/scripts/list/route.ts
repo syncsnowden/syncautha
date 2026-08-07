@@ -16,7 +16,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     return Response.json({ error: "Data not found" }, { status: 404 });
   }
 
-  const data = await loadProjectData(pasteId);
+  const data = await loadProjectData(pasteId, true);
   const scripts = Object.values(data.scripts || {}).map(s => ({
     id: s.id,
     name: s.name

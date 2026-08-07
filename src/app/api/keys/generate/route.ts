@@ -28,7 +28,8 @@ export async function POST(req: Request) {
 
     await updateRewardSession(project_id, session_id, (s) => { s.used = true; });
     
-    const data = await loadProjectData(project_id);
+    if (!project.paste_id) return Response.json({ error: "Project data not configured" }, { status: 400 });
+    const data = await loadProjectData(project.paste_id, true);
     if (!data) return Response.json({ error: "Project data not found" }, { status: 404 });
     const keysCount = Object.keys(data.keys || {}).length;
     

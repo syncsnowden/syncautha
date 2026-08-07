@@ -123,14 +123,16 @@ async function ensureMaster(): Promise<string> {
   return masterId;
 }
 
-async function readPaste(id: string): Promise<any> {
-  const cached = pasteCache.get(id);
-  if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
-    return cached.data;
+async function readPaste(id: string, forceFresh = false): Promise<any> {
+  if (!forceFresh) {
+    const cached = pasteCache.get(id);
+    if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+      return cached.data;
+    }
   }
   
   let pending = pendingRequests.get(id);
-  if (pending) {
+  if (pending && !forceFresh) {
     return pending;
   }
 
@@ -149,7 +151,9 @@ async function readPaste(id: string): Promise<any> {
     }
   })();
 
-  pendingRequests.set(id, promise);
+  if (!forceFresh) {
+    pendingRequests.set(id, promise);
+  }
   return promise;
 }
 
@@ -182,9 +186,9 @@ async function createPaste(data: any): Promise<string> {
 // ─── MASTER DB ───
 interface MasterDB { projects: Record<string, { paste_id: string; name: string; created_at: number; settings?: Project }>; }
 
-async function getMaster(): Promise<MasterDB> {
+async function getMaster(forceFresh = false): Promise<MasterDB> {
   const mid = await ensureMaster();
-  const data = await readPaste(mid);
+  const data = await readPaste(mid, forceFresh);
   return data || { projects: {} };
 }
 
@@ -307,8 +311,8 @@ export async function getProject(id: string): Promise<Project | null> {
   return result;
 }
 
-export async function loadProjectData(pasteId: string): Promise<ProjectData> {
-  const data = await readPaste(pasteId);
+export async function loadProjectData(pasteId: string, forceFresh = false): Promise<ProjectData> {
+  const data = await readPaste(pasteId, forceFresh);
   return { ...EMPTY_PROJECT, ...data };
 }
 
@@ -555,10 +559,10 @@ export async function logExecution(
   scriptId: string,
   exec: { hwid: string; key: string; ip: string; username: string; executor: string; }
 ) {
-  const m = await getMaster();
+  const m = await getMaster(true);
   const p = m.projects[projectId];
   if (!p) return;
-  const data = await loadProjectData(p.paste_id);
+  const data = await loadProjectData(p.paste_id, true);
 
   // Total count
   data.executions_count = (data.executions_count || 0) + 1;
@@ -586,4 +590,59 @@ export async function logExecution(
   }
 
   await saveProjectData(p.paste_id, data);
+}
+
+export async function obfuscateWithWeAreDevs(code: string): Promise<string | null> {
+  if (!code || code.trim() === "") return null;
+  try {
+    const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+    
+    // 1. Visit main page to warm up connection, headers, and cookies
+    const pageRes = await fetch("https://wearedevs.net/obfuscator", {
+      headers: { "User-Agent": userAgent }
+    });
+    
+    let cookies: string[] = [];
+    if (typeof pageRes.headers.getSetCookie === "function") {
+      cookies = pageRes.headers.getSetCookie();
+    } else {
+      const rawCookie = pageRes.headers.get("set-cookie");
+      if (rawCookie) cookies = [rawCookie];
+    }
+    const cookieHeader = cookies.map(c => c.split(";")[0]).join("; ");
+
+    // 2. Perform obfuscation request
+    const obfRes = await fetch("https://wearedevs.net/api/obfuscate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": userAgent,
+        "Cookie": cookieHeader,
+        "Referer": "https://wearedevs.net/obfuscator",
+        "Origin": "https://wearedevs.net",
+        "Accept": "application/json, text/plain, */*"
+      },
+      body: JSON.stringify({ script: code })
+    });
+
+    if (obfRes.ok) {
+      const resText = await obfRes.text();
+      try {
+        const obfData = JSON.parse(resText);
+        if (obfData.obfuscated) {
+          return obfData.obfuscated;
+        }
+      } catch {
+        if (resText && !resText.includes("<!DOCTYPE html>") && !resText.includes("<html")) {
+          return resText;
+        }
+      }
+      console.error("[SyncAuth] Obfuscator returned success = false or HTML payload:", resText.slice(0, 500));
+    } else {
+      console.error(`[SyncAuth] Obfuscator returned status ${obfRes.status}: ${obfRes.statusText}`);
+    }
+  } catch (e) {
+    console.error("[SyncAuth] Obfuscation helper failed:", e);
+  }
+  return null;
 }

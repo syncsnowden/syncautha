@@ -1,4 +1,4 @@
-import { getScripts, createScript, generateId, type Script } from "@/lib/pastefy";
+import { getScripts, createScript, generateId, type Script, obfuscateWithWeAreDevs } from "@/lib/pastefy";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 export const runtime = "edge";
@@ -46,57 +46,21 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     
     // Obfuscate with WeAreDevs
     if (code.trim() !== "") {
-      try {
-        const obfRes = await fetch("https://wearedevs.net/api/obfuscate", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "application/json, text/plain, */*"
-          },
-          body: JSON.stringify({ script: code })
-        });
-        if (obfRes.ok) {
-          const resText = await obfRes.text();
-          let obfuscatedCode = "";
-          let success = false;
-          try {
-            const obfData = JSON.parse(resText);
-            if (obfData.success && obfData.obfuscated) {
-              obfuscatedCode = obfData.obfuscated;
-              success = true;
-            } else if (obfData.obfuscated) {
-              obfuscatedCode = obfData.obfuscated;
-              success = true;
+      const obfuscatedCode = await obfuscateWithWeAreDevs(code);
+      if (obfuscatedCode) {
+        code = obfuscatedCode;
+        if (user) {
+          const supabaseAdmin = createAdminClient();
+          // Fetch latest metadata to merge properly
+          const { data: latestUserData } = await supabaseAdmin.auth.admin.getUserById(user.id);
+          const existingMetadata = latestUserData?.user?.user_metadata || {};
+          await supabaseAdmin.auth.admin.updateUserById(user.id, {
+            user_metadata: {
+              ...existingMetadata,
+              [usageKey]: (existingMetadata[usageKey] || 0) + 1
             }
-          } catch {
-            if (resText && !resText.includes("<!DOCTYPE html>") && !resText.includes("<html")) {
-              obfuscatedCode = resText;
-              success = true;
-            }
-          }
-          if (success && obfuscatedCode) {
-            code = obfuscatedCode;
-            if (user) {
-              const supabaseAdmin = createAdminClient();
-              // Fetch latest metadata to merge properly
-              const { data: latestUserData } = await supabaseAdmin.auth.admin.getUserById(user.id);
-              const existingMetadata = latestUserData?.user?.user_metadata || {};
-              await supabaseAdmin.auth.admin.updateUserById(user.id, {
-                user_metadata: {
-                  ...existingMetadata,
-                  [usageKey]: (existingMetadata[usageKey] || 0) + 1
-                }
-              });
-            }
-          } else {
-            console.error("[SyncAuth] Obfuscator returned success = false or HTML payload:", resText.slice(0, 500));
-          }
-        } else {
-          console.error(`[SyncAuth] Obfuscator returned status ${obfRes.status}: ${obfRes.statusText}`);
+          });
         }
-      } catch (e) {
-        console.error("[SyncAuth] Obfuscation failed:", e);
       }
     }
 

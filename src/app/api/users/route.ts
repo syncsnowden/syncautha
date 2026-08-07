@@ -9,7 +9,7 @@ export async function GET() {
     const allUsers: any[] = [];
     for (const p of projects) {
       if (!p.paste_id) continue;
-      const data = await loadProjectData(p.paste_id);
+      const data = await loadProjectData(p.paste_id, true);
       if (data && data.users) {
         Object.values(data.users).forEach((u: any) => {
           allUsers.push({

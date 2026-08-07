@@ -17,7 +17,7 @@ export async function GET(req: Request) {
     const allKeys: any[] = [];
     for (const p of projects) {
       if (!p.paste_id) continue;
-      const data = await loadProjectData(p.paste_id);
+      const data = await loadProjectData(p.paste_id, true);
       if (data && data.keys) {
         Object.values(data.keys).forEach((k: any) => {
           allKeys.push({
