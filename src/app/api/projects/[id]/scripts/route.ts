@@ -61,6 +61,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
             }
           });
         }
+      } else {
+        return Response.json({ error: "Obfuscation failed. Please check the obfuscator service or try again." }, { status: 500 });
       }
     }
 

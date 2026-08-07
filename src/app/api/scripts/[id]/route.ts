@@ -37,31 +37,35 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         user = data?.user;
       }
 
-      if (user) {
-        const plan = user.user_metadata?.redeemed_code || "Free";
-        const limit = plan === "Pro" ? 500 : (plan === "Basic" ? 50 : 10);
-        const currentMonth = new Date().toISOString().slice(0, 7);
-        const usageKey = `obf_usage_${currentMonth}`;
-        const currentUsage = user.user_metadata?.[usageKey] || 0;
+      const plan = user?.user_metadata?.redeemed_code || "Free";
+      const limit = plan === "Pro" ? 500 : (plan === "Basic" ? 50 : 10);
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      const usageKey = `obf_usage_${currentMonth}`;
+      const currentUsage = user?.user_metadata?.[usageKey] || 0;
 
-        if (currentUsage >= limit) {
-          return Response.json({ error: `Obfuscation limit reached for ${plan} plan (${limit}/mo).` }, { status: 429 });
-        }
+      if (user && currentUsage >= limit) {
+        return Response.json({ error: `Obfuscation limit reached for ${plan} plan (${limit}/mo).` }, { status: 429 });
+      }
 
-        // Obfuscate with WeAreDevs
+      // Obfuscate with WeAreDevs
+      if (body.script_code && body.script_code.trim() !== "") {
         const obfuscatedCode = await obfuscateWithWeAreDevs(body.script_code);
         if (obfuscatedCode) {
           body.script_code = obfuscatedCode;
-          const supabaseAdmin = createAdminClient();
-          // Fetch latest metadata to merge properly
-          const { data: latestUserData } = await supabaseAdmin.auth.admin.getUserById(user.id);
-          const existingMetadata = latestUserData?.user?.user_metadata || {};
-          await supabaseAdmin.auth.admin.updateUserById(user.id, {
-            user_metadata: {
-              ...existingMetadata,
-              [usageKey]: (existingMetadata[usageKey] || 0) + 1
-            }
-          });
+          if (user) {
+            const supabaseAdmin = createAdminClient();
+            // Fetch latest metadata to merge properly
+            const { data: latestUserData } = await supabaseAdmin.auth.admin.getUserById(user.id);
+            const existingMetadata = latestUserData?.user?.user_metadata || {};
+            await supabaseAdmin.auth.admin.updateUserById(user.id, {
+              user_metadata: {
+                ...existingMetadata,
+                [usageKey]: (existingMetadata[usageKey] || 0) + 1
+              }
+            });
+          }
+        } else {
+          return Response.json({ error: "Obfuscation failed. Please check the obfuscator service or try again." }, { status: 500 });
         }
       }
     }
