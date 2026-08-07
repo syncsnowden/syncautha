@@ -332,8 +332,8 @@ export default function RewardsPage() {
                       </p>
                       
                       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                        <span style={{ fontSize: 11, color: "var(--text-2)", fontWeight: 600 }}>Option A: Direct Redirect (Recommended for sequential checkpoints)</span>
-                        <p style={{ fontSize: 11, color: "var(--text-3)", margin: "0 0 4px 0" }}>Set target URL in Linkvertise to your key generation page. Bypasses will be checked on load via local storage.</p>
+                        <span style={{ fontSize: 11, color: "var(--text-2)", fontWeight: 600 }}>Option A: Direct Redirect (Simpler Setup, Bypasser-Vulnerable)</span>
+                        <p style={{ fontSize: 11, color: "var(--text-3)", margin: "0 0 4px 0" }}>Set target URL in Linkvertise to your key generation page. Bypasses will be checked on load via local storage, but can be bypassed if the user resolves the link externally.</p>
                         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                           <code style={{ flex: 1, fontSize: 11, color: "var(--text-2)", fontFamily: "monospace", background: "var(--bg-2)", padding: "8px 12px", borderRadius: 6, overflowX: "auto" }}>
                             {siteUrl}/get-key/{activeProject.id}
@@ -348,8 +348,8 @@ export default function RewardsPage() {
                       </div>
 
                       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                        <span style={{ fontSize: 11, color: "var(--text-2)", fontWeight: 600 }}>Option B: Postback Endpoint Redirect</span>
-                        <p style={{ fontSize: 11, color: "var(--text-3)", margin: "0 0 4px 0" }}>Set target URL in Linkvertise to the rewards postback endpoint.</p>
+                        <span style={{ fontSize: 11, color: "var(--text-2)", fontWeight: 600 }}>Option B: Postback Endpoint Redirect (Recommended & Bypasser-Proof!)</span>
+                        <p style={{ fontSize: 11, color: "var(--text-3)", margin: "0 0 4px 0" }}>Set target URL in Linkvertise to the rewards postback endpoint. Enforces rigorous IP matching between the user browser session and the redirection requester, blocking automated bypassers.</p>
                         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                           <code style={{ flex: 1, fontSize: 11, color: "var(--text-2)", fontFamily: "monospace", background: "var(--bg-2)", padding: "8px 12px", borderRadius: 6, overflowX: "auto" }}>
                             {siteUrl}/api/rewards/postback

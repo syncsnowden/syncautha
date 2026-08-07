@@ -18,6 +18,22 @@ export async function GET(req: Request) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${req.headers.get("host") || "syncauth-eight.vercel.app"}`;
 
   if (provider === "linkvertise") {
+    // 1. Block known bypasser referer headers
+    const referer = (req.headers.get("referer") || "").toLowerCase();
+    const blockedReferers = ["bypass.city", "bypass.vip", "bypasser", "linkvertisebypasser", "keybypasser"];
+    if (blockedReferers.some(r => referer.includes(r))) {
+      return Response.json({ error: "Bypasser detected. Please complete the link honestly." }, { status: 403 });
+    }
+
+    // 2. Verify that the IP address matches the session's creator IP address
+    const ip = req.headers.get("cf-connecting-ip") || 
+               req.headers.get("x-forwarded-for")?.split(",")[0].trim() || 
+               req.headers.get("x-real-ip") || 
+               "127.0.0.1";
+    if (session.ip && session.ip !== ip) {
+      return Response.json({ error: "IP address mismatch. You must complete the checkpoint on the same device and network connection. Bypassing is blocked." }, { status: 403 });
+    }
+
     const hash = url.searchParams.get("hash") || "";
     if (!hash) return Response.json({ error: "Missing hash parameter. Did you bypass?" }, { status: 400 });
 
