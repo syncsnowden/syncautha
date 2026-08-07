@@ -36,6 +36,18 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [isSuggestionOpen, setIsSuggestionOpen] = useState(false);
 
+  useEffect(() => {
+    const checkUser = async () => {
+      const { getSupabase } = await import("@/lib/supabase/client");
+      const supabase = getSupabase();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        router.push("/dashboard");
+      }
+    };
+    checkUser();
+  }, [router]);
+
   const strength = pwStrength(password);
   const match = confirm ? password === confirm : null;
 

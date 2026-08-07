@@ -22,6 +22,16 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isSuggestionOpen, setIsSuggestionOpen] = useState(false);
 
+  useEffect(() => {
+    const checkUser = async () => {
+      const supabase = getSupabase();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        router.push("/dashboard");
+      }
+    };
+    checkUser();
+  }, [router]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

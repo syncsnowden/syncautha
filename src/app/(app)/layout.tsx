@@ -40,16 +40,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         setUsername(u);
         return;
       }
+      
       const cached = localStorage.getItem("syncauth_user");
       if (cached) {
         try {
           const u = JSON.parse(cached);
           setEmail(u.email ?? "");
           setUsername((u.email ?? "").split("@")[0] || "User");
+          return;
         } catch {}
       }
+      
+      router.push("/login");
     });
-  }, [pathname]);
+  }, [pathname, router]);
 
   const handleLogout = async () => {
     const supabase = getSupabase();
