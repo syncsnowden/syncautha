@@ -1,5 +1,6 @@
 import { getScript, getProject, getProjectPasteId, loadProjectData, hashHwid, getScriptRaw, logExecution } from "@/lib/pastefy";
 import { encryptWebhook } from "@/lib/crypto";
+export const runtime = "edge";
 
 export const dynamic = "force-dynamic";
 

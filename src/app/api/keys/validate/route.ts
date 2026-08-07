@@ -1,4 +1,5 @@
 import { getKey, updateKey, deleteKey, hashHwid, getProject, logUser } from "@/lib/pastefy";
+export const runtime = "edge";
 
 export const dynamic = "force-dynamic";
 

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+export const runtime = "edge";
 
 interface Project {
   id: string; name: string; logs_webhook: string; alert_webhook: string;

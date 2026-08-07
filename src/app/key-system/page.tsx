@@ -1,6 +1,7 @@
 "use client";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+export const runtime = "edge";
 
 function KeySystemInner() {
   const searchParams = useSearchParams();

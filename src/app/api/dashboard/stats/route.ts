@@ -1,5 +1,6 @@
 import { getProjects, loadProjectData } from "@/lib/pastefy";
 import { createClient } from "@/lib/supabase/server";
+export const runtime = "edge";
 
 export const dynamic = "force-dynamic";
 

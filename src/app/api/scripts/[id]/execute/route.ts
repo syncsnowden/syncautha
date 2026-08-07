@@ -1,4 +1,5 @@
 import { getScript, getProject, hashHwid, logExecution } from "@/lib/pastefy";
+export const runtime = "edge";
 
 export const dynamic = "force-dynamic";
 

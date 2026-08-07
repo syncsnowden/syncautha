@@ -10,6 +10,7 @@ import FAQSection from "@/components/FAQSection";
 import DarkCyberCanvas from "@/components/DarkCyberCanvas";
 import SuggestionModal from "@/components/SuggestionModal";
 import { getSupabase } from "@/lib/supabase/client";
+export const runtime = "edge";
 
 export default function LoginPage() {
   const router = useRouter();

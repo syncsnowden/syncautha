@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import DarkCyberCanvas from "@/components/DarkCyberCanvas";
+export const runtime = "edge";
 
 export default function DocsPage() {
   const [activeTab, setActiveTab] = useState("lootlabs");

@@ -1,5 +1,5 @@
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
 
 export async function GET() {
   return new Response(JSON.stringify({ ok: true, time: Date.now(), build: "v6-jsondirect" }), {

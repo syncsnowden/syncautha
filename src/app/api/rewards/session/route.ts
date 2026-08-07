@@ -1,4 +1,5 @@
 import { getProject, createRewardSession, generateId } from "@/lib/pastefy";
+export const runtime = "edge";
 
 export const dynamic = "force-dynamic";
 

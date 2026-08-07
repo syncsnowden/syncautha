@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { getSupabase } from "@/lib/supabase/client";
+export const runtime = "edge";
 
 interface Script {
   id: string; project_id: string; name: string;

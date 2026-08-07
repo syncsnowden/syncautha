@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+export const runtime = "edge";
 
 // Global last sent timestamp to enforce 1 message per 20 seconds universally
 let globalLastTimestamp = 0;
