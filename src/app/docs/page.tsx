@@ -145,10 +145,10 @@ export default function DocsPage() {
                       </p>
                       <ul style={{ color: "var(--text-2)", fontSize: 13, margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 6 }}>
                         <li><strong>Option A (Simple Redirect):</strong> <code>{"https://<yourdomain>/get-key/<PROJECT_ID>"}</code><br />
-                        <span style={{ color: "var(--text-3)", fontSize: 12 }}>This directs users straight back to your key page, but can be bypassed using link bypass tools.</span></li>
+                        <span style={{ color: "var(--text-3)", fontSize: 12 }}>This directs users straight back to your key page, but can be bypassed.</span></li>
                         
-                        <li><strong>Option B (Bypasser-Proof Redirect - Recommended):</strong> <code>{"https://<yourdomain>/api/rewards/postback"}</code><br />
-                        <span style={{ color: "var(--text-3)", fontSize: 12 }}>This routes the user through our secure backend checker, which blocks bypassers by verifying their IP addresses.</span></li>
+                        <li><strong>Option B (Postback Redirect - Recommended):</strong> <code>{"https://<yourdomain>/api/rewards/postback"}</code><br />
+                        <span style={{ color: "var(--text-3)", fontSize: 12 }}>Bypass-proof/Secure option, routes users through the secure backend verification system.</span></li>
                       </ul>
                     </div>
 
