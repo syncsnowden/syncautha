@@ -1,3 +1,4 @@
+import { createAdminClient } from "@/lib/supabase/admin";
 const PASTEFY_BASE = "https://pastefy.app/api/v2";
 const API_KEY = process.env.PASTEFY_API_KEY || "sMBc9KgDW5Jy0PlP5GWCAa4Tlt4VJwJ2BQWJxW46NsLTYHEQbs3u4i8TyI4O";
 const ENV_MASTER_ID = process.env.PASTEFY_PASTE_ID || "";
@@ -370,11 +371,33 @@ export async function createScript(projectId: string, script: Script): Promise<v
   const m = await getMaster();
   const p = m.projects[projectId];
   if (!p) throw new Error("Project not found");
-  // Create separate paste for script
-  const pasteId = await createPaste({ exists: true, code: script.script_code, name: script.name, created_at: script.created_at });
+
+  // 1. Upload to Supabase Storage
+  const supabase = createAdminClient();
+  const { error: uploadError } = await supabase.storage
+    .from("scripts")
+    .upload(`${script.id}.lua`, script.script_code, {
+      contentType: "text/plain; charset=utf-8",
+      upsert: true
+    });
+  if (uploadError) {
+    console.error("[SyncAuth] Supabase Storage upload failed during createScript:", uploadError);
+  }
+
+  // 2. Fallback: Create separate paste for script (will soft-fail/catch if pastefy is overloaded/returns 413)
+  let pasteId = "";
+  try {
+    pasteId = await createPaste({ exists: true, code: script.script_code, name: script.name, created_at: script.created_at });
+  } catch (e) {
+    console.warn("[SyncAuth] Pastefy backup paste creation failed (safe to ignore if Supabase succeeded):", e);
+  }
   script.paste_id = pasteId;
+
+  // Clear script_code in metadata to prevent 413s on the master project file
+  const metadataScript = { ...script, script_code: "" };
+
   const data = await loadProjectData(p.paste_id);
-  data.scripts[script.id] = script;
+  data.scripts[script.id] = metadataScript;
   await saveProjectData(p.paste_id, data);
 }
 
@@ -382,7 +405,25 @@ export async function getScript(id: string): Promise<Script | null> {
   const m = await getMaster();
   for (const [pid, p] of Object.entries(m.projects)) {
     const data = await loadProjectData(p.paste_id);
-    if (data.scripts[id]) return data.scripts[id];
+    if (data.scripts[id]) {
+      const script = { ...data.scripts[id] };
+      // Try to load code from Supabase Storage first
+      const supabase = createAdminClient();
+      const { data: fileData, error } = await supabase.storage
+        .from("scripts")
+        .download(`${id}.lua`);
+      
+      if (!error && fileData) {
+        script.script_code = await fileData.text();
+      } else {
+        // Fallback to pastefy if not found in Storage
+        if (script.paste_id) {
+          const paste = await readPaste(script.paste_id);
+          script.script_code = paste?.code || "";
+        }
+      }
+      return script;
+    }
   }
   return null;
 }
@@ -392,11 +433,33 @@ export async function updateScript(id: string, updates: Partial<Script>): Promis
   for (const [pid, p] of Object.entries(m.projects)) {
     const data = await loadProjectData(p.paste_id);
     if (data.scripts[id]) {
-      Object.assign(data.scripts[id], updates);
-      // Also update the script's own paste if code changed
-      if (updates.script_code !== undefined && data.scripts[id].paste_id) {
-        await writePaste(data.scripts[id].paste_id, { exists: true, code: updates.script_code, name: data.scripts[id].name, created_at: data.scripts[id].created_at });
+      if (updates.script_code !== undefined) {
+        // Update Supabase Storage
+        const supabase = createAdminClient();
+        const { error: uploadError } = await supabase.storage
+          .from("scripts")
+          .upload(`${id}.lua`, updates.script_code, {
+            contentType: "text/plain; charset=utf-8",
+            upsert: true
+          });
+        if (uploadError) {
+          console.error("[SyncAuth] Supabase Storage upload failed during updateScript:", uploadError);
+        }
+
+        // Try updating pastefy backup
+        if (data.scripts[id].paste_id) {
+          try {
+            await writePaste(data.scripts[id].paste_id, { exists: true, code: updates.script_code, name: updates.name || data.scripts[id].name, created_at: data.scripts[id].created_at });
+          } catch (e) {
+            console.warn("[SyncAuth] Pastefy backup update failed (safe to ignore if Supabase succeeded):", e);
+          }
+        }
       }
+
+      const metadataUpdates = { ...updates };
+      delete metadataUpdates.script_code;
+
+      Object.assign(data.scripts[id], metadataUpdates);
       await saveProjectData(p.paste_id, data);
       return;
     }
@@ -409,10 +472,17 @@ export async function deleteScript(id: string): Promise<void> {
   for (const [pid, p] of Object.entries(m.projects)) {
     const data = await loadProjectData(p.paste_id);
     if (data.scripts[id]) {
-      // Soft-delete: mark the script paste as inactive
+      // Delete from Supabase Storage
+      const supabase = createAdminClient();
+      await supabase.storage.from("scripts").remove([`${id}.lua`]);
+
+      // Soft-delete pastefy paste
       if (data.scripts[id].paste_id) {
-        await writePaste(data.scripts[id].paste_id, { exists: false, code: "", name: data.scripts[id].name, created_at: data.scripts[id].created_at });
+        try {
+          await writePaste(data.scripts[id].paste_id, { exists: false, code: "", name: data.scripts[id].name, created_at: data.scripts[id].created_at });
+        } catch {}
       }
+
       delete data.scripts[id];
       await saveProjectData(p.paste_id, data);
       return;
@@ -423,12 +493,7 @@ export async function deleteScript(id: string): Promise<void> {
 export async function getScriptRaw(id: string): Promise<{ exists: boolean; code: string } | null> {
   const script = await getScript(id);
   if (!script) return null;
-  if (!script.paste_id) {
-    return { exists: true, code: script.script_code || "" };
-  }
-  const paste = await readPaste(script.paste_id);
-  if (!paste) return null;
-  return { exists: paste.exists !== false, code: paste.code || "" };
+  return { exists: true, code: script.script_code || "" };
 }
 
 export async function getProjectPasteId(projectId: string): Promise<string | null> {
