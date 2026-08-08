@@ -753,26 +753,29 @@ export interface ObfuscationRecord {
   resets_at_formatted: string;
 }
 
-export async function getUserObfuscationUsage(user: any): Promise<{ used: number; limit: number; plan: string; obfuscations: ObfuscationRecord[]; paste_id: string }> {
-  const plan = user?.user_metadata?.redeemed_code || "Free";
+export async function getUserObfuscationUsage(user: any, forceFresh = true): Promise<{ used: number; limit: number; plan: string; obfuscations: ObfuscationRecord[]; paste_id: string }> {
+  const supabaseAdmin = createAdminClient();
+  let freshUser = user;
+  if (user?.id) {
+    const { data: latestUserData } = await supabaseAdmin.auth.admin.getUserById(user.id).catch(() => ({ data: null }));
+    if (latestUserData?.user) freshUser = latestUserData.user;
+  }
+
+  const plan = freshUser?.user_metadata?.redeemed_code || "Free";
   const limit = plan === "Pro" ? 500 : (plan === "Basic" ? 50 : 10);
 
-  if (!user || !user.id) {
+  if (!freshUser || !freshUser.id) {
     return { used: 0, limit, plan, obfuscations: [], paste_id: "" };
   }
 
-  let pasteId = user.user_metadata?.obf_paste_id || "";
+  let pasteId = freshUser.user_metadata?.obf_paste_id || "";
 
   if (!pasteId) {
     try {
-      pasteId = await createRawPastefyPaste(
-        `syncauth-obf-${user.id}`,
-        JSON.stringify({ user_id: user.id, obfuscations: [] }, null, 2)
-      );
-      if (pasteId && user.id) {
-        const supabaseAdmin = createAdminClient();
-        const existingMetadata = user.user_metadata || {};
-        await supabaseAdmin.auth.admin.updateUserById(user.id, {
+      pasteId = await createPaste({ user_id: freshUser.id, obfuscations: [] });
+      if (pasteId && freshUser.id) {
+        const existingMetadata = freshUser.user_metadata || {};
+        await supabaseAdmin.auth.admin.updateUserById(freshUser.id, {
           user_metadata: { ...existingMetadata, obf_paste_id: pasteId }
         }).catch(() => {});
       }
@@ -781,22 +784,11 @@ export async function getUserObfuscationUsage(user: any): Promise<{ used: number
     }
   }
 
-  if (!pasteId) {
-    const currentMonth = new Date().toISOString().slice(0, 7);
-    const used = user.user_metadata?.[`obf_usage_${currentMonth}`] || 0;
-    return { used, limit, plan, obfuscations: [], paste_id: "" };
-  }
-
-  try {
-    const res = await fetch(`${PASTEFY_BASE}/paste/${pasteId}`, { headers: authH() });
-    if (res.ok) {
-      const d = await res.json();
-      const content = d.paste?.content || d.content || "{}";
-      let parsed: any = {};
-      try { parsed = JSON.parse(content); } catch {}
-
+  if (pasteId) {
+    try {
+      const data = await readPaste(pasteId, forceFresh);
       const now = Date.now();
-      const allObs: ObfuscationRecord[] = Array.isArray(parsed.obfuscations) ? parsed.obfuscations : [];
+      const allObs: ObfuscationRecord[] = Array.isArray(data?.obfuscations) ? data.obfuscations : [];
       const validObs = allObs.filter(o => o.resets_at > now);
 
       return {
@@ -806,33 +798,34 @@ export async function getUserObfuscationUsage(user: any): Promise<{ used: number
         obfuscations: validObs,
         paste_id: pasteId
       };
+    } catch (e) {
+      console.error("[SyncAuth] Failed to read user obf paste:", e);
     }
-  } catch (e) {
-    console.error("[SyncAuth] Failed to read user obf paste:", e);
   }
 
   const currentMonth = new Date().toISOString().slice(0, 7);
-  const used = user.user_metadata?.[`obf_usage_${currentMonth}`] || 0;
+  const used = freshUser.user_metadata?.[`obf_usage_${currentMonth}`] || 0;
   return { used, limit, plan, obfuscations: [], paste_id: pasteId };
 }
 
 export async function recordUserObfuscation(user: any): Promise<number> {
   if (!user || !user.id) return 0;
 
-  const usageInfo = await getUserObfuscationUsage(user);
+  const usageInfo = await getUserObfuscationUsage(user, true);
   let pasteId = usageInfo.paste_id;
 
   if (!pasteId) {
-    pasteId = await createRawPastefyPaste(
-      `syncauth-obf-${user.id}`,
-      JSON.stringify({ user_id: user.id, obfuscations: [] }, null, 2)
-    );
-    if (pasteId) {
-      const supabaseAdmin = createAdminClient();
-      const existingMetadata = user.user_metadata || {};
-      await supabaseAdmin.auth.admin.updateUserById(user.id, {
-        user_metadata: { ...existingMetadata, obf_paste_id: pasteId }
-      }).catch(() => {});
+    try {
+      pasteId = await createPaste({ user_id: user.id, obfuscations: [] });
+      if (pasteId) {
+        const supabaseAdmin = createAdminClient();
+        const existingMetadata = user.user_metadata || {};
+        await supabaseAdmin.auth.admin.updateUserById(user.id, {
+          user_metadata: { ...existingMetadata, obf_paste_id: pasteId }
+        }).catch(() => {});
+      }
+    } catch (e) {
+      console.error("[SyncAuth] Failed to create obf paste in recordUserObfuscation:", e);
     }
   }
 
@@ -849,16 +842,9 @@ export async function recordUserObfuscation(user: any): Promise<number> {
 
   if (pasteId) {
     try {
-      await fetch(`${PASTEFY_BASE}/paste/${pasteId}`, {
-        method: "PUT",
-        headers: jsonH(),
-        body: JSON.stringify({
-          title: `syncauth-obf-${user.id}`,
-          content: JSON.stringify({ user_id: user.id, obfuscations: updatedObfuscations }, null, 2)
-        })
-      });
+      await writePaste(pasteId, { user_id: user.id, obfuscations: updatedObfuscations });
     } catch (e) {
-      console.error("[SyncAuth] Failed to update user obf tracking paste:", e);
+      console.error("[SyncAuth] Failed to write user obf tracking paste:", e);
     }
   }
 

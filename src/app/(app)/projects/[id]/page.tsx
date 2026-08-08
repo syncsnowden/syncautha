@@ -510,33 +510,33 @@ export default function ProjectDetailPage() {
   const [tab, setTab] = useState<"scripts" | "keys">("scripts");
   const [obfUsage, setObfUsage] = useState<{ used: number; limit: number; plan: string }>({ used: 0, limit: 10, plan: "Free" });
 
+  const fetchUsage = async () => {
+    try {
+      const { getSupabase } = await import("@/lib/supabase/client");
+      const sb = getSupabase();
+      const { data: { session } } = await sb.auth.getSession();
+      let token = session?.access_token || "";
+      
+      if (!token) {
+        const raw = localStorage.getItem("syncauth_session");
+        if (raw) token = JSON.parse(raw)?.access_token || "";
+      }
+      
+      if (token) {
+        const r = await fetch(`/api/obf-usage?t=${Date.now()}`, { headers: { Authorization: `Bearer ${token}` } });
+        if (r.ok) {
+          const d = await r.json();
+          if (d?.used !== undefined) setObfUsage(d);
+        }
+      }
+    } catch (e) {
+      console.error("Obf usage fetch failed", e);
+    }
+  };
+
   useEffect(() => {
     fetch(`/api/projects/${pid}`).then(r => r.json()).then(setProject);
     loadScripts();
-
-    const fetchUsage = async () => {
-      try {
-        const { getSupabase } = await import("@/lib/supabase/client");
-        const sb = getSupabase();
-        const { data: { session } } = await sb.auth.getSession();
-        let token = session?.access_token || "";
-        
-        if (!token) {
-          const raw = localStorage.getItem("syncauth_session");
-          if (raw) token = JSON.parse(raw)?.access_token || "";
-        }
-        
-        if (token) {
-          const r = await fetch("/api/obf-usage", { headers: { Authorization: `Bearer ${token}` } });
-          if (r.ok) {
-            const d = await r.json();
-            if (d?.used !== undefined) setObfUsage(d);
-          }
-        }
-      } catch (e) {
-        console.error("Obf usage fetch failed", e);
-      }
-    };
     fetchUsage();
   }, [pid]);
 
@@ -609,7 +609,7 @@ export default function ProjectDetailPage() {
         throw new Error(data.error || "Failed to save.");
       }
       toast.success(editSid ? "Script updated!" : "Script created & obfuscated!");
-      resetForm(); loadScripts();
+      resetForm(); loadScripts(); fetchUsage();
     } catch (e: any) { toast.error(e.message || "Failed to save."); }
     finally { setSaving(false); }
   }
