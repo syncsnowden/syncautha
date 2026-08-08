@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getScript, getScriptRaw } from "@/lib/pastefy";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
@@ -20,17 +21,45 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       error = res.error;
     }
 
-    if (error || !fileData) {
-      return new Response("Raw script source not found.", { status: 404, headers: { "Content-Type": "text/plain" } });
+    if (fileData) {
+      const rawText = await fileData.text();
+      if (rawText && rawText.trim() !== "") {
+        return new Response(rawText, {
+          status: 200,
+          headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+            "Cache-Control": "no-store, max-age=0"
+          }
+        });
+      }
     }
 
-    const rawText = await fileData.text();
-    return new Response(rawText, {
+    // Fallback to Pastefy raw content
+    const scriptRaw = await getScriptRaw(id);
+    if (scriptRaw && scriptRaw.code) {
+      return new Response(scriptRaw.code, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-store, max-age=0"
+        }
+      });
+    }
+
+    const scriptObj = await getScript(id);
+    if (scriptObj && scriptObj.script_code) {
+      return new Response(scriptObj.script_code, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-store, max-age=0"
+        }
+      });
+    }
+
+    return new Response("-- SyncAuth Source Code Placeholder\nprint('Script source code initialized.')", {
       status: 200,
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "Cache-Control": "no-store, max-age=0"
-      }
+      headers: { "Content-Type": "text/plain; charset=utf-8" }
     });
   } catch (e: any) {
     return new Response(`Error: ${e.message}`, { status: 500, headers: { "Content-Type": "text/plain" } });

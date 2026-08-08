@@ -1,4 +1,4 @@
-import { getScripts, createScript, generateId, type Script, obfuscateWithWeAreDevs, sendScriptNotification, createRawPastefyPaste } from "@/lib/pastefy";
+import { getScripts, createScript, generateId, type Script, obfuscateWithWeAreDevs, sendScriptNotification, createRawPastefyPaste, getUserObfuscationUsage, recordUserObfuscation } from "@/lib/pastefy";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 export const runtime = "edge";
@@ -18,8 +18,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const token = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : undefined;
     
     let user = null;
+    const supabaseAdmin = createAdminClient();
     if (token) {
-      const supabaseAdmin = createAdminClient();
       const { data } = await supabaseAdmin.auth.getUser(token);
       user = data?.user;
     } else {
@@ -27,15 +27,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       const { data } = await supabase.auth.getUser();
       user = data?.user;
     }
-    
-    const plan = user?.user_metadata?.redeemed_code || "Free";
-    const limit = plan === "Pro" ? 500 : (plan === "Basic" ? 50 : 10);
-    const currentMonth = new Date().toISOString().slice(0, 7);
-    const usageKey = `obf_usage_${currentMonth}`;
-    const currentUsage = user?.user_metadata?.[usageKey] || 0;
 
-    if (user && currentUsage >= limit) {
-      return Response.json({ error: `Obfuscation limit reached for ${plan} plan (${limit}/mo).` }, { status: 429 });
+    if (user) {
+      const usage = await getUserObfuscationUsage(user);
+      if (usage.used >= usage.limit) {
+        return Response.json({ error: `Obfuscation limit reached for ${usage.plan} plan (${usage.limit}/mo).` }, { status: 429 });
+      }
     }
 
     const body = await req.json();
@@ -58,7 +55,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     }
 
     // Backup RAW source to Supabase Storage
-    const supabaseAdmin = createAdminClient();
     if (rawCode.trim() !== "") {
       await supabaseAdmin.storage
         .from("scripts")
@@ -84,14 +80,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       if (obfuscatedCode) {
         code = obfuscatedCode;
         if (user) {
-          const { data: latestUserData } = await supabaseAdmin.auth.admin.getUserById(user.id);
-          const existingMetadata = latestUserData?.user?.user_metadata || {};
-          await supabaseAdmin.auth.admin.updateUserById(user.id, {
-            user_metadata: {
-              ...existingMetadata,
-              [usageKey]: (existingMetadata[usageKey] || 0) + 1
-            }
-          });
+          await recordUserObfuscation(user);
         }
       } else {
         return Response.json({ error: "Obfuscation failed. Please check the obfuscator service or try again." }, { status: 500 });

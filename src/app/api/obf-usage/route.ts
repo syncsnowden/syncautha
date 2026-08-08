@@ -1,4 +1,5 @@
 import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { getUserObfuscationUsage } from "@/lib/pastefy";
 export const runtime = "edge";
 
 export const dynamic = "force-dynamic";
@@ -18,13 +19,8 @@ export async function GET(req: Request) {
     const { data: { user }, error } = await supabase.auth.getUser(token);
     if (error || !user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-    const plan = user.user_metadata?.redeemed_code || "Free";
-    const limit = plan === "Pro" ? 500 : (plan === "Basic" ? 50 : 10);
-    const currentMonth = new Date().toISOString().slice(0, 7);
-    const usageKey = `obf_usage_${currentMonth}`;
-    const used = user.user_metadata?.[usageKey] || 0;
-
-    return Response.json({ used, limit, plan });
+    const usageInfo = await getUserObfuscationUsage(user);
+    return Response.json(usageInfo);
   } catch (e: any) {
     return Response.json({ error: e.message }, { status: 500 });
   }

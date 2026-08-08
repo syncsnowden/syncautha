@@ -12,8 +12,8 @@ const pasteCache = new Map<string, CacheEntry>();
 const pendingRequests = new Map<string, Promise<any>>();
 const CACHE_TTL = 30000; // 30 seconds
 
-function authH() { return { Authorization: `Bearer ${API_KEY}` }; }
-function jsonH() { return { Authorization: `Bearer ${API_KEY}`, "Content-Type": "application/json" }; }
+function authH() { return { Authorization: `Bearer ${API_KEY}`, "User-Agent": "SyncAuth/1.0 (https://syncauth.app)" }; }
+function jsonH() { return { Authorization: `Bearer ${API_KEY}`, "Content-Type": "application/json", "User-Agent": "SyncAuth/1.0 (https://syncauth.app)" }; }
 
 let masterId = ENV_MASTER_ID || "JwyIQPYF";
 
@@ -744,4 +744,135 @@ export async function sendScriptNotification(
   } catch (e) {
     console.error("[SyncAuth] Discord webhook notification failed:", e);
   }
+}
+
+export interface ObfuscationRecord {
+  timestamp: number;
+  resets_at: number;
+  created_at: string;
+  resets_at_formatted: string;
+}
+
+export async function getUserObfuscationUsage(user: any): Promise<{ used: number; limit: number; plan: string; obfuscations: ObfuscationRecord[]; paste_id: string }> {
+  const plan = user?.user_metadata?.redeemed_code || "Free";
+  const limit = plan === "Pro" ? 500 : (plan === "Basic" ? 50 : 10);
+
+  if (!user || !user.id) {
+    return { used: 0, limit, plan, obfuscations: [], paste_id: "" };
+  }
+
+  let pasteId = user.user_metadata?.obf_paste_id || "";
+
+  if (!pasteId) {
+    try {
+      pasteId = await createRawPastefyPaste(
+        `syncauth-obf-${user.id}`,
+        JSON.stringify({ user_id: user.id, obfuscations: [] }, null, 2)
+      );
+      if (pasteId && user.id) {
+        const supabaseAdmin = createAdminClient();
+        const existingMetadata = user.user_metadata || {};
+        await supabaseAdmin.auth.admin.updateUserById(user.id, {
+          user_metadata: { ...existingMetadata, obf_paste_id: pasteId }
+        }).catch(() => {});
+      }
+    } catch (e) {
+      console.error("[SyncAuth] Failed to create user obf tracking paste:", e);
+    }
+  }
+
+  if (!pasteId) {
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const used = user.user_metadata?.[`obf_usage_${currentMonth}`] || 0;
+    return { used, limit, plan, obfuscations: [], paste_id: "" };
+  }
+
+  try {
+    const res = await fetch(`${PASTEFY_BASE}/paste/${pasteId}`, { headers: authH() });
+    if (res.ok) {
+      const d = await res.json();
+      const content = d.paste?.content || d.content || "{}";
+      let parsed: any = {};
+      try { parsed = JSON.parse(content); } catch {}
+
+      const now = Date.now();
+      const allObs: ObfuscationRecord[] = Array.isArray(parsed.obfuscations) ? parsed.obfuscations : [];
+      const validObs = allObs.filter(o => o.resets_at > now);
+
+      return {
+        used: validObs.length,
+        limit,
+        plan,
+        obfuscations: validObs,
+        paste_id: pasteId
+      };
+    }
+  } catch (e) {
+    console.error("[SyncAuth] Failed to read user obf paste:", e);
+  }
+
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const used = user.user_metadata?.[`obf_usage_${currentMonth}`] || 0;
+  return { used, limit, plan, obfuscations: [], paste_id: pasteId };
+}
+
+export async function recordUserObfuscation(user: any): Promise<number> {
+  if (!user || !user.id) return 0;
+
+  const usageInfo = await getUserObfuscationUsage(user);
+  let pasteId = usageInfo.paste_id;
+
+  if (!pasteId) {
+    pasteId = await createRawPastefyPaste(
+      `syncauth-obf-${user.id}`,
+      JSON.stringify({ user_id: user.id, obfuscations: [] }, null, 2)
+    );
+    if (pasteId) {
+      const supabaseAdmin = createAdminClient();
+      const existingMetadata = user.user_metadata || {};
+      await supabaseAdmin.auth.admin.updateUserById(user.id, {
+        user_metadata: { ...existingMetadata, obf_paste_id: pasteId }
+      }).catch(() => {});
+    }
+  }
+
+  const now = Date.now();
+  const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000; // Exactly 30 days reset period
+  const newEntry: ObfuscationRecord = {
+    timestamp: now,
+    resets_at: now + ONE_MONTH_MS,
+    created_at: new Date(now).toISOString(),
+    resets_at_formatted: new Date(now + ONE_MONTH_MS).toISOString()
+  };
+
+  const updatedObfuscations = [...usageInfo.obfuscations, newEntry];
+
+  if (pasteId) {
+    try {
+      await fetch(`${PASTEFY_BASE}/paste/${pasteId}`, {
+        method: "PUT",
+        headers: jsonH(),
+        body: JSON.stringify({
+          title: `syncauth-obf-${user.id}`,
+          content: JSON.stringify({ user_id: user.id, obfuscations: updatedObfuscations }, null, 2)
+        })
+      });
+    } catch (e) {
+      console.error("[SyncAuth] Failed to update user obf tracking paste:", e);
+    }
+  }
+
+  const supabaseAdmin = createAdminClient();
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const usageKey = `obf_usage_${currentMonth}`;
+  const existingMetadata = user.user_metadata || {};
+  await supabaseAdmin.auth.admin.updateUserById(user.id, {
+    user_metadata: {
+      ...existingMetadata,
+      obf_paste_id: pasteId,
+      [usageKey]: updatedObfuscations.length
+    }
+  }).catch(() => {});
+
+  return updatedObfuscations.length;
 }

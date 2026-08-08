@@ -1,4 +1,4 @@
-import { getScript, updateScript, deleteScript, obfuscateWithWeAreDevs, sendScriptNotification, createRawPastefyPaste } from "@/lib/pastefy";
+import { getScript, updateScript, deleteScript, obfuscateWithWeAreDevs, sendScriptNotification, createRawPastefyPaste, getUserObfuscationUsage, recordUserObfuscation } from "@/lib/pastefy";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 export const runtime = "edge";
@@ -113,14 +113,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     // 3. Obfuscate raw source code
     if (rawCode.trim() !== "") {
-      const plan = user?.user_metadata?.redeemed_code || "Free";
-      const limit = plan === "Pro" ? 500 : (plan === "Basic" ? 50 : 10);
-      const currentMonth = new Date().toISOString().slice(0, 7);
-      const usageKey = `obf_usage_${currentMonth}`;
-      const currentUsage = user?.user_metadata?.[usageKey] || 0;
-
-      if (user && currentUsage >= limit) {
-        return Response.json({ error: `Obfuscation limit reached for ${plan} plan (${limit}/mo).` }, { status: 429 });
+      if (user) {
+        const usage = await getUserObfuscationUsage(user);
+        if (usage.used >= usage.limit) {
+          return Response.json({ error: `Obfuscation limit reached for ${usage.plan} plan (${usage.limit}/mo).` }, { status: 429 });
+        }
       }
 
       // Obfuscate with custom API
@@ -128,16 +125,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       if (obfuscatedCode) {
         body.script_code = obfuscatedCode;
         if (user) {
-          const { data: latestUserData } = await supabaseAdmin.auth.admin.getUserById(user.id);
-          const existingMetadata = latestUserData?.user?.user_metadata || {};
-          const updatedUsage = (existingMetadata[usageKey] || 0) + 1;
-          await supabaseAdmin.auth.admin.updateUserById(user.id, {
-            user_metadata: {
-              ...existingMetadata,
-              [usageKey]: updatedUsage
-            }
-          });
-          console.log(`[SyncAuth] Updated obfuscation usage for ${user.email || user.id}: ${updatedUsage}/${limit}`);
+          await recordUserObfuscation(user);
         }
       } else {
         return Response.json({ error: "Obfuscation failed. Please check the obfuscator service or try again." }, { status: 500 });
