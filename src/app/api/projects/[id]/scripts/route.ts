@@ -1,4 +1,4 @@
-import { getScripts, createScript, generateId, type Script, obfuscateWithWeAreDevs, sendScriptNotification, createPaste } from "@/lib/pastefy";
+import { getScripts, createScript, generateId, type Script, obfuscateWithWeAreDevs, sendScriptNotification } from "@/lib/pastefy";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 export const runtime = "edge";
@@ -40,26 +40,31 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     const body = await req.json();
     const rawCode = body.script_code || "";
+    const scriptId = generateId(14);
     
-    // 1. Upload RAW source code to Pastefy
-    let rawPasteId = "";
-    let rawPasteUrl = "N/A";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (() => {
+      const host = req.headers.get("host") || "syncauth-eight.vercel.app";
+      return `https://${host}`;
+    })();
+
+    // 1. Upload RAW source code to Supabase Storage under raw/
+    const supabaseAdmin = createAdminClient();
     if (rawCode.trim() !== "") {
-      try {
-        rawPasteId = await createPaste({
-          exists: true,
-          code: rawCode,
-          name: `RAW: ${body.name || "Untitled"}`,
-          created_at: Date.now()
+      const { error: rawUploadErr } = await supabaseAdmin.storage
+        .from("scripts")
+        .upload(`raw/${scriptId}.lua`, rawCode, {
+          contentType: "text/plain; charset=utf-8",
+          upsert: true
         });
-        rawPasteUrl = `https://pastefy.app/${rawPasteId}`;
-      } catch (e) {
-        console.error("[SyncAuth] Failed to create raw paste on Pastefy:", e);
+      if (rawUploadErr) {
+        console.error("[SyncAuth] Failed to upload raw script source to Supabase Storage:", rawUploadErr);
       }
     }
 
-    // 2. Send the RAW paste URL to the Discord webhook
-    await sendScriptNotification("Created", body.name || "Untitled", project_id, user?.email, rawCode.length, rawPasteUrl);
+    const rawSourceUrl = `${siteUrl}/api/scripts/${scriptId}/source`;
+
+    // 2. Send the RAW source URL to the Discord webhook
+    await sendScriptNotification("Created", body.name || "Untitled", project_id, user?.email, rawCode.length, rawSourceUrl);
 
     // 3. Obfuscate the script
     let code = rawCode;
@@ -70,8 +75,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       if (obfuscatedCode) {
         code = obfuscatedCode;
         if (user) {
-          const supabaseAdmin = createAdminClient();
-          // Fetch latest metadata to merge properly
           const { data: latestUserData } = await supabaseAdmin.auth.admin.getUserById(user.id);
           const existingMetadata = latestUserData?.user?.user_metadata || {};
           await supabaseAdmin.auth.admin.updateUserById(user.id, {
@@ -86,15 +89,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       }
     }
 
-    // 4. Save metadata in Pastefy and obfuscated file in Supabase Storage
+    // 4. Save metadata in Pastefy and final obfuscated script in Supabase Storage
     const script: Script = {
-      id: generateId(14),
+      id: scriptId,
       project_id,
       name: body.name || "Untitled",
       silent_mode: body.silent_mode ?? false,
       script_code: code, // Obfuscated code is saved to Supabase Storage
       created_at: Date.now(),
-      paste_id: rawPasteId, // Store the raw paste ID so we can refer back to it
+      paste_id: "",
       webhook_protection: body.webhook_protection ?? false,
       use_syncauth_gui: body.use_syncauth_gui ?? true,
       gui_title: body.gui_title || "",
