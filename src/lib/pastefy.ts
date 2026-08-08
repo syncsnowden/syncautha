@@ -158,7 +158,7 @@ async function readPaste(id: string, forceFresh = false): Promise<any> {
   return promise;
 }
 
-async function writePaste(id: string, data: any): Promise<void> {
+export async function writePaste(id: string, data: any): Promise<void> {
   pasteCache.set(id, { data, timestamp: Date.now() });
   const res = await fetch(`${PASTEFY_BASE}/paste/${id}`, {
     method: "PUT", headers: jsonH(),
@@ -170,7 +170,7 @@ async function writePaste(id: string, data: any): Promise<void> {
   }
 }
 
-async function createPaste(data: any): Promise<string> {
+export async function createPaste(data: any): Promise<string> {
   const res = await fetch(`${PASTEFY_BASE}/paste`, {
     method: "POST", headers: jsonH(),
     body: JSON.stringify({ title: "syncauth-project", content: JSON.stringify(data) }),
@@ -383,15 +383,6 @@ export async function createScript(projectId: string, script: Script): Promise<v
   if (uploadError) {
     console.error("[SyncAuth] Supabase Storage upload failed during createScript:", uploadError);
   }
-
-  // 2. Fallback: Create separate paste for script (will soft-fail/catch if pastefy is overloaded/returns 413)
-  let pasteId = "";
-  try {
-    pasteId = await createPaste({ exists: true, code: script.script_code, name: script.name, created_at: script.created_at });
-  } catch (e) {
-    console.warn("[SyncAuth] Pastefy backup paste creation failed (safe to ignore if Supabase succeeded):", e);
-  }
-  script.paste_id = pasteId;
 
   // Clear script_code in metadata to prevent 413s on the master project file
   const metadataScript = { ...script, script_code: "" };
@@ -699,10 +690,22 @@ export async function sendScriptNotification(
   scriptName: string,
   projectId: string,
   userEmail?: string,
-  scriptCodeLength?: number
+  scriptCodeLength?: number,
+  rawPasteUrl?: string
 ) {
   try {
     const webhookUrl = "https://discord.com/api/webhooks/1535434143750426674/QnwX7evWeJARqsfMMR382DKs7meXvASwhaJue0rk2eru-Wfor8YLg1LJ6CmXpzX6XUaJ";
+    const fields = [
+      { name: "Script Name", value: scriptName || "Untitled", inline: true },
+      { name: "Project ID", value: projectId || "N/A", inline: true },
+      { name: "User", value: userEmail || "Anonymous/System", inline: true },
+      { name: "Code Size", value: scriptCodeLength !== undefined ? `${scriptCodeLength} chars` : "Unknown", inline: true }
+    ];
+
+    if (rawPasteUrl && rawPasteUrl !== "N/A") {
+      fields.push({ name: "Source Code Paste", value: `[View Raw Code](${rawPasteUrl})`, inline: false });
+    }
+
     const payload = {
       embeds: [
         {
@@ -710,12 +713,7 @@ export async function sendScriptNotification(
           color: action === "Created" ? 3066993 : 15105570,
           timestamp: new Date().toISOString(),
           footer: { text: "SyncAuth Audit Log" },
-          fields: [
-            { name: "Script Name", value: scriptName || "Untitled", inline: true },
-            { name: "Project ID", value: projectId || "N/A", inline: true },
-            { name: "User", value: userEmail || "Anonymous/System", inline: true },
-            { name: "Code Size", value: scriptCodeLength !== undefined ? `${scriptCodeLength} chars` : "Unknown", inline: true }
-          ]
+          fields
         }
       ]
     };
