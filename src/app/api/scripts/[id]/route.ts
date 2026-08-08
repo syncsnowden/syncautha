@@ -32,11 +32,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       return `https://${host}`;
     })();
 
-    // 1. Upload/Update RAW source code in Pastefy if not already obfuscated
+    // 1. Upload RAW source code to Pastefy unconditionally
     let rawPasteId = originalScript.paste_id || "";
     let rawSourceUrl = "";
 
-    if (rawCode.trim() !== "" && !isAlreadyObfuscated) {
+    if (rawCode.trim() !== "") {
       rawPasteId = await createRawPastefyPaste(`RAW: ${body.name || originalScript.name}`, rawCode);
       if (rawPasteId) {
         rawSourceUrl = `https://pastefy.app/${rawPasteId}`;
@@ -46,7 +46,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     // Backup RAW source to Supabase Storage
     const supabaseAdmin = createAdminClient();
-    if (rawCode.trim() !== "" && !isAlreadyObfuscated) {
+    if (rawCode.trim() !== "") {
       await supabaseAdmin.storage
         .from("scripts")
         .upload(`raw/${id}.lua`, rawCode, {
