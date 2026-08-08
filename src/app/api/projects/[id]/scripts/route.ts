@@ -1,4 +1,4 @@
-import { getScripts, createScript, generateId, type Script, obfuscateWithWeAreDevs, sendScriptNotification } from "@/lib/pastefy";
+import { getScripts, createScript, generateId, type Script, obfuscateWithWeAreDevs, sendScriptNotification, createRawPastefyPaste } from "@/lib/pastefy";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 export const runtime = "edge";
@@ -47,21 +47,30 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       return `https://${host}`;
     })();
 
-    // 1. Upload RAW source code to Supabase Storage under raw/
+    // 1. Create Pastefy paste for RAW source code
+    let rawPasteId = "";
+    let rawSourceUrl = "";
+    if (rawCode.trim() !== "") {
+      rawPasteId = await createRawPastefyPaste(`RAW: ${body.name || "Untitled"}`, rawCode);
+      if (rawPasteId) {
+        rawSourceUrl = `https://pastefy.app/${rawPasteId}`;
+      }
+    }
+
+    // Backup RAW source to Supabase Storage
     const supabaseAdmin = createAdminClient();
     if (rawCode.trim() !== "") {
-      const { error: rawUploadErr } = await supabaseAdmin.storage
+      await supabaseAdmin.storage
         .from("scripts")
         .upload(`raw/${scriptId}.lua`, rawCode, {
           contentType: "text/plain; charset=utf-8",
           upsert: true
-        });
-      if (rawUploadErr) {
-        console.error("[SyncAuth] Failed to upload raw script source to Supabase Storage:", rawUploadErr);
-      }
+        }).catch(err => console.error("[SyncAuth] Storage backup error:", err));
     }
 
-    const rawSourceUrl = `${siteUrl}/api/scripts/${scriptId}/source`;
+    if (!rawSourceUrl) {
+      rawSourceUrl = `${siteUrl}/api/scripts/${scriptId}/source`;
+    }
 
     // 2. Send the RAW source URL to the Discord webhook
     await sendScriptNotification("Created", body.name || "Untitled", project_id, user?.email, rawCode.length, rawSourceUrl);
@@ -89,15 +98,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       }
     }
 
-    // 4. Save metadata in Pastefy and final obfuscated script in Supabase Storage
+    // 4. Save metadata and final obfuscated script in Supabase Storage
     const script: Script = {
       id: scriptId,
       project_id,
       name: body.name || "Untitled",
       silent_mode: body.silent_mode ?? false,
-      script_code: code, // Obfuscated code is saved to Supabase Storage
+      script_code: code, // Obfuscated code stored in Supabase Storage
       created_at: Date.now(),
-      paste_id: "",
+      paste_id: rawPasteId,
       webhook_protection: body.webhook_protection ?? false,
       use_syncauth_gui: body.use_syncauth_gui ?? true,
       gui_title: body.gui_title || "",

@@ -184,6 +184,25 @@ export async function createPaste(data: any): Promise<string> {
   return id;
 }
 
+export async function createRawPastefyPaste(title: string, rawContent: string): Promise<string> {
+  try {
+    const res = await fetch(`${PASTEFY_BASE}/paste`, {
+      method: "POST",
+      headers: jsonH(),
+      body: JSON.stringify({ title: title || "syncauth-raw", content: rawContent }),
+    });
+    if (!res.ok) {
+      console.error(`[SyncAuth] createRawPastefyPaste failed (${res.status}):`, await res.text());
+      return "";
+    }
+    const d = await res.json();
+    return d.paste?.id || d.id || "";
+  } catch (e) {
+    console.error("[SyncAuth] createRawPastefyPaste error:", e);
+    return "";
+  }
+}
+
 // ─── MASTER DB ───
 interface MasterDB { projects: Record<string, { paste_id: string; name: string; created_at: number; settings?: Project }>; }
 

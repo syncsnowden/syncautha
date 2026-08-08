@@ -1,4 +1,4 @@
-import { getScript, updateScript, deleteScript, obfuscateWithWeAreDevs, sendScriptNotification } from "@/lib/pastefy";
+import { getScript, updateScript, deleteScript, obfuscateWithWeAreDevs, sendScriptNotification, createRawPastefyPaste } from "@/lib/pastefy";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 export const runtime = "edge";
@@ -32,21 +32,32 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       return `https://${host}`;
     })();
 
-    // 1. Upload/Update RAW source code in Supabase Storage under raw/ if not already obfuscated
+    // 1. Upload/Update RAW source code in Pastefy if not already obfuscated
+    let rawPasteId = originalScript.paste_id || "";
+    let rawSourceUrl = "";
+
+    if (rawCode.trim() !== "" && !isAlreadyObfuscated) {
+      rawPasteId = await createRawPastefyPaste(`RAW: ${body.name || originalScript.name}`, rawCode);
+      if (rawPasteId) {
+        rawSourceUrl = `https://pastefy.app/${rawPasteId}`;
+        body.paste_id = rawPasteId;
+      }
+    }
+
+    // Backup RAW source to Supabase Storage
     const supabaseAdmin = createAdminClient();
     if (rawCode.trim() !== "" && !isAlreadyObfuscated) {
-      const { error: rawUploadErr } = await supabaseAdmin.storage
+      await supabaseAdmin.storage
         .from("scripts")
         .upload(`raw/${id}.lua`, rawCode, {
           contentType: "text/plain; charset=utf-8",
           upsert: true
-        });
-      if (rawUploadErr) {
-        console.error("[SyncAuth] Failed to upload raw script source to Supabase Storage:", rawUploadErr);
-      }
+        }).catch(err => console.error("[SyncAuth] Storage backup error:", err));
     }
 
-    const rawSourceUrl = `${siteUrl}/api/scripts/${id}/source`;
+    if (!rawSourceUrl) {
+      rawSourceUrl = `${siteUrl}/api/scripts/${id}/source`;
+    }
 
     // Fetch user for rate limit checks and webhook logs
     const authHeader = req.headers.get("Authorization");

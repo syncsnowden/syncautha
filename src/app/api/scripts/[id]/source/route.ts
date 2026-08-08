@@ -7,9 +7,18 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const { id } = await params;
   try {
     const supabase = createAdminClient();
-    const { data: fileData, error } = await supabase.storage
+    let { data: fileData, error } = await supabase.storage
       .from("scripts")
       .download(`raw/${id}.lua`);
+
+    if (error || !fileData) {
+      // Fallback to standard storage file
+      const res = await supabase.storage
+        .from("scripts")
+        .download(`${id}.lua`);
+      fileData = res.data;
+      error = res.error;
+    }
 
     if (error || !fileData) {
       return new Response("Raw script source not found.", { status: 404, headers: { "Content-Type": "text/plain" } });
