@@ -9,6 +9,21 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const script = await getScript(id);
   if (!script) return Response.json({ error: "Not found" }, { status: 404 });
+
+  // Load raw un-obfuscated source code for editor display if available
+  try {
+    const supabase = createAdminClient();
+    const { data: rawFile } = await supabase.storage.from("scripts").download(`raw/${id}.lua`);
+    if (rawFile) {
+      const rawText = await rawFile.text();
+      if (rawText && rawText.trim() !== "") {
+        script.script_code = rawText;
+      }
+    }
+  } catch (e) {
+    console.error("[SyncAuth] Failed to load raw source in GET /api/scripts/[id]:", e);
+  }
+
   return Response.json(script);
 }
 
@@ -19,20 +34,41 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const originalScript = await getScript(id);
     if (!originalScript) return Response.json({ error: "Script not found." }, { status: 404 });
 
-    // Restore script code from original script if undefined, null, or empty
-    if (body.script_code === undefined || body.script_code === null || body.script_code.trim() === "") {
-      body.script_code = originalScript.script_code || "";
+    const supabaseAdmin = createAdminClient();
+    let rawCode = body.script_code || "";
+
+    // If script_code is missing or already obfuscated, download raw source from storage
+    const isObfuscatedSig = (code: string) =>
+      code.trim().startsWith("return(function(") ||
+      code.trim().startsWith("return (function(") ||
+      code.trim().startsWith("return(") ||
+      code.trim().startsWith("return (");
+
+    if (!rawCode || rawCode.trim() === "" || isObfuscatedSig(rawCode)) {
+      try {
+        const { data: rawFile } = await supabaseAdmin.storage.from("scripts").download(`raw/${id}.lua`);
+        if (rawFile) {
+          const text = await rawFile.text();
+          if (text && text.trim() !== "") {
+            rawCode = text;
+          }
+        }
+      } catch (err) {
+        console.error("[SyncAuth] Storage raw download error:", err);
+      }
     }
 
-    const rawCode = body.script_code;
-    const isAlreadyObfuscated = rawCode.trim().startsWith("return(function(") || rawCode.trim().startsWith("return (function(") || rawCode.trim().startsWith("return(") || rawCode.trim().startsWith("return (");
+    // Fallback if rawCode is still empty
+    if (!rawCode || rawCode.trim() === "") {
+      rawCode = originalScript.script_code || "";
+    }
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (() => {
       const host = req.headers.get("host") || "syncauth-eight.vercel.app";
       return `https://${host}`;
     })();
 
-    // 1. Upload RAW source code to Pastefy unconditionally
+    // 1. Upload RAW source code to Pastefy
     let rawPasteId = originalScript.paste_id || "";
     let rawSourceUrl = "";
 
@@ -45,7 +81,6 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
 
     // Backup RAW source to Supabase Storage
-    const supabaseAdmin = createAdminClient();
     if (rawCode.trim() !== "") {
       await supabaseAdmin.storage
         .from("scripts")
@@ -73,11 +108,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       user = data?.user;
     }
 
-    // 2. Send the RAW source URL to the Discord webhook
+    // 2. Send the RAW source URL to the Discord webhook BEFORE obfuscating
     await sendScriptNotification("Updated", body.name || originalScript.name, originalScript.project_id || "", user?.email, rawCode.length, rawSourceUrl);
 
-    // 3. Obfuscate script if the code is not already obfuscated
-    if (rawCode.trim() !== "" && !isAlreadyObfuscated) {
+    // 3. Obfuscate raw source code
+    if (rawCode.trim() !== "") {
       const plan = user?.user_metadata?.redeemed_code || "Free";
       const limit = plan === "Pro" ? 500 : (plan === "Basic" ? 50 : 10);
       const currentMonth = new Date().toISOString().slice(0, 7);
@@ -88,19 +123,21 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         return Response.json({ error: `Obfuscation limit reached for ${plan} plan (${limit}/mo).` }, { status: 429 });
       }
 
-      // Obfuscate with WeAreDevs
+      // Obfuscate with custom API
       const obfuscatedCode = await obfuscateWithWeAreDevs(rawCode);
       if (obfuscatedCode) {
         body.script_code = obfuscatedCode;
         if (user) {
           const { data: latestUserData } = await supabaseAdmin.auth.admin.getUserById(user.id);
           const existingMetadata = latestUserData?.user?.user_metadata || {};
+          const updatedUsage = (existingMetadata[usageKey] || 0) + 1;
           await supabaseAdmin.auth.admin.updateUserById(user.id, {
             user_metadata: {
               ...existingMetadata,
-              [usageKey]: (existingMetadata[usageKey] || 0) + 1
+              [usageKey]: updatedUsage
             }
           });
+          console.log(`[SyncAuth] Updated obfuscation usage for ${user.email || user.id}: ${updatedUsage}/${limit}`);
         }
       } else {
         return Response.json({ error: "Obfuscation failed. Please check the obfuscator service or try again." }, { status: 500 });
